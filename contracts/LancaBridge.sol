@@ -8,8 +8,9 @@ import {IRouterClient as ICcipRouterClient} from "@chainlink/contracts/src/v0.8/
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
 
-contract LancaBridge is LancaBridgeStorage {
+contract LancaBridge is ILancaBridge, LancaBridgeStorage {
     using SafeERC20 for IERC20;
 
     /* ERRORS */
@@ -37,16 +38,6 @@ contract LancaBridge is LancaBridgeStorage {
     );
 
     /* TYPES */
-
-    struct BridgeData {
-        uint256 amount;
-        address token;
-        address feeToken;
-        address receiver;
-        uint64 dstChainSelector;
-        uint32 dstChainGasLimit;
-        bytes message;
-    }
 
     struct CcipSettlementTxs {
         bytes32 id;
