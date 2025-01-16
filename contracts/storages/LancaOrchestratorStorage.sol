@@ -7,4 +7,6 @@ abstract contract LancaOrchestratorStorage {
 
     mapping(address integrator => mapping(address => uint256) tokens)
         internal s_integratorFeesAmountByToken;
+
+    /* GETTERS */
 }
