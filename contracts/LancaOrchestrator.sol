@@ -26,6 +26,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     /* CONSTANTS */
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
+    uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
@@ -46,6 +47,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     function bridge(
         address token,
         uint256 amount,
+        address receiver,
         uint64 dstChainSelector,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
@@ -55,15 +57,16 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
         amount -= _collectIntegratorFee(token, amount, integration);
 
-        address receiver = s_lancaOrchestratorDstByChainSelector[dstChainSelector];
+        address dstLancaContract = s_lancaOrchestratorDstByChainSelector[dstChainSelector];
+        bytes memory message = abi.encode(receiver, compressedDstSwapData);
 
         ILancaBridge.BridgeData memory bridgeData = ILancaBridge.BridgeData({
             amount: amount,
             token: token,
             feeToken: i_usdc,
-            receiver: msg.sender,
+            receiver: dstLancaContract,
             dstChainSelector: dstChainSelector,
-            dstChainGasLimit: 100000,
+            dstChainGasLimit: DST_CHAIN_GAS_LIMIT,
             message: compressedDstSwapData
         });
 
