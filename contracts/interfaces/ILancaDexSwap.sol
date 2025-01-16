@@ -36,11 +36,11 @@ interface ILancaDexSwap {
     /// @notice error emitted when the router is not allowed
     error DexRouterNotAllowed();
 
-    /// @notice error emitted when the dexData is empty
-    error EmptyDexData();
+    /// @notice error emitted when the swapData is empty
+    error EmptySwapData();
 
     /// @notice error emitted when provided DEX data is invalid
-    error InvalidDexData();
+    error InvalidSwapData();
 
     /// @notice error emitted when a swap operation fails
     error LancaSwapFailed();
