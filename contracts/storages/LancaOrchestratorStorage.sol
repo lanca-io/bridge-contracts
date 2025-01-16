@@ -7,4 +7,7 @@ abstract contract LancaOrchestratorStorage {
 
     mapping(address integrator => mapping(address => uint256) tokens)
         internal s_integratorFeesAmountByToken;
+
+    /// @notice mapping to keep track of allowed routers to perform swaps.
+    mapping(address router => bool isAllowed) public s_routerAllowed;
 }
