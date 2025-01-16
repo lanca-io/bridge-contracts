@@ -73,6 +73,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         ILancaBridge(i_lancaBridge).bridge(bridgeData);
     }
 
+    /// @inheritdoc ILancaDexSwap
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address recipient
@@ -139,6 +140,10 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         return integratorFeeAmount;
     }
 
+    /**
+     * @notice Perform a swap on a SwapData
+     * @param swapData the SwapData to perform the swap
+     */
     function _performSwap(ILancaDexSwap.SwapData memory swapData) internal {
         bytes memory dexCallData = swapData.dexCallData;
         require(dexCallData.length != 0, EmptyDexData());
