@@ -50,7 +50,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         bytes calldata compressedDstSwapData,
         Integration calldata integration
     ) external {
-        if (token != i_usdc) revert InvalidBridgeToken();
+        require(token == i_usdc, InvalidBridgeToken());
 
         IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
         amount -= _collectIntegratorFee(token, amount, integration);
