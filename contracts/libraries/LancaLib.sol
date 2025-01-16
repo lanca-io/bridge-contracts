@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
+import {ZERO_ADDRESS} from "../Constants.sol";
 
 library LancaLib {
     using SafeERC20 for IERC20;
@@ -12,11 +12,11 @@ library LancaLib {
     error InvalidTransferData();
     error TransferFailed();
 
-    function getBalance(address token, address contract) internal view returns (uint256) {
+    function getBalance(address token, address contractAddress) internal view returns (uint256) {
         if (token == ZERO_ADDRESS) {
-            return contract.balance;
-        return IERC20(token).balanceOf(contract);
+            return contractAddress.balance;
         }
+        return IERC20(token).balanceOf(contractAddress);
     }
 
     function transferTokenToUser(address recipient, address token, uint256 amount) internal {
