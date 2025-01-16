@@ -35,10 +35,19 @@ interface ILancaDexSwap {
     /* ERRORS */
     /// @notice error emitted when the router is not allowed
     error DexRouterNotAllowed();
+
     /// @notice error emitted when the dexData is empty
     error EmptyDexData();
+
+    /// @notice error emitted when provided DEX data is invalid
+    error InvalidDexData();
+
     /// @notice error emitted when a swap operation fails
     error LancaSwapFailed();
+
+    /// @notice this error is emitted when the path of tokens to be swapped is invalid
+    error InvalidTokenPath();
+
     /// @notice error emitted when the received amount is less than the minimum allowed
     /// @param amount the amount received
     error InsufficientAmount(uint256 amount);
