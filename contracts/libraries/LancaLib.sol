@@ -84,31 +84,25 @@ library LancaLib {
         require(tokenType == ICcip.CcipToken.usdc, TokenTypeNotSupported(tokenType));
         uint256 chainId = block.chainid;
 
-        assembly {
-            switch chainId
-            case 43114 {
-                usdcAddress := USDC_AVALANCHE
-            }
-            case 42161 {
-                usdcAddress := USDC_ARBITRUM
-            }
-            case 8453 {
-                usdcAddress := USDC_BASE
-            }
-            case 137 {
-                usdcAddress := USDC_POLYGON
-            }
-            case 10 {
-                usdcAddress := USDC_OPTIMISM
-            }
-            case 1 {
-                usdcAddress := USDC_ETHEREUM
-            }
-            default {
-                usdcAddress := ZERO_ADDRESS
-            }
+        if (chainId == CHAIN_ID_AVALANCHE) {
+            return USDC_AVALANCHE;
+        }
+        if (chainId == CHAIN_ID_ARBITRUM) {
+            return USDC_ARBITRUM;
+        }
+        if (chainId == CHAIN_ID_BASE) {
+            return USDC_BASE;
+        }
+        if (chainId == CHAIN_ID_POLYGON) {
+            return USDC_POLYGON;
+        }
+        if (chainId == CHAIN_ID_OPTIMISM) {
+            return USDC_OPTIMISM;
+        }
+        if (chainId == CHAIN_ID_ETHEREUM) {
+            return USDC_ETHEREUM;
         }
 
-        require(usdcAddress != ZERO_ADDRESS, ChainNotSupported(chainId));
+        revert ChainNotSupported(chainId);
     }
 }

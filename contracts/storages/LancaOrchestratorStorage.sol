@@ -14,7 +14,4 @@ abstract contract LancaOrchestratorStorage is ReentrancyGuard {
 
     /// @notice mapping to keep track of allowed routers to perform swaps.
     mapping(address router => bool isAllowed) public s_routerAllowed;
-
-    /// @notice mapping of chainId to USDC address
-    mapping(uint64 chainId => address usdc) public s_usdcAddressByChainId;
 }
