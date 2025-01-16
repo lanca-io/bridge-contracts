@@ -71,13 +71,13 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
     function bridge(BridgeData calldata bridgeData) external {
         _validateBridgeData(bridgeData);
         uint256 fee = _getFee(bridgeData);
-        if (bridgeData.amount <= fee) revert InsufficientBridgeAmount();
+        require(bridgeData.amount > fee, InsufficientBridgeAmount());
 
         IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
 
         uint256 amountToSendAfterFee = bridgeData.amount - fee;
         address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeData.dstChainSelector];
-        if (dstLancaBridgeContract == ZERO_ADDRESS) revert InvalidDstChainSelector();
+        require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: i_usdc,
@@ -134,10 +134,10 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
     /* INTERNAL FUNCTIONS */
 
     function _validateBridgeData(BridgeData calldata bridgeData) internal view {
-        if (bridgeData.token != i_usdc) revert InvalidBridgeToken();
-        if (bridgeData.feeToken != i_usdc) revert InvalidFeeToken();
-        if (bridgeData.receiver == ZERO_ADDRESS) revert InvalidReceiver();
-        if (bridgeData.dstChainGasLimit > MAX_DST_CHAIN_GAS_LIMIT) revert InvalidDstChainGasLimit();
+        require(bridgeData.token == i_usdc, InvalidBridgeToken());
+        require(bridgeData.feeToken == i_usdc, InvalidFeeToken());
+        require(bridgeData.receiver != ZERO_ADDRESS, InvalidReceiver());
+        require(bridgeData.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
     function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
@@ -233,9 +233,7 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
         bytes memory ccipMessageData
     ) internal view returns (LibCcipClient.EVM2AnyMessage memory) {
         address receiver = s_lancaBridgeContractsByChain[dstChainSelector];
-        if (receiver == ZERO_ADDRESS) {
-            revert InvalidDstChainSelector();
-        }
+        require(receiver != ZERO_ADDRESS, InvalidDstChainSelector());
 
         LibCcipClient.EVMTokenAmount[] memory tokenAmounts = new LibCcipClient.EVMTokenAmount[](1);
         tokenAmounts[0] = LibCcipClient.EVMTokenAmount({token: token, amount: amount});
