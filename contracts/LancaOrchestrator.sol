@@ -8,8 +8,9 @@ import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
+contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -51,7 +52,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         uint64 dstChainSelector,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
-    ) external {
+    ) external nonReentrant {
         require(token == i_usdc, InvalidBridgeToken());
 
         IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
@@ -77,7 +78,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address recipient
-    ) external payable returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
@@ -118,6 +119,8 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
 
         return dstTokenReceived;
     }
+
+    function swapAndBridge() external payable nonReentrant {}
 
     /* INTERNAL FUNCTIONS */
 
