@@ -9,7 +9,7 @@ library LancaLib {
     using SafeERC20 for IERC20;
 
     /* ERRORS */
-    error InvalidDexData();
+    error InvalidTransferData();
     error TransferFailed();
 
     function getBalance(address token, address contract) internal view returns (uint256) {
@@ -20,7 +20,7 @@ library LancaLib {
     }
 
     function transferTokenToUser(address recipient, address token, uint256 amount) internal {
-        require(amount != 0 && recipient != ZERO_ADDRESS);
+        require(amount != 0 && recipient != ZERO_ADDRESS, InvalidTransferData());
 
         if (token != ZERO_ADDRESS) {
             IERC20(token).safeTransfer(recipient, amount);
