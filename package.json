@@ -16,7 +16,13 @@
     "format:sol": "prettier --write ./*.sol ./contracts/**/*.sol ./test/**/*.sol",
     "clean:hardhat": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
     "clean:forge": "forge clean",
-    "clean": "yarn run clean:hardhat && yarn run clean:forge"
+    "clean": "yarn run clean:hardhat && yarn run clean:forge",
+    "prepare": "husky"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run format && npm run lint:ts && npm run compile"
+    }
   },
   "devDependencies": {
     "@chainlink/env-enc": "1.0.5",
