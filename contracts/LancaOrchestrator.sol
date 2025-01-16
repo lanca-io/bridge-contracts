@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 
@@ -50,7 +51,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
             swapData.length != 0 &&
                 swapData.length <= MAX_TOKEN_PATH_LENGTH &&
                 swapData[0].fromAmount != 0,
-            InvalidDexData()
+            InvalidSwapData()
         );
         _;
     }
@@ -69,7 +70,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         uint64 dstChainSelector,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
-    ) external nonReentrant {
+    ) public nonReentrant {
         require(token == i_usdc, InvalidBridgeToken());
 
         IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
@@ -95,7 +96,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address recipient
-    ) external payable nonReentrant validateSwapData(swapData) returns (uint256) {
+    ) public payable nonReentrant validateSwapData(swapData) returns (uint256) {
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
@@ -118,7 +119,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         }
 
         // @dev check if swapDataLength is 0 and there were no swaps
-        require(balanceAfter != 0, InvalidDexData());
+        require(balanceAfter != 0, InvalidSwapData());
 
         uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
 
@@ -138,11 +139,30 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     }
 
     function swapAndBridge(
-        ILancaBridge.BridgeData calldata bridgeData,
+        ILancaBridge.BridgeData memory bridgeData,
         ILancaDexSwap.SwapData[] memory swapData,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {}
+    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
+        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
+        require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
+
+        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
+
+        uint256 amountReceivedFromSwap = swap(swapData, i_addressThis);
+        bridgeData.amount =
+            amountReceivedFromSwap -
+            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
+
+        bridge(
+            bridgeData.token,
+            bridgeData.amount,
+            bridgeData.receiver,
+            bridgeData.dstChainSelector,
+            compressedDstSwapData,
+            integration
+        );
+    }
 
     /* INTERNAL FUNCTIONS */
 
@@ -171,7 +191,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
      */
     function _performSwap(ILancaDexSwap.SwapData memory swapData) internal {
         bytes memory dexCallData = swapData.dexCallData;
-        require(dexCallData.length != 0, EmptyDexData());
+        require(dexCallData.length != 0, EmptySwapData());
 
         address dexRouter = swapData.dexRouter;
         require(s_routerAllowed[dexRouter], DexRouterNotAllowed());
