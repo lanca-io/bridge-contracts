@@ -21,7 +21,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run format && npm run lint:ts && npm run compile"
+      "pre-commit": "npm run format:ts && npm run format:sol && npm run lint:ts && npm run compile"
     }
   },
   "devDependencies": {
