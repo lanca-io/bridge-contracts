@@ -4,9 +4,12 @@ pragma solidity 0.8.28;
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {LancaLib} from "./libraries/LancaLib.sol";
+import {ZERO_ADDRESS} from "./Constants.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorage {
+contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -17,7 +20,6 @@ contract LancaOrchestrator is LancaOrchestratorStorage {
     }
 
     /* ERRORS */
-
     error InvalidIntegratorFeeBps();
     error InvalidBridgeToken();
 
@@ -28,6 +30,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage {
     /* IMMUTABLES */
     address internal immutable i_usdc;
     address internal immutable i_lancaBridge;
+    address internal immutable i_addressThis;
 
     /* EVENTS */
     event IntegratorFeesCollected(address integrator, address token, uint256 amount);
@@ -35,6 +38,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage {
     constructor(address usdc, address lancaBridge) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
+        i_addressThis = address(this);
     }
 
     /* FUNCTIONS */
@@ -44,11 +48,11 @@ contract LancaOrchestrator is LancaOrchestratorStorage {
         uint256 amount,
         uint64 dstChainSelector,
         bytes memory compressedDstSwapData,
-        Integration memory integration
+        Integration calldata integration
     ) external {
         if (token != i_usdc) revert InvalidBridgeToken();
 
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
         amount -= _collectIntegratorFee(token, amount, integration);
 
         address receiver = s_lancaOrchestratorDstByChainSelector[dstChainSelector];
@@ -66,23 +70,91 @@ contract LancaOrchestrator is LancaOrchestratorStorage {
         ILancaBridge(i_lancaBridge).bridge(bridgeData);
     }
 
+    function swap(
+        ILancaDexSwap.SwapData[] memory swapData,
+        address recipient
+    ) external payable returns (uint256) {
+        uint256 swapDataLength = swapData.length;
+        uint256 lastSwapStepIndex = swapDataLength - 1;
+        address dstToken = swapData[lastSwapStepIndex].toToken;
+        uint256 dstTokenProxyInitialBalance = LancaLib.getBalance(dstToken, i_addressThis);
+        uint256 balanceAfter;
+
+        for (uint256 i; i < swapDataLength; ++i) {
+            uint256 balanceBefore = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
+
+            _performSwap(swapData[i]);
+
+            balanceAfter = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
+            uint256 tokenReceived = balanceAfter - balanceBefore;
+            require(tokenReceived >= swapData[i].toAmountMin, InsufficientAmount(tokenReceived));
+
+            if (i < lastSwapStepIndex) {
+                require(swapData[i].toToken == swapData[i + 1].fromToken, InvalidTokenPath());
+                swapData[i + 1].fromAmount = tokenReceived;
+            }
+        }
+
+        // @dev check if swapDataLength is 0 and there were no swaps
+        require(balanceAfter != 0, InvalidDexData());
+
+        uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
+
+        if (recipient != i_addressThis) {
+            LancaLib.transferTokenToUser(recipient, dstToken, dstTokenReceived);
+        }
+
+        emit LancaSwap(
+            swapData[0].fromToken,
+            dstToken,
+            swapData[0].fromAmount,
+            dstTokenReceived,
+            recipient
+        );
+
+        return dstTokenReceived;
+    }
+
     /* INTERNAL FUNCTIONS */
 
     function _collectIntegratorFee(
         address token,
         uint256 amount,
-        Integration memory integration
+        Integration calldata integration
     ) internal returns (uint256) {
-        if (integration.integrator == address(0)) return 0;
-        if (integration.feeBps > MAX_INTEGRATOR_FEE_BPS) revert InvalidIntegratorFeeBps();
+        (address integrator, uint256 feeBps) = (integration.integrator, integration.feeBps);
+        if (integrator == address(0)) return 0;
+        require(feeBps <= MAX_INTEGRATOR_FEE_BPS, InvalidIntegratorFeeBps());
 
-        uint256 integratorFeeAmount = (amount * integration.feeBps) / BPS_DIVISOR;
+        uint256 integratorFeeAmount = (amount * feeBps) / BPS_DIVISOR;
         if (integratorFeeAmount == 0) return 0;
 
-        s_integratorFeesAmountByToken[integration.integrator][token] += integratorFeeAmount;
+        s_integratorFeesAmountByToken[integrator][token] += integratorFeeAmount;
         //        s_totalIntegratorFeesAmountByToken[token] += integratorFeeAmount;
 
-        emit IntegratorFeesCollected(integration.integrator, token, integratorFeeAmount);
+        emit IntegratorFeesCollected(integrator, token, integratorFeeAmount);
         return integratorFeeAmount;
+    }
+
+    function _performSwap(ILancaDexSwap.SwapData memory swapData) internal {
+        bytes memory dexCallData = swapData.dexCallData;
+        require(dexCallData.length != 0, EmptyDexData());
+
+        address dexRouter = swapData.dexRouter;
+        require(s_routerAllowed[dexRouter], DexRouterNotAllowed());
+
+        uint256 fromAmount = swapData.fromAmount;
+        address fromToken = swapData.fromToken;
+        bool isFromNative = fromToken == ZERO_ADDRESS;
+
+        bool success;
+        if (!isFromNative) {
+            IERC20(fromToken).safeIncreaseAllowance(dexRouter, fromAmount);
+            (success, ) = dexRouter.call(dexCallData);
+        } else {
+            (success, ) = dexRouter.call{value: fromAmount}(dexCallData);
+        }
+
+        require(success, LancaSwapFailed());
     }
 }
