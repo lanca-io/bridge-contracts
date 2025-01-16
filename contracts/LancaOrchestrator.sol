@@ -126,7 +126,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         Integration calldata integration
     ) internal returns (uint256) {
         (address integrator, uint256 feeBps) = (integration.integrator, integration.feeBps);
-        if (integrator == address(0)) return 0;
+        if (integrator == ZERO_ADDRESS) return 0;
         require(feeBps <= MAX_INTEGRATOR_FEE_BPS, InvalidIntegratorFeeBps());
 
         uint256 integratorFeeAmount = (amount * feeBps) / BPS_DIVISOR;

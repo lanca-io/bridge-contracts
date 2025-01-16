@@ -9,6 +9,7 @@ import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/librar
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {ZERO_ADDRESS} from "./Constants.sol";
 
 contract LancaBridge is ILancaBridge, LancaBridgeStorage {
     using SafeERC20 for IERC20;
@@ -48,7 +49,6 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
 
     uint24 internal constant MAX_DST_CHAIN_GAS_LIMIT = 1_400_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
-    address internal constant ZERO_ADDRESS = address(0);
     uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * 1e6;
     uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 1_000_000;
 
