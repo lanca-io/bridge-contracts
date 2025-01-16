@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-abstract contract LancaOrchestratorStorage {
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+abstract contract LancaOrchestratorStorage is ReentrancyGuard {
     mapping(uint64 dstChainSelector => address dstOrchetrator)
         internal s_lancaOrchestratorDstByChainSelector;
 

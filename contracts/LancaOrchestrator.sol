@@ -8,9 +8,8 @@ import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap, ReentrancyGuard {
+contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -120,7 +119,12 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap, Reentranc
         return dstTokenReceived;
     }
 
-    function swapAndBridge() external payable nonReentrant {}
+    function swapAndBridge(
+        ILancaBridge.BridgeData calldata bridgeData,
+        ILancaDexSwap.SwapData[] memory swapData,
+        bytes calldata compressedDstSwapData,
+        Integration calldata integration
+    ) external payable nonReentrant {}
 
     /* INTERNAL FUNCTIONS */
 
