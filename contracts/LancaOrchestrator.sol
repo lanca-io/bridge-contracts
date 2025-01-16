@@ -47,7 +47,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         address token,
         uint256 amount,
         uint64 dstChainSelector,
-        bytes memory compressedDstSwapData,
+        bytes calldata compressedDstSwapData,
         Integration calldata integration
     ) external {
         if (token != i_usdc) revert InvalidBridgeToken();
