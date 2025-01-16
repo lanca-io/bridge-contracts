@@ -5,7 +5,7 @@ abstract contract LancaOrchestratorStorage {
     mapping(uint64 dstChainSelector => address dstOrchetrator)
         internal s_lancaOrchestratorDstByChainSelector;
 
-    mapping(address integrator => mapping(address => uint256) tokens)
+    mapping(address integrator => mapping(address token => uint256 amount))
         internal s_integratorFeesAmountByToken;
 
     /// @notice mapping to keep track of allowed routers to perform swaps.
