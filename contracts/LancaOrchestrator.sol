@@ -19,11 +19,8 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         uint256 feeBps;
     }
 
-    /* ERRORS */
-    error InvalidIntegratorFeeBps();
-    error InvalidBridgeToken();
-
     /* CONSTANTS */
+    uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
@@ -36,10 +33,31 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     /* EVENTS */
     event IntegratorFeesCollected(address integrator, address token, uint256 amount);
 
+    /* ERRORS */
+    error InvalidIntegratorFeeBps();
+    error InvalidBridgeToken();
+    error InvalidBridgeData();
+
     constructor(address usdc, address lancaBridge) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
         i_addressThis = address(this);
+    }
+
+    /* MODIFIERS */
+    modifier validateSwapData(ILancaDexSwap.SwapData[] memory swapData) {
+        require(
+            swapData.length != 0 &&
+                swapData.length <= MAX_TOKEN_PATH_LENGTH &&
+                swapData[0].fromAmount != 0,
+            InvalidDexData()
+        );
+        _;
+    }
+
+    modifier validateBridgeData(ILancaBridge.BridgeData memory bridgeData) {
+        require(bridgeData.amount != 0 && bridgeData.receiver != ZERO_ADDRESS, InvalidBridgeData());
+        _;
     }
 
     /* FUNCTIONS */
@@ -77,7 +95,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address recipient
-    ) external payable nonReentrant returns (uint256) {
+    ) external payable nonReentrant validateSwapData(swapData) returns (uint256) {
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
@@ -124,7 +142,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
         ILancaDexSwap.SwapData[] memory swapData,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
-    ) external payable nonReentrant {}
+    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {}
 
     /* INTERNAL FUNCTIONS */
 
