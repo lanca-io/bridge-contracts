@@ -3,7 +3,8 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ZERO_ADDRESS} from "../Constants.sol";
+import {ICcip} from "../interfaces/ICcip.sol";
+import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM} from "../Constants.sol";
 
 library LancaLib {
     using SafeERC20 for IERC20;
@@ -12,8 +13,26 @@ library LancaLib {
     /// @dev Reverts when transfer data is invalid (e.g., zero amount or recipient address).
     error InvalidTransferData();
 
+    /// @notice Reverts when the provided amount is invalid (e.g., zero amount).
+    /// @dev This error is typically thrown when the amount of tokens to transfer is invalid.
+    error InvalidAmount();
+
     /// @dev Reverts when the token transfer fails.
     error TransferFailed();
+
+    /// @dev Reverts when the provided chain ID is not supported.
+    /// @param chainId The ID of the chain that is not supported.
+    error ChainNotSupported(uint256 chainId);
+
+    /// @dev Reverts when the token type is not supported.
+    /// @param tokenType The unsupported token type.
+    error TokenTypeNotSupported(ICcip.CcipToken tokenType);
+
+    /// @dev Reverts when the token transfer is attempted to the null address.
+    error TransferToNullAddress();
+
+    /// @dev Reverts when the token is not an ERC20 token.
+    error TokenIsNotERC20();
 
     /**
      * @dev Returns the balance of the token for the contractAddress.
@@ -43,5 +62,53 @@ library LancaLib {
             (bool success, ) = recipient.call{value: amount}("");
             require(success, TransferFailed());
         }
+    }
+
+    function transferFromERC20(address token, address from, address to, uint256 amount) internal {
+        require(token != ZERO_ADDRESS, TokenIsNotERC20());
+        require(to != ZERO_ADDRESS, TransferToNullAddress());
+        IERC20(token).safeTransferFrom(from, to, amount);
+    }
+
+    function transferTokenFromUser(address fromToken, uint256 fromAmount) internal {
+        if (fromToken != ZERO_ADDRESS) {
+            transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
+        } else {
+            require(fromAmount == msg.value, InvalidAmount());
+        }
+    }
+
+    function getUSDCAddressByChain(
+        ICcip.CcipToken tokenType
+    ) internal view returns (address usdcAddress) {
+        require(tokenType == ICcip.CcipToken.usdc, TokenTypeNotSupported(tokenType));
+        uint256 chainId = block.chainid;
+
+        assembly {
+            switch chainId
+            case 43114 {
+                usdcAddress := USDC_AVALANCHE
+            }
+            case 42161 {
+                usdcAddress := USDC_ARBITRUM
+            }
+            case 8453 {
+                usdcAddress := USDC_BASE
+            }
+            case 137 {
+                usdcAddress := USDC_POLYGON
+            }
+            case 10 {
+                usdcAddress := USDC_OPTIMISM
+            }
+            case 1 {
+                usdcAddress := USDC_ETHEREUM
+            }
+            default {
+                usdcAddress := ZERO_ADDRESS
+            }
+        }
+
+        require(usdcAddress != ZERO_ADDRESS, ChainNotSupported(chainId));
     }
 }
