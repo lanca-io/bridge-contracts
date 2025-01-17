@@ -12,6 +12,8 @@
     "test": "REPORT_GAS=true hardhat test --network hardhat",
     "lint:ts": "eslint . --config eslint.config.mjs",
     "lint:sol": "solhint --config .solhint.json ./contracts/*.sol ./contracts/**/*.sol",
+    "lint": "yarn lint:ts && yarn lint:sol",
+    "lint:fix": "eslint --fix . && solhint --fix --config .solhint.json ./contracts/*.sol ./contracts/**/*.sol",
     "format:ts": "prettier --write ./**/*.ts",
     "format:sol": "prettier --write ./*.sol ./contracts/**/*.sol ./test/**/*.sol",
     "clean:hardhat": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
