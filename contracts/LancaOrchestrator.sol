@@ -10,10 +10,10 @@ import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {Ownable} from "./Ownable.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
-import {Integration} from "./Integration.sol";
+import {ZERO_ADDRESS, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_ETHEREUM, CHAIN_SELECTOR_OPTIMISM, SUPPORTED_CHAINS_COUNT} from "./Constants.sol";
+import {LancaIntegration} from "./LancaIntegration.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, Integration {
+contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, LancaIntegration {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -34,6 +34,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
     error InvalidBridgeToken();
     error InvalidBridgeData();
     error InvalidRecipient();
+    error TransferFailed();
 
     constructor(address usdc, address lancaBridge) LancaOrchestratorStorageSetters(msg.sender) {
         i_usdc = usdc;
@@ -238,7 +239,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         return dstTokenReceived;
     }
 
-    /// @inheritdoc Integration
+    /// @inheritdoc LancaIntegration
     function _collectSwapFee(
         address fromToken,
         uint256 fromAmount,
@@ -249,7 +250,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         return fromAmount;
     }
 
-    /// @inheritdoc Integration
+    /// @inheritdoc LancaIntegration
     function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
@@ -264,7 +265,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         }
     }
 
-    /// @inheritdoc Integration
+    /// @inheritdoc LancaIntegration
     function _collectIntegratorFee(
         address token,
         uint256 amount,
