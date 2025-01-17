@@ -35,7 +35,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
     address internal immutable i_addressThis;
 
     /* EVENTS */
-    event ConceroFeesCollected(address token, uint256 amount);
     event IntegratorFeesCollected(address integrator, address token, uint256 amount);
     event IntegratorFeesWithdrawn(address integrator, address token, uint256 amount);
 
@@ -268,8 +267,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
         if (lancaFee != 0) {
             // @dev TODO: pass token token address as well
             s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
-            // @dev TODO: remove to save gas
-            emit LancaFeesCollected(token, lancaFee);
         }
         return lancaFee;
     }
