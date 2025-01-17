@@ -39,6 +39,7 @@ contract LancaOrchestrator is
 
     /* EVENTS */
     event IntegratorFeesCollected(address integrator, address token, uint256 amount);
+    event IntegratorFeesWithdrawn(address integrator, address token, uint256 amount);
 
     /* ERRORS */
     error InvalidIntegratorFeeBps();
@@ -67,7 +68,56 @@ contract LancaOrchestrator is
         _;
     }
 
-    /* FUNCTIONS */
+    /* EXTERNAL FUNCTIONS */
+
+    function swapAndBridge(
+        ILancaBridge.BridgeData memory bridgeData,
+        ILancaDexSwap.SwapData[] memory swapData,
+        bytes calldata compressedDstSwapData,
+        Integration calldata integration
+    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
+        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
+        require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
+
+        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
+
+        uint256 amountReceivedFromSwap = swap(swapData, i_addressThis);
+        bridgeData.amount =
+            amountReceivedFromSwap -
+            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
+
+        bridge(
+            bridgeData.token,
+            bridgeData.amount,
+            bridgeData.receiver,
+            bridgeData.dstChainSelector,
+            compressedDstSwapData,
+            integration
+        );
+    }
+
+    function withdrawIntegratorFees(address[] calldata tokens) external nonReentrant {
+        for (uint256 i; i < tokens.length; ++i) {
+            address token = tokens[i];
+            uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
+
+            if (amount > 0) {
+                s_integratorFeesAmountByToken[msg.sender][token] = 0;
+                //s_totalIntegratorFeesAmountByToken[token] -= amount;
+
+                if (token == ZERO_ADDRESS) {
+                    (bool success, ) = msg.sender.call{value: amount}("");
+                    require(success, TransferFailed());
+                } else {
+                    IERC20(token).safeTransfer(msg.sender, amount);
+                }
+
+                emit IntegratorFeesWithdrawn(msg.sender, token, amount);
+            }
+        }
+    }
+
+    /* PUBLIC FUNCTIONS */
 
     function bridge(
         address token,
@@ -144,32 +194,6 @@ contract LancaOrchestrator is
         return dstTokenReceived;
     }
 
-    function swapAndBridge(
-        ILancaBridge.BridgeData memory bridgeData,
-        ILancaDexSwap.SwapData[] memory swapData,
-        bytes calldata compressedDstSwapData,
-        Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
-        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
-        require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
-
-        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-
-        uint256 amountReceivedFromSwap = swap(swapData, i_addressThis);
-        bridgeData.amount =
-            amountReceivedFromSwap -
-            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
-
-        bridge(
-            bridgeData.token,
-            bridgeData.amount,
-            bridgeData.receiver,
-            bridgeData.dstChainSelector,
-            compressedDstSwapData,
-            integration
-        );
-    }
-
     /* INTERNAL FUNCTIONS */
 
     function _collectIntegratorFee(
@@ -216,4 +240,6 @@ contract LancaOrchestrator is
 
         require(success, LancaSwapFailed());
     }
+
+    /* PRIVATE FUNCTIONS */
 }
