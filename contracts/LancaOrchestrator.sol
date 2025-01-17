@@ -238,6 +238,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         return dstTokenReceived;
     }
 
+    /// @inheritdoc Integration
     function _collectSwapFee(
         address fromToken,
         uint256 fromAmount,
@@ -248,6 +249,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         return fromAmount;
     }
 
+    /// @inheritdoc Integration
     function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
@@ -262,6 +264,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         }
     }
 
+    /// @inheritdoc Integration
     function _collectIntegratorFee(
         address token,
         uint256 amount,
