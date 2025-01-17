@@ -29,6 +29,7 @@ contract LancaOrchestrator is
     /* CONSTANTS */
     uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
+    uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
@@ -45,6 +46,7 @@ contract LancaOrchestrator is
     error InvalidIntegratorFeeBps();
     error InvalidBridgeToken();
     error InvalidBridgeData();
+    error InvalidRecipient();
 
     constructor(address usdc, address lancaBridge) Ownable(msg.sender) {
         i_usdc = usdc;
@@ -118,6 +120,46 @@ contract LancaOrchestrator is
 
                 emit IntegratorFeesWithdrawn(integrator, token, amount);
             }
+        }
+    }
+
+    /**
+     * @notice Function to allow Concero Team to withdraw fees
+     * @param recipient the recipient address
+     * @param tokens array of token addresses to withdraw
+     */
+    function withdrawConceroFees(
+        address recipient,
+        address[] calldata tokens
+    ) external payable nonReentrant onlyOwner {
+        require(recipient != ZERO_ADDRESS, InvalidRecipient());
+
+        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
+
+        for (uint256 i; i < tokens.length; ++i) {
+            address token = tokens[i];
+            uint256 balance = LancaLib.getBalance(token, i_addressThis);
+            uint256 integratorFees = s_integratorFeesAmountByToken[i_addressThis][token];
+            uint256 availableBalance = balance - integratorFees;
+
+            if (token == usdc) {
+                uint256 batchedReserves;
+                /// @custom:TODO: move to getSupportedChainSelectors, which should use immutable variables passed to infraCommon
+                uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+                    CHAIN_SELECTOR_ARBITRUM,
+                    CHAIN_SELECTOR_BASE,
+                    CHAIN_SELECTOR_POLYGON,
+                    CHAIN_SELECTOR_AVALANCHE,
+                    CHAIN_SELECTOR_ETHEREUM,
+                    CHAIN_SELECTOR_OPTIMISM
+                ];
+                for (uint256 j; j < SUPPORTED_CHAINS_COUNT; ++j) {
+                    batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];
+                }
+                availableBalance -= batchedReserves;
+            }
+
+            LancaLib.transferTokenToUser(recipient, token, availableBalance);
         }
     }
 
