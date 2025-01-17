@@ -31,4 +31,10 @@ interface IIntegration {
     /* ERRORS */
     /// @notice error emitted when an invalid integrator fee bps is provided
     error InvalidIntegratorFeeBps();
+
+    /* FUNCTIONS */
+
+    /// @notice Withdraws the fees collected for the caller integrator
+    /// @param tokens the array of tokens to withdraw the fees from
+    function withdrawIntegratorFees(address[] calldata tokens) external;
 }
