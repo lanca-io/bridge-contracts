@@ -93,7 +93,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
 
             if (amount > 0) {
                 delete s_integratorFeesAmountByToken[integrator][token];
-                //s_totalIntegratorFeesAmountByToken[token] -= amount;
 
                 if (token == ZERO_ADDRESS) {
                     (bool success, ) = integrator.call{value: amount}("");
