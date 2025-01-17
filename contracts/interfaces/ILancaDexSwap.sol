@@ -60,5 +60,9 @@ interface ILancaDexSwap {
      * @param recipient the address to send the output token to
      * @return dstTokenReceived the amount of token received after the swap
      */
-    function swap(SwapData[] calldata swapData, address recipient) external payable;
+    function swap(
+        SwapData[] calldata swapData,
+        address receiver,
+        Integration calldata integration
+    ) external payable;
 }
