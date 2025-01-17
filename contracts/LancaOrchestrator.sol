@@ -83,7 +83,7 @@ contract LancaOrchestrator is
 
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
-        uint256 amountReceivedFromSwap = swap(swapData, i_addressThis);
+        uint256 amountReceivedFromSwap = _swap(swapData, i_addressThis);
         bridgeData.amount =
             amountReceivedFromSwap -
             _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
@@ -198,7 +198,17 @@ contract LancaOrchestrator is
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address recipient
-    ) public payable nonReentrant validateSwapData(swapData) returns (uint256) {
+    ) public payable nonReentrant validateSwapData(swapData) {
+        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
+        _swap(swapData, recipient);
+    }
+
+    /* INTERNAL FUNCTIONS */
+
+    function _swap(
+        ILancaDexSwap.SwapData[] memory swapData,
+        address recipient
+    ) internal returns (uint256) {
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
@@ -239,8 +249,6 @@ contract LancaOrchestrator is
 
         return dstTokenReceived;
     }
-
-    /* INTERNAL FUNCTIONS */
 
     function _collectIntegratorFee(
         address token,
