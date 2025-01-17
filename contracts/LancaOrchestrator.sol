@@ -85,7 +85,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
     /// @custom:reentrant it looks like we don't need this
     /// @notice Withdraws all the collected fees in the specified tokens for the current integrator.
     /// @param tokens the tokens to withdraw the fees from
-    function withdrawIntegratorFees(address[] calldata tokens) external nonReentrant {
+    function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
         address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {
             address token = tokens[i];
@@ -242,13 +242,13 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         address fromToken,
         uint256 fromAmount,
         Integration calldata integration
-    ) internal returns (uint256) {
+    ) internal override returns (uint256) {
         fromAmount -= _collectLancaFee(fromToken, fromAmount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
     }
 
-    function _collectLancaFee(address token, uint256 amount) internal returns (uint256) {
+    function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
             // @dev TODO: pass token token address as well
@@ -267,7 +267,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
         address token,
         uint256 amount,
         Integration calldata integration
-    ) internal returns (uint256) {
+    ) internal override returns (uint256) {
         (address integrator, uint256 feeBps) = (integration.integrator, integration.feeBps);
         if (integrator == ZERO_ADDRESS || feeBps == 0) return 0;
 
