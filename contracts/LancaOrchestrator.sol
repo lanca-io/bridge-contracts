@@ -201,8 +201,9 @@ contract LancaOrchestrator is
         address receiver,
         Integration calldata integration
     ) public payable nonReentrant validateSwapData(swapData) {
-        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-        swapData = _collectSwapFee(swapData, integration);
+        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
+        LancaLib.transferTokenFromUser(fromToken, fromAmount);
+        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
         _swap(swapData, receiver);
     }
 
@@ -254,17 +255,13 @@ contract LancaOrchestrator is
     }
 
     function _collectSwapFee(
-        ILancaDexSwap.SwapData[] memory swapData,
+        address fromToken,
+        uint256 fromAmount,
         Integration calldata integration
-    ) internal returns (ILancaDexSwap.SwapData[] memory) {
-        uint256 amount = swapData[0].fromAmount;
-
-        amount -= _collectConceroFee(amount);
-        amount -= _collectIntegratorFee(swapData[0].fromToken, amount, integration);
-
-        swapData[0].fromAmount = amount;
-
-        return swapData;
+    ) internal returns (uint256) {
+        fromAmount -= _collectConceroFee(fromAmount);
+        fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
+        return fromAmount;
     }
 
     function _collectConceroFee(uint256 amount) internal returns (uint256) {
