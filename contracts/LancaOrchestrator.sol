@@ -11,16 +11,12 @@ import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {Ownable} from "./Ownable.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
+import {Integration} from "./Integration.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
+contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, Integration {
     using SafeERC20 for IERC20;
 
     /* TYPES */
-
-    struct Integration {
-        address integrator;
-        uint256 feeBps;
-    }
 
     /* CONSTANTS */
     uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
@@ -34,12 +30,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
     address internal immutable i_lancaBridge;
     address internal immutable i_addressThis;
 
-    /* EVENTS */
-    event IntegratorFeesCollected(address integrator, address token, uint256 amount);
-    event IntegratorFeesWithdrawn(address integrator, address token, uint256 amount);
-
     /* ERRORS */
-    error InvalidIntegratorFeeBps();
     error InvalidBridgeToken();
     error InvalidBridgeData();
     error InvalidRecipient();
