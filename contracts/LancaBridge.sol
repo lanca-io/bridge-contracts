@@ -9,8 +9,9 @@ import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/librar
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
 
-contract LancaBridge is ILancaBridge, LancaBridgeStorage {
+contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     using SafeERC20 for IERC20;
 
     /* ERRORS */
@@ -56,13 +57,16 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
 
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
-    IConceroRouter internal immutable i_conceroRouter;
     ICcipRouterClient internal immutable i_ccipRouter;
 
-    constructor(address conceroRouter, address ccipRouter, address usdc, address link) {
+    constructor(
+        address conceroRouter,
+        address ccipRouter,
+        address usdc,
+        address link
+    ) ConceroClient(conceroRouter) {
         i_usdc = usdc;
         i_link = IERC20(link);
-        i_conceroRouter = IConceroRouter(conceroRouter);
         i_ccipRouter = ICcipRouterClient(ccipRouter);
     }
 
@@ -87,7 +91,7 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
             data: bridgeData.message
         });
 
-        bytes32 conceroMessageId = i_conceroRouter.sendMessage(messageReq);
+        bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
         bytes32 bridgeDataHash = keccak256(
             abi.encode(
                 bridgeData.amount,
@@ -250,5 +254,11 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
                 ),
                 feeToken: feeToken
             });
+    }
+
+    /* CONCERO CLIENT FUNCTIONS */
+
+    function _conceroReceive(Message calldata conceroMessage) internal override {
+        // @TODO: search if confirmed mapping needed on this step
     }
 }
