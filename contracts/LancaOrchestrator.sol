@@ -70,12 +70,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
 
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
-        uint256 amountReceivedFromSwap = _swap(swapData, i_addressThis);
-
-        /// @custom:fee do we need this? - NO
-        bridgeData.amount =
-            amountReceivedFromSwap -
-            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
+        bridgeData.amount = _swap(swapData, i_addressThis);
 
         bridge(
             bridgeData.token,
