@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
-import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM} from "../Constants.sol";
+import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM, CHAIN_ID_AVALANCHE, CHAIN_ID_ARBITRUM, CHAIN_ID_BASE, CHAIN_ID_POLYGON, CHAIN_ID_OPTIMISM, CHAIN_ID_ETHEREUM} from "../Constants.sol";
 
 library LancaLib {
     using SafeERC20 for IERC20;
