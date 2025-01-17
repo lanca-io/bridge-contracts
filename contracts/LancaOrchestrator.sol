@@ -97,22 +97,23 @@ contract LancaOrchestrator is
     }
 
     function withdrawIntegratorFees(address[] calldata tokens) external nonReentrant {
+        address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {
             address token = tokens[i];
-            uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
+            uint256 amount = s_integratorFeesAmountByToken[integrator][token];
 
             if (amount > 0) {
-                s_integratorFeesAmountByToken[msg.sender][token] = 0;
+                s_integratorFeesAmountByToken[integrator][token] = 0;
                 //s_totalIntegratorFeesAmountByToken[token] -= amount;
 
                 if (token == ZERO_ADDRESS) {
-                    (bool success, ) = msg.sender.call{value: amount}("");
+                    (bool success, ) = integrator.call{value: amount}("");
                     require(success, TransferFailed());
                 } else {
-                    IERC20(token).safeTransfer(msg.sender, amount);
+                    IERC20(token).safeTransfer(integrator, amount);
                 }
 
-                emit IntegratorFeesWithdrawn(msg.sender, token, amount);
+                emit IntegratorFeesWithdrawn(integrator, token, amount);
             }
         }
     }
