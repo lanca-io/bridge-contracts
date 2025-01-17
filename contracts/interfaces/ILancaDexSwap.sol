@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {ILancaIntegration} from "./ILancaIntegration.sol";
+
 interface ILancaDexSwap {
     /* TYPES */
 
@@ -63,6 +65,6 @@ interface ILancaDexSwap {
     function swap(
         SwapData[] calldata swapData,
         address receiver,
-        Integration calldata integration
+        ILancaIntegration.Integration calldata integration
     ) external payable;
 }
