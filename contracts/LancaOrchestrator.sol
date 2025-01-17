@@ -12,11 +12,7 @@ import {LancaLib} from "./libraries/LancaLib.sol";
 import {Ownable} from "./Ownable.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 
-contract LancaOrchestrator is
-    LancaOrchestratorStorage,
-    LancaOrchestratorStorageSetters,
-    ILancaDexSwap
-{
+contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -49,7 +45,7 @@ contract LancaOrchestrator is
     error InvalidBridgeData();
     error InvalidRecipient();
 
-    constructor(address usdc, address lancaBridge) Ownable(msg.sender) {
+    constructor(address usdc, address lancaBridge) LancaOrchestratorStorageSetters(msg.sender) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
         i_addressThis = address(this);
@@ -85,8 +81,8 @@ contract LancaOrchestrator is
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
         uint256 amountReceivedFromSwap = _swap(swapData, i_addressThis);
-        
-        /// @custom:fee do we need this?
+
+        /// @custom:fee do we need this? - NO
         bridgeData.amount =
             amountReceivedFromSwap -
             _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
@@ -131,7 +127,8 @@ contract LancaOrchestrator is
      * @param recipient the recipient address
      * @param tokens array of token addresses to withdraw
      */
-    function withdrawConceroFees(
+    // @dev TODO mb remove this function
+    function withdrawLancaFees(
         address recipient,
         address[] calldata tokens
     ) external payable nonReentrant onlyOwner {
@@ -261,21 +258,23 @@ contract LancaOrchestrator is
         uint256 fromAmount,
         Integration calldata integration
     ) internal returns (uint256) {
-        fromAmount -= _collectConceroFee(fromAmount);
+        fromAmount -= _collectLancaFee(fromAmount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
     }
 
-    function _collectConceroFee(uint256 amount) internal returns (uint256) {
-        uint256 conceroFee = _getConceroFee(amount);
+    function _collectLancaFee(uint256 amount) internal returns (uint256) {
+        uint256 conceroFee = _getLancaFee(amount);
         if (conceroFee != 0) {
+            // @dev TODO: pass token token address as well
             s_integratorFeesAmountByToken[i_addressThis][i_usdc] += conceroFee;
+            // @dev TODO: remove to save gas
             emit ConceroFeesCollected(i_usdc, conceroFee);
         }
         return conceroFee;
     }
 
-    function _getConceroFee(uint256 amount) internal pure returns (uint256) {
+    function _getLancaFee(uint256 amount) internal pure returns (uint256) {
         unchecked {
             return (amount / CONCERO_FEE_FACTOR);
         }
@@ -292,6 +291,7 @@ contract LancaOrchestrator is
         require(feeBps <= MAX_INTEGRATOR_FEE_BPS, InvalidIntegratorFeeBps());
 
         uint256 integratorFeeAmount = (amount * feeBps) / BPS_DIVISOR;
+
         if (integratorFeeAmount != 0) {
             s_integratorFeesAmountByToken[integrator][token] += integratorFeeAmount;
             emit IntegratorFeesCollected(integrator, token, integratorFeeAmount);

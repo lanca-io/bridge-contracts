@@ -64,21 +64,18 @@ library LancaLib {
         }
     }
 
-    /// @custom:require these checks exist in ERC20
     function transferFromERC20(address token, address from, address to, uint256 amount) internal {
         require(token != ZERO_ADDRESS, TokenIsNotERC20());
         require(to != ZERO_ADDRESS, TransferToNullAddress());
         IERC20(token).safeTransferFrom(from, to, amount);
     }
 
-    /// @custom:require these checks exist in ERC20
     function transferERC20(address token, uint256 amount, address recipient) internal {
         require(token != ZERO_ADDRESS, TokenIsNotERC20());
         require(recipient != ZERO_ADDRESS, TransferToNullAddress());
         IERC20(token).safeTransfer(recipient, amount);
     }
 
-    /// @custom:require this check exists in ERC20
     function transferTokenFromUser(address fromToken, uint256 fromAmount) internal {
         if (fromToken != ZERO_ADDRESS) {
             transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
