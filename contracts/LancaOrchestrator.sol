@@ -251,7 +251,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, In
     function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
-            // @dev TODO: pass token token address as well
             s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
         }
         return lancaFee;
