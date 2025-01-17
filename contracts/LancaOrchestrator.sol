@@ -103,7 +103,7 @@ contract LancaOrchestrator is
             uint256 amount = s_integratorFeesAmountByToken[integrator][token];
 
             if (amount > 0) {
-                s_integratorFeesAmountByToken[integrator][token] = 0;
+                delete s_integratorFeesAmountByToken[integrator][token];
                 //s_totalIntegratorFeesAmountByToken[token] -= amount;
 
                 if (token == ZERO_ADDRESS) {
