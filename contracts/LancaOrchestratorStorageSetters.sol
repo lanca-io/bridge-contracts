@@ -3,8 +3,9 @@ pragma solidity 0.8.28;
 
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
+import {Ownable} from "./Ownable.sol";
 
-abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage {
+abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, Ownable {
     /* ERRORS */
     /// @notice error emitted when the input is the address(0)
     error InvalidAddress();
