@@ -108,7 +108,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
     }
 
     /**
-     * @notice Function to allow Concero Team to withdraw fees
+     * @notice Function to allow Lanca Team to withdraw fees
      * @param recipient the recipient address
      * @param tokens array of token addresses to withdraw
      */
