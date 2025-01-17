@@ -38,4 +38,3 @@ interface ILancaIntegration {
     /// @param tokens the array of tokens to withdraw the fees from
     function withdrawIntegratorFees(address[] calldata tokens) external;
 }
-
