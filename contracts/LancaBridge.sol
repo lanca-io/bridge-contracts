@@ -157,7 +157,7 @@ contract LancaBridge is ILancaBridge, LancaBridgeStorage {
 
     function _clearPendingSettlementTxByLane(uint64 dstChainSelector) internal {
         delete s_pendingSettlementIdsByDstChain[dstChainSelector];
-        s_pendingSettlementTxAmountByDstChain[dstChainSelector] = 0;
+        delete s_pendingSettlementTxAmountByDstChain[dstChainSelector];
     }
 
     function _sendBatchViaSettlement(
