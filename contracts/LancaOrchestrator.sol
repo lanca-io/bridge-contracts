@@ -4,13 +4,19 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
+import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
+import {Ownable} from "./Ownable.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
+contract LancaOrchestrator is
+    LancaOrchestratorStorage,
+    LancaOrchestratorStorageSetters,
+    ILancaDexSwap
+{
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -39,7 +45,7 @@ contract LancaOrchestrator is LancaOrchestratorStorage, ILancaDexSwap {
     error InvalidBridgeToken();
     error InvalidBridgeData();
 
-    constructor(address usdc, address lancaBridge) {
+    constructor(address usdc, address lancaBridge) Ownable(msg.sender) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
         i_addressThis = address(this);
