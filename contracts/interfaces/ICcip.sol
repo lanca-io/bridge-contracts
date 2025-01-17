@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 interface ICcip {
-    // @notice CCIP transaction types
+    /// @notice CCIP transaction types
     enum CcipTxType {
         deposit,
         batchedSettlement,
@@ -10,7 +10,13 @@ interface ICcip {
         liquidityRebalancing
     }
 
-    // @notice CCIP transaction data ie infraType with txIds, recipients, amounts
+    /// @notice CCIP Compatible Tokens
+    enum CcipToken {
+        bnm,
+        usdc
+    }
+
+    /// @notice CCIP transaction data ie infraType with txIds, recipients, amounts
     struct CcipTxData {
         CcipTxType ccipTxType;
         bytes data;

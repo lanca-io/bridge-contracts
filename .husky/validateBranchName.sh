@@ -1,6 +1,6 @@
 set -eu  
 
-VALID_BRANCH_REGEX='^(master|release|feature\/.+|fix\/.+|hotfix\/.+)$'
+VALID_BRANCH_REGEX='^(master|main|release|feature\/.+|fix\/.+|hotfix\/.+)$'
 
 ERROR_MESSAGE="🚫 Error: Invalid branch name.
 Branch names must match:

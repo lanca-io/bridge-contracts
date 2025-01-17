@@ -10,6 +10,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
 import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
+import {ZERO_ADDRESS} from "./Constants.sol";
 
 contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     using SafeERC20 for IERC20;
@@ -49,7 +50,6 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     uint24 internal constant MAX_DST_CHAIN_GAS_LIMIT = 1_400_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
-    address internal constant ZERO_ADDRESS = address(0);
     uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * 1e6;
     uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 1_000_000;
 
@@ -75,13 +75,13 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     function bridge(BridgeData calldata bridgeData) external {
         _validateBridgeData(bridgeData);
         uint256 fee = _getFee(bridgeData);
-        if (bridgeData.amount <= fee) revert InsufficientBridgeAmount();
+        require(bridgeData.amount > fee, InsufficientBridgeAmount());
 
         IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
 
         uint256 amountToSendAfterFee = bridgeData.amount - fee;
         address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeData.dstChainSelector];
-        if (dstLancaBridgeContract == ZERO_ADDRESS) revert InvalidDstChainSelector();
+        require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: i_usdc,
@@ -138,10 +138,10 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     /* INTERNAL FUNCTIONS */
 
     function _validateBridgeData(BridgeData calldata bridgeData) internal view {
-        if (bridgeData.token != i_usdc) revert InvalidBridgeToken();
-        if (bridgeData.feeToken != i_usdc) revert InvalidFeeToken();
-        if (bridgeData.receiver == ZERO_ADDRESS) revert InvalidReceiver();
-        if (bridgeData.dstChainGasLimit > MAX_DST_CHAIN_GAS_LIMIT) revert InvalidDstChainGasLimit();
+        require(bridgeData.token == i_usdc, InvalidBridgeToken());
+        require(bridgeData.feeToken == i_usdc, InvalidFeeToken());
+        require(bridgeData.receiver != ZERO_ADDRESS, InvalidReceiver());
+        require(bridgeData.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
     function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
@@ -161,7 +161,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     function _clearPendingSettlementTxByLane(uint64 dstChainSelector) internal {
         delete s_pendingSettlementIdsByDstChain[dstChainSelector];
-        s_pendingSettlementTxAmountByDstChain[dstChainSelector] = 0;
+        delete s_pendingSettlementTxAmountByDstChain[dstChainSelector];
     }
 
     function _sendBatchViaSettlement(
@@ -237,9 +237,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         bytes memory ccipMessageData
     ) internal view returns (LibCcipClient.EVM2AnyMessage memory) {
         address receiver = s_lancaBridgeContractsByChain[dstChainSelector];
-        if (receiver == ZERO_ADDRESS) {
-            revert InvalidDstChainSelector();
-        }
+        require(receiver != ZERO_ADDRESS, InvalidDstChainSelector());
 
         LibCcipClient.EVMTokenAmount[] memory tokenAmounts = new LibCcipClient.EVMTokenAmount[](1);
         tokenAmounts[0] = LibCcipClient.EVMTokenAmount({token: token, amount: amount});
