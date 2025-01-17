@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {IIntegration} from "./interfaces/IIntegration.sol";
+import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 
 /**
- * @title Integration
+ * @title LancaIntegration
  * @dev Abstract contract that defines the integration of Lanca Orchestrator with different DEX protocols.
  * @notice This contract is used to collect the fees for Lanca and the integrators.
  * @notice The fees are represented as a percentage of the input amount.
@@ -14,7 +14,7 @@ import {IIntegration} from "./interfaces/IIntegration.sol";
  * @dev This contract is meant to be inherited by other contracts that will implement the
  *      _collectSwapFee, _collectLancaFee and _collectIntegratorFee functions.
  */
-abstract contract Integration is IIntegration {
+abstract contract LancaIntegration is ILancaIntegration {
     /**
      * @notice Collects the Lanca fee and the integrator fee from the input amount.
      * @param fromToken The token to collect the fees from.

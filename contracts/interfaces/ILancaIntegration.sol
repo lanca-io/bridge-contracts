@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-/// @title Interface for Integration
+/// @title Interface for ILancaIntegration
 /// @dev This interface provides a standard way to interact with different integrations
 /// @dev Each integration should implement this interface
-interface IIntegration {
+interface ILancaIntegration {
     /* TYPES */
 
     /// @notice Struct to track an integration
@@ -38,3 +38,4 @@ interface IIntegration {
     /// @param tokens the array of tokens to withdraw the fees from
     function withdrawIntegratorFees(address[] calldata tokens) external;
 }
+
