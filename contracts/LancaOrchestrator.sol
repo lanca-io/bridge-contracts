@@ -25,7 +25,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
     /* CONSTANTS */
     uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
-    uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint16 internal constant LANCA_FEE_FACTOR = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
@@ -258,25 +258,25 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap {
         uint256 fromAmount,
         Integration calldata integration
     ) internal returns (uint256) {
-        fromAmount -= _collectLancaFee(fromAmount);
+        fromAmount -= _collectLancaFee(fromToken, fromAmount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
     }
 
-    function _collectLancaFee(uint256 amount) internal returns (uint256) {
-        uint256 conceroFee = _getLancaFee(amount);
-        if (conceroFee != 0) {
+    function _collectLancaFee(address token, uint256 amount) internal returns (uint256) {
+        uint256 lancaFee = _getLancaFee(amount);
+        if (lancaFee != 0) {
             // @dev TODO: pass token token address as well
-            s_integratorFeesAmountByToken[i_addressThis][i_usdc] += conceroFee;
+            s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
             // @dev TODO: remove to save gas
-            emit ConceroFeesCollected(i_usdc, conceroFee);
+            emit LancaFeesCollected(token, lancaFee);
         }
-        return conceroFee;
+        return lancaFee;
     }
 
     function _getLancaFee(uint256 amount) internal pure returns (uint256) {
         unchecked {
-            return (amount / CONCERO_FEE_FACTOR);
+            return (amount / LANCA_FEE_FACTOR);
         }
     }
 
