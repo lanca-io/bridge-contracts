@@ -83,7 +83,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
         );
     }
 
-    /// @custom:reentrant it looks like we don't need this
     /// @notice Withdraws all the collected fees in the specified tokens for the current integrator.
     /// @param tokens the tokens to withdraw the fees from
     function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
