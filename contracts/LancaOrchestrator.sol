@@ -106,47 +106,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
         }
     }
 
-    /**
-     * @notice Function to allow Lanca Team to withdraw fees
-     * @param recipient the recipient address
-     * @param tokens array of token addresses to withdraw
-     */
-    // @dev TODO mb remove this function
-    function withdrawLancaFees(
-        address recipient,
-        address[] calldata tokens
-    ) external payable nonReentrant onlyOwner {
-        require(recipient != ZERO_ADDRESS, InvalidRecipient());
-
-        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
-
-        for (uint256 i; i < tokens.length; ++i) {
-            address token = tokens[i];
-            uint256 balance = LancaLib.getBalance(token, i_addressThis);
-            uint256 integratorFees = s_integratorFeesAmountByToken[i_addressThis][token];
-            uint256 availableBalance = balance - integratorFees;
-
-            if (token == usdc) {
-                uint256 batchedReserves;
-                /// @custom:TODO: move to getSupportedChainSelectors, which should use immutable variables passed to infraCommon
-                uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
-                    CHAIN_SELECTOR_ARBITRUM,
-                    CHAIN_SELECTOR_BASE,
-                    CHAIN_SELECTOR_POLYGON,
-                    CHAIN_SELECTOR_AVALANCHE,
-                    CHAIN_SELECTOR_ETHEREUM,
-                    CHAIN_SELECTOR_OPTIMISM
-                ];
-                for (uint256 j; j < SUPPORTED_CHAINS_COUNT; ++j) {
-                    batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];
-                }
-                availableBalance -= batchedReserves;
-            }
-
-            LancaLib.transferTokenToUser(recipient, token, availableBalance);
-        }
-    }
-
     /* PUBLIC FUNCTIONS */
 
     function bridge(
