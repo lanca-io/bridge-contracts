@@ -35,6 +35,11 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
     error InvalidRecipient();
     error TransferFailed();
 
+    /**
+     * @dev Constructor for the LancaOrchestrator contract.
+     * @param usdc The address of the USDC token.
+     * @param lancaBridge The address of the LancaBridge contract.
+     */
     constructor(address usdc, address lancaBridge) LancaOrchestratorStorageSetters(msg.sender) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
@@ -59,6 +64,13 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
 
     /* EXTERNAL FUNCTIONS */
 
+    /**
+     * @notice Performs a token swap followed by a cross-chain bridge operation.
+     * @param bridgeData The data required for the bridging process.
+     * @param swapData The list of swap operations to perform before bridging.
+     * @param compressedDstSwapData Additional swap data for the destination chain.
+     * @param integration Integration details for fee calculation.
+     */
     function swapAndBridge(
         ILancaBridge.BridgeData memory bridgeData,
         ILancaDexSwap.SwapData[] memory swapData,
@@ -82,8 +94,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
         );
     }
 
-    /// @notice Withdraws all the collected fees in the specified tokens for the current integrator.
-    /// @param tokens the tokens to withdraw the fees from
+    /// @inheritdoc ILancaIntegration
     function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
         address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {

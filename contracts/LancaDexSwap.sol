@@ -6,6 +6,12 @@ import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 abstract contract LancaDexSwap is ILancaDexSwap {
     /* INTERNAL FUNCTIONS */
 
+    /**
+     * @notice Perform a swap on a list of SwapData, with the first SwapData.fromToken being the input token and the last SwapData.toToken being the output token.
+     * @param swapData the list of SwapData to perform the swap in order
+     * @param receiver the address to send the output token to
+     * @return dstTokenReceived the amount of token received after the swap
+     */
     function _swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
