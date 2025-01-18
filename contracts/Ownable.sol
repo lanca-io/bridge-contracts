@@ -10,10 +10,10 @@ abstract contract Ownable {
     /* ERRORS */
     /// @notice error emitted when a non-owner address call access controlled functions
     error NotOwner();
-    error ZeroAddress();
+    error InvalidOwner();
 
     constructor(address initialOwner) {
-        require(initialOwner != ZERO_ADDRESS, ZeroAddress());
+        require(initialOwner != ZERO_ADDRESS, InvalidOwner());
 
         i_owner = initialOwner;
     }
