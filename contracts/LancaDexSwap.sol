@@ -4,6 +4,9 @@ pragma solidity 0.8.28;
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 
 abstract contract LancaDexSwap is ILancaDexSwap {
+    /* CONSTANTS */
+    uint16 internal constant LANCA_FEE_FACTOR = 1000;
+
     /* INTERNAL FUNCTIONS */
 
     /**
@@ -81,5 +84,14 @@ abstract contract LancaDexSwap is ILancaDexSwap {
         }
 
         require(success, LancaSwapFailed());
+    }
+
+    /// @notice Calculates the Lanca fee for a given amount.
+    /// @param amount the amount for which to calculate the fee
+    /// @return the calculated Lanca fee
+    function _getLancaFee(uint256 amount) internal pure virtual returns (uint256) {
+        unchecked {
+            return (amount / LANCA_FEE_FACTOR);
+        }
     }
 }

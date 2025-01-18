@@ -20,7 +20,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
     /* CONSTANTS */
     uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
-    uint16 internal constant LANCA_FEE_FACTOR = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
@@ -179,12 +178,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
             s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
         }
         return lancaFee;
-    }
-
-    function _getLancaFee(uint256 amount) internal pure returns (uint256) {
-        unchecked {
-            return (amount / LANCA_FEE_FACTOR);
-        }
     }
 
     /// @inheritdoc LancaIntegration
