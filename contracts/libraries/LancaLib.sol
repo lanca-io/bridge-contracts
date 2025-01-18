@@ -70,6 +70,12 @@ library LancaLib {
         IERC20(token).safeTransferFrom(from, to, amount);
     }
 
+    function transferERC20(address token, uint256 amount, address recipient) internal {
+        require(token != ZERO_ADDRESS, TokenIsNotERC20());
+        require(recipient != ZERO_ADDRESS, TransferToNullAddress());
+        IERC20(token).safeTransfer(recipient, amount);
+    }
+
     function transferTokenFromUser(address fromToken, uint256 fromAmount) internal {
         if (fromToken != ZERO_ADDRESS) {
             transferFromERC20(fromToken, msg.sender, address(this), fromAmount);

@@ -10,6 +10,8 @@ abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, O
     /// @notice error emitted when the input is the address(0)
     error InvalidAddress();
 
+    constructor(address owner) Ownable(owner) {}
+
     /**
      * @notice Sets the address of a DEX Router as approved or not approved to perform swaps.
      * @param router the address of the DEX Router

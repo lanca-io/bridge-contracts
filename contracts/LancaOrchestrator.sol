@@ -10,25 +10,18 @@ import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {Ownable} from "./Ownable.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
+import {ZERO_ADDRESS, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_ETHEREUM, CHAIN_SELECTOR_OPTIMISM, SUPPORTED_CHAINS_COUNT} from "./Constants.sol";
+import {LancaIntegration} from "./LancaIntegration.sol";
 
-contract LancaOrchestrator is
-    LancaOrchestratorStorage,
-    LancaOrchestratorStorageSetters,
-    ILancaDexSwap
-{
+contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, LancaIntegration {
     using SafeERC20 for IERC20;
 
     /* TYPES */
 
-    struct Integration {
-        address integrator;
-        uint256 feeBps;
-    }
-
     /* CONSTANTS */
     uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
+    uint16 internal constant LANCA_FEE_FACTOR = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
@@ -37,16 +30,13 @@ contract LancaOrchestrator is
     address internal immutable i_lancaBridge;
     address internal immutable i_addressThis;
 
-    /* EVENTS */
-    event IntegratorFeesCollected(address integrator, address token, uint256 amount);
-    event IntegratorFeesWithdrawn(address integrator, address token, uint256 amount);
-
     /* ERRORS */
-    error InvalidIntegratorFeeBps();
     error InvalidBridgeToken();
     error InvalidBridgeData();
+    error InvalidRecipient();
+    error TransferFailed();
 
-    constructor(address usdc, address lancaBridge) Ownable(msg.sender) {
+    constructor(address usdc, address lancaBridge) LancaOrchestratorStorageSetters(msg.sender) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
         i_addressThis = address(this);
@@ -81,10 +71,7 @@ contract LancaOrchestrator is
 
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
-        uint256 amountReceivedFromSwap = _swap(swapData, i_addressThis);
-        bridgeData.amount =
-            amountReceivedFromSwap -
-            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
+        bridgeData.amount = _swap(swapData, i_addressThis);
 
         bridge(
             bridgeData.token,
@@ -96,10 +83,9 @@ contract LancaOrchestrator is
         );
     }
 
-    /// @custom:reentrant it looks like we don't need this
     /// @notice Withdraws all the collected fees in the specified tokens for the current integrator.
     /// @param tokens the tokens to withdraw the fees from
-    function withdrawIntegratorFees(address[] calldata tokens) external nonReentrant {
+    function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
         address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {
             address token = tokens[i];
@@ -107,7 +93,6 @@ contract LancaOrchestrator is
 
             if (amount > 0) {
                 delete s_integratorFeesAmountByToken[integrator][token];
-                //s_totalIntegratorFeesAmountByToken[token] -= amount;
 
                 if (token == ZERO_ADDRESS) {
                     (bool success, ) = integrator.call{value: amount}("");
@@ -155,17 +140,20 @@ contract LancaOrchestrator is
     /// @inheritdoc ILancaDexSwap
     function swap(
         ILancaDexSwap.SwapData[] memory swapData,
-        address recipient
+        address receiver,
+        Integration calldata integration
     ) public payable nonReentrant validateSwapData(swapData) {
-        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-        _swap(swapData, recipient);
+        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
+        LancaLib.transferTokenFromUser(fromToken, fromAmount);
+        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
+        _swap(swapData, receiver);
     }
 
     /* INTERNAL FUNCTIONS */
 
     function _swap(
         ILancaDexSwap.SwapData[] memory swapData,
-        address recipient
+        address receiver
     ) internal returns (uint256) {
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
@@ -193,8 +181,8 @@ contract LancaOrchestrator is
 
         uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
 
-        if (recipient != i_addressThis) {
-            LancaLib.transferTokenToUser(recipient, dstToken, dstTokenReceived);
+        if (receiver != i_addressThis) {
+            LancaLib.transferTokenToUser(receiver, dstToken, dstTokenReceived);
         }
 
         emit LancaSwap(
@@ -202,28 +190,56 @@ contract LancaOrchestrator is
             dstToken,
             swapData[0].fromAmount,
             dstTokenReceived,
-            recipient
+            receiver
         );
 
         return dstTokenReceived;
     }
 
+    /// @inheritdoc LancaIntegration
+    function _collectSwapFee(
+        address fromToken,
+        uint256 fromAmount,
+        Integration calldata integration
+    ) internal override returns (uint256) {
+        fromAmount -= _collectLancaFee(fromToken, fromAmount);
+        fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
+        return fromAmount;
+    }
+
+    /// @inheritdoc LancaIntegration
+    function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
+        uint256 lancaFee = _getLancaFee(amount);
+        if (lancaFee != 0) {
+            s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
+        }
+        return lancaFee;
+    }
+
+    function _getLancaFee(uint256 amount) internal pure returns (uint256) {
+        unchecked {
+            return (amount / LANCA_FEE_FACTOR);
+        }
+    }
+
+    /// @inheritdoc LancaIntegration
     function _collectIntegratorFee(
         address token,
         uint256 amount,
         Integration calldata integration
-    ) internal returns (uint256) {
+    ) internal override returns (uint256) {
         (address integrator, uint256 feeBps) = (integration.integrator, integration.feeBps);
-        if (integrator == ZERO_ADDRESS) return 0;
+        if (integrator == ZERO_ADDRESS || feeBps == 0) return 0;
+
         require(feeBps <= MAX_INTEGRATOR_FEE_BPS, InvalidIntegratorFeeBps());
 
         uint256 integratorFeeAmount = (amount * feeBps) / BPS_DIVISOR;
-        if (integratorFeeAmount == 0) return 0;
 
-        s_integratorFeesAmountByToken[integrator][token] += integratorFeeAmount;
-        //        s_totalIntegratorFeesAmountByToken[token] += integratorFeeAmount;
+        if (integratorFeeAmount != 0) {
+            s_integratorFeesAmountByToken[integrator][token] += integratorFeeAmount;
+            emit IntegratorFeesCollected(integrator, token, integratorFeeAmount);
+        }
 
-        emit IntegratorFeesCollected(integrator, token, integratorFeeAmount);
         return integratorFeeAmount;
     }
 

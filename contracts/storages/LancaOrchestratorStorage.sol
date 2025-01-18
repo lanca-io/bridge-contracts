@@ -10,8 +10,8 @@ abstract contract LancaOrchestratorStorage is ReentrancyGuard {
     mapping(address integrator => mapping(address token => uint256 amount))
         internal s_integratorFeesAmountByToken;
 
-    /* GETTERS */
-
     /// @notice mapping to keep track of allowed routers to perform swaps.
-    mapping(address router => bool isAllowed) public s_routerAllowed;
+    mapping(address router => bool isAllowed) internal s_routerAllowed;
+
+    /* GETTERS */
 }

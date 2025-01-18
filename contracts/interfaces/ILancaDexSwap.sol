@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {ILancaIntegration} from "./ILancaIntegration.sol";
+
 interface ILancaDexSwap {
     /* TYPES */
 
@@ -57,8 +59,12 @@ interface ILancaDexSwap {
     /**
      * @notice Perform a swap on a list of SwapData, with the first SwapData.fromToken being the input token and the last SwapData.toToken being the output token.
      * @param swapData the list of SwapData to perform the swap in order
-     * @param recipient the address to send the output token to
+     * @param receiver the address to send the output token to
      * @return dstTokenReceived the amount of token received after the swap
      */
-    function swap(SwapData[] calldata swapData, address recipient) external payable;
+    function swap(
+        SwapData[] calldata swapData,
+        address receiver,
+        ILancaIntegration.Integration calldata integration
+    ) external payable;
 }
