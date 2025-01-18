@@ -7,13 +7,14 @@ import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol"
 import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
+import {LancaDexSwap} from "./LancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {Ownable} from "./Ownable.sol";
 import {ZERO_ADDRESS, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_ETHEREUM, CHAIN_SELECTOR_OPTIMISM, SUPPORTED_CHAINS_COUNT} from "./Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, LancaIntegration {
+contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, LancaIntegration {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -151,51 +152,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
 
     /* INTERNAL FUNCTIONS */
 
-    function _swap(
-        ILancaDexSwap.SwapData[] memory swapData,
-        address receiver
-    ) internal returns (uint256) {
-        uint256 swapDataLength = swapData.length;
-        uint256 lastSwapStepIndex = swapDataLength - 1;
-        address dstToken = swapData[lastSwapStepIndex].toToken;
-        uint256 dstTokenProxyInitialBalance = LancaLib.getBalance(dstToken, i_addressThis);
-        uint256 balanceAfter;
-
-        for (uint256 i; i < swapDataLength; ++i) {
-            uint256 balanceBefore = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
-
-            _performSwap(swapData[i]);
-
-            balanceAfter = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
-            uint256 tokenReceived = balanceAfter - balanceBefore;
-            require(tokenReceived >= swapData[i].toAmountMin, InsufficientAmount(tokenReceived));
-
-            if (i < lastSwapStepIndex) {
-                require(swapData[i].toToken == swapData[i + 1].fromToken, InvalidTokenPath());
-                swapData[i + 1].fromAmount = tokenReceived;
-            }
-        }
-
-        // @dev check if swapDataLength is 0 and there were no swaps
-        require(balanceAfter != 0, InvalidSwapData());
-
-        uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
-
-        if (receiver != i_addressThis) {
-            LancaLib.transferTokenToUser(receiver, dstToken, dstTokenReceived);
-        }
-
-        emit LancaSwap(
-            swapData[0].fromToken,
-            dstToken,
-            swapData[0].fromAmount,
-            dstTokenReceived,
-            receiver
-        );
-
-        return dstTokenReceived;
-    }
-
     /// @inheritdoc LancaIntegration
     function _collectSwapFee(
         address fromToken,
@@ -241,32 +197,6 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, ILancaDexSwap, La
         }
 
         return integratorFeeAmount;
-    }
-
-    /**
-     * @notice Perform a swap on a SwapData
-     * @param swapData the SwapData to perform the swap
-     */
-    function _performSwap(ILancaDexSwap.SwapData memory swapData) internal {
-        bytes memory dexCallData = swapData.dexCallData;
-        require(dexCallData.length != 0, EmptySwapData());
-
-        address dexRouter = swapData.dexRouter;
-        require(s_routerAllowed[dexRouter], DexRouterNotAllowed());
-
-        uint256 fromAmount = swapData.fromAmount;
-        address fromToken = swapData.fromToken;
-        bool isFromNative = fromToken == ZERO_ADDRESS;
-
-        bool success;
-        if (!isFromNative) {
-            IERC20(fromToken).safeIncreaseAllowance(dexRouter, fromAmount);
-            (success, ) = dexRouter.call(dexCallData);
-        } else {
-            (success, ) = dexRouter.call{value: fromAmount}(dexCallData);
-        }
-
-        require(success, LancaSwapFailed());
     }
 
     /* PRIVATE FUNCTIONS */
