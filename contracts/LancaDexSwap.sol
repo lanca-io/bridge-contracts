@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
+import {LancaLib} from "./libraries/LancaLib.sol";
 
 abstract contract LancaDexSwap is ILancaDexSwap {
     /* CONSTANTS */
