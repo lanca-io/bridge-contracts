@@ -9,6 +9,7 @@ import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
 import {LancaOwnable} from "../LancaOwnable.sol";
+import {ICcip} from "../interfaces/ICcip.sol";
 
 contract LancaParentPool is
     ILancaParentPool,
@@ -89,14 +90,15 @@ contract LancaParentPool is
 
         uint256 liquidityCap = s_liquidityCap;
 
-        require(usdcAmount +
+        require(
+            usdcAmount +
                 i_USDC.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
                 s_withdrawAmountLocked <=
-            liquidityCap,
-        MaxDepositCapReached(liquidityCap)
-        )
+                liquidityCap,
+            MaxDepositCapReached(liquidityCap)
+        );
 
         bytes[] memory args = new bytes[](3);
         args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
@@ -122,5 +124,100 @@ contract LancaParentPool is
         });
 
         emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, deadline);
+    }
+
+    /**
+     * @notice Completes the deposit process initiated via startDeposit().
+     * @notice This function needs to be called within the deadline of DEPOSIT_DEADLINE_SECONDS, set in startDeposit().
+     * @param depositRequestId the ID of the deposit request
+     */
+    function completeDeposit(bytes32 depositRequestId) external onlyProxyContext {
+        DepositRequest memory request = s_depositRequests[depositRequestId];
+        address lpAddress = request.lpAddress;
+        uint256 usdcAmount = request.usdcAmountToDeposit;
+        uint256 usdcAmountAfterFee = usdcAmount - DEPOSIT_FEE_USDC;
+        uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
+
+        require(msg.sender == lpAddress, NotAllowedToCompleteDeposit());
+        require(block.timestamp <= request.deadline, DepositDeadlinePassed());
+        require(childPoolsLiquiditySnapshot != 0, DepositRequestNotReady());
+
+        uint256 lpTokensToMint = _calculateLPTokensToMint(
+            childPoolsLiquiditySnapshot,
+            usdcAmountAfterFee
+        );
+
+        i_USDC.safeTransferFrom(lpAddress, address(this), usdcAmount);
+
+        i_lpToken.mint(lpAddress, lpTokensToMint);
+
+        _distributeLiquidityToChildPools(usdcAmountAfterFee, ICcip.CcipTxType.deposit);
+
+        s_depositFeeAmount += DEPOSIT_FEE_USDC;
+
+        emit DepositCompleted(depositRequestId, lpAddress, usdcAmount, lpTokensToMint);
+
+        delete s_depositRequests[depositRequestId];
+    }
+
+    /**
+     * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
+     * @param childPoolsTotalBalance The total cross chain balance of child pools
+     * @param amountToDeposit the amount of USDC deposited
+     * @dev This function must be called only by an allowed Messenger & must not revert
+     * @dev totalUSDCCrossChainBalance MUST have 10**6 decimals.
+     */
+    function _calculateLPTokensToMint(
+        uint256 childPoolsTotalBalance,
+        uint256 amountToDeposit
+    ) private view returns (uint256) {
+        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
+            s_loansInUse +
+            s_depositsOnTheWayAmount -
+            s_depositFeeAmount;
+        //TODO: add withdrawalsOnTheWay
+
+        uint256 totalCrossChainLiquidity = childPoolsTotalBalance + parentPoolLiquidity;
+        uint256 totalLPSupply = i_lpToken.totalSupply();
+
+        if (totalLPSupply == 0) {
+            return _convertToLPTokenDecimals(amountToDeposit);
+        }
+
+        uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
+        uint256 amountDepositedConverted = _convertToLPTokenDecimals(amountToDeposit);
+
+        return
+            (((crossChainBalanceConverted + amountDepositedConverted) * totalLPSupply) /
+                crossChainBalanceConverted) - totalLPSupply;
+    }
+
+    /**
+     * @notice helper function to distribute liquidity after LP deposits.
+     * @param amountToDistributeUSDC amount of USDC should be distributed to the pools.
+     */
+    function _distributeLiquidityToChildPools(
+        uint256 amountToDistributeUSDC,
+        ICcip.CcipTxType ccipTxType
+    ) internal {
+        uint64[] memory poolChainSelectors = s_poolChainSelectors;
+
+        uint256 childPoolsCount = poolChainSelectors.length;
+        uint256 amountToDistributePerPool = ((amountToDistributeUSDC * PRECISION_HANDLER) /
+            (childPoolsCount + 1)) / PRECISION_HANDLER;
+
+        for (uint256 i; i < childPoolsCount; ) {
+            bytes32 ccipMessageId = _ccipSend(
+                poolChainSelectors[i],
+                amountToDistributePerPool,
+                ccipTxType
+            );
+
+            _addDepositOnTheWay(ccipMessageId, poolChainSelectors[i], amountToDistributePerPool);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 }
