@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import "./interfaces/ILancaBridge.sol";
+import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
+import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
 import {IConceroRouter} from "./interfaces/IConceroRouter.sol";
-import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
-import {IRouterClient as ICcipRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ILancaBridgeClient} from "./LancaBridgeClient/Interfaces/ILancaBridgeClient.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
-import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
+import {IRouterClient as ICcipRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 
 contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
@@ -22,6 +24,8 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     error InsufficientBridgeAmount();
     error InvalidDstChainSelector();
     error InvalidFeeToken();
+    error UnauthorizedConceroMessageSender();
+    error UnauthorizedConceroMessageSrcChain();
 
     /* EVENTS */
     event LancaBridgeSent(
@@ -83,12 +87,20 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeData.dstChainSelector];
         require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
+        bytes memory bridgeDataMessage = abi.encode(
+            msg.sender,
+            bridgeData.receiver,
+            bridgeData.dstChainGasLimit,
+            bridgeData.amount,
+            bridgeData.message
+        );
+
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: i_usdc,
             receiver: dstLancaBridgeContract,
             dstChainSelector: bridgeData.dstChainSelector,
             dstChainGasLimit: bridgeData.dstChainGasLimit,
-            data: bridgeData.message
+            data: bridgeDataMessage
         });
 
         bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
@@ -258,5 +270,33 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     function _conceroReceive(Message calldata conceroMessage) internal override {
         // @TODO: search if confirmed mapping needed on this step
+        require(
+            s_isConceroMessageSenderAllowed[conceroMessage.sender],
+            UnauthorizedConceroMessageSender()
+        );
+
+        require(
+            s_isConceroMessageSrcChainAllowed[conceroMessage.srcChainSelector],
+            UnauthorizedConceroMessageSrcChain()
+        );
+
+        (
+            address sender,
+            address lancaBridgeReceiver,
+            uint32 gasLimit,
+            uint256 amount,
+            bytes memory data
+        ) = abi.decode(conceroMessage.data, (address, address, uint32, uint256, bytes));
+
+        ILancaBridgeClient.LancaBridgeData bridgeData = ILancaBridgeClient.LancaBridgeData({
+            sender: sender,
+            token: i_usdc,
+            amount: amount,
+            srcChainSelector: conceroMessage.srcChainSelector,
+            data: data
+        });
+
+        IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);
+        ILancaBridgeClient(lancaBridgeReceiver).lancaBridgeReceive{gas: gasLimit}(bridgeData);
     }
 }
