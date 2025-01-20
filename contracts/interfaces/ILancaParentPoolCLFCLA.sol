@@ -32,7 +32,7 @@ interface ILancaParentPoolCLFCLA {
     function retryPerformWithdrawalRequest() external;
 }
 
-interface IParentPoolCLFCLAViewDelegate {
+interface ILancaParentPoolCLFCLAViewDelegate {
     function calculateWithdrawableAmountViaDelegateCall(
         uint256 childPoolsBalance,
         uint256 clpAmount
