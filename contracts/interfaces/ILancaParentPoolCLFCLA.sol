@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-// SPDX-License-Identifier: UNLICENSED
 /**
  * @title Security Reporting
  * @notice If you discover any security vulnerabilities, please report them responsibly.
- * @contact email: security@concero.io
+ * @notice contact email: security@concero.io
  */
-
 interface ILancaParentPoolCLFCLA {
     /// @notice Event emitted when a new withdrawal request is made.
     event WithdrawalRequestInitiated(
