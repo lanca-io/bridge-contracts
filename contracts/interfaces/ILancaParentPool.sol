@@ -11,12 +11,6 @@ interface ILancaParentPool is ILancaPool {
         removePool
     }
 
-    /// @notice `ccipSend` to distribute liquidity
-    struct Pools {
-        uint64 chainSelector;
-        address poolAddress;
-    }
-
     /// @notice Struct to track Functions Requests Type
     enum CLFRequestType {
         startDepositgetChildPoolsLiquidity,
@@ -25,8 +19,14 @@ interface ILancaParentPool is ILancaPool {
         liquidityRedistribution
     }
 
+    /// @notice `ccipSend` to distribute liquidity
+    struct Pools {
+        uint64 chainSelector;
+        address poolAddress;
+    }
+
     struct WithdrawRequest {
-        address liquidityProvider;
+        address lpAddress;
         uint256 lpAmountToBurn;
         //
         uint256 totalCrossChainLiquiditySnapshot; //todo: we don't update this updateWithdrawalRequest
@@ -37,7 +37,7 @@ interface ILancaParentPool is ILancaPool {
     }
 
     struct DepositRequest {
-        address liquidityProvider;
+        address lpAddress;
         uint256 childPoolsLiquiditySnapshot;
         uint256 usdcAmountToDeposit;
         uint256 deadline;
@@ -50,7 +50,7 @@ interface ILancaParentPool is ILancaPool {
     }
 
     struct PerformWithdrawRequest {
-        address liquidityProvider;
+        address lpAddress;
         uint256 amount;
         bytes32 withdrawId;
         bool failed;
@@ -61,12 +61,11 @@ interface ILancaParentPool is ILancaPool {
     event FailedExecutionLayerTxSettled(bytes32 indexed conceroMessageId);
 
     /// @notice Event emitted when a new withdrawal request is made.
-    event WithdrawalRequestInitiated(bytes32 indexed requestId, address liquidityProvider);
 
     /// @notice Event emitted when a value is withdrawn from the contract.
     event WithdrawalCompleted(
         bytes32 indexed requestId,
-        address indexed liquidityProvider,
+        address indexed lpAddress,
         address token,
         uint256 amount
     );
@@ -91,7 +90,7 @@ interface ILancaParentPool is ILancaPool {
     /// @notice Event emitted in depositLiquidity when a deposit is successfully executed.
     event DepositInitiated(
         bytes32 indexed requestId,
-        address indexed liquidityProvider,
+        address indexed lpAddress,
         uint256 amount,
         uint256 deadline
     );
@@ -99,7 +98,7 @@ interface ILancaParentPool is ILancaPool {
     /// @notice Event emitted when a deposit is completed.
     event DepositCompleted(
         bytes32 indexed requestId,
-        address indexed liquidityProvider,
+        address indexed lpAddress,
         uint256 amount,
         uint256 lpTokensToMint
     );
@@ -130,7 +129,7 @@ interface ILancaParentPool is ILancaPool {
     error DepositDeadlinePassed();
 
     /* FUNCTIONS */
-    function getWithdrawalIdByLPAddress(address liquidityProvider) external view returns (bytes32);
+    function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
     function startDeposit(uint256 usdcAmount) external;
     function distributeLiquidity(
         uint64 chainSelector,
