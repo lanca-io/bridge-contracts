@@ -39,10 +39,6 @@ abstract contract LancaParentPoolStorage {
     /// @notice variable to store Ethers Hashsum
     bytes32 internal s_ethersHashSum;
 
-    /// @notice TODO: Needs to be moved to immutable and deprecated
-    bytes32 internal s_collectLiquidityJsCodeHashSum;
-    bytes32 internal s_distributeLiquidityJsCodeHashSum;
-
     /* ARRAYS */
     /// @notice Array of Pools to receive Liquidity through `ccipSend` function
     uint64[] internal s_poolChainSelectors;
