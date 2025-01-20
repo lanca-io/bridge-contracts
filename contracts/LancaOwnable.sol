@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {ZERO_ADDRESS} from "./Constants.sol";
 
-abstract contract Ownable {
+abstract contract LancaOwnable {
     /* IMMUTABLE VARIABLES */
     address internal immutable i_owner;
 
