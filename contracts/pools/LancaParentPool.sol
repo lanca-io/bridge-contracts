@@ -81,6 +81,8 @@ contract LancaParentPool is
         _;
     }
 
+    /* EXTERNAL FUNCTIONS */
+
     /**
      * @notice Allows a user to initiate the deposit. Currently supports USDC only.
      * @param usdcAmount amount to be deposited
@@ -200,6 +202,19 @@ contract LancaParentPool is
         s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
         s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
     }
+
+    /**
+     * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
+     */
+    function retryPerformWithdrawalRequest() external {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.retryPerformWithdrawalRequest.selector
+        );
+
+        LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+    }
+
+    /* INTERNAL FUNCTIONS */
 
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
