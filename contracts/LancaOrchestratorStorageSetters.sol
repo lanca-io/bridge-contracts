@@ -3,14 +3,14 @@ pragma solidity 0.8.28;
 
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
-import {Ownable} from "./Ownable.sol";
+import {LancaOwnable} from "./LancaOwnable.sol";
 
-abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, Ownable {
+abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, LancaOwnable {
     /* ERRORS */
     /// @notice error emitted when the input is the address(0)
     error InvalidAddress();
 
-    constructor(address owner) Ownable(owner) {}
+    constructor(address owner) LancaOwnable(owner) {}
 
     /**
      * @notice Sets the address of a DEX Router as approved or not approved to perform swaps.
