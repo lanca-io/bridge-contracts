@@ -4,10 +4,10 @@ pragma solidity 0.8.28;
 interface ILancaParentPool {
     event FailedExecutionLayerTxSettled(bytes32 indexed conceroMessageId);
 
-    /// @notice event emitted when a new withdraw request is made
+    /// @notice Event emitted when a new withdrawal request is made.
     event WithdrawalRequestInitiated(bytes32 indexed requestId, address liquidityProvider);
 
-    /// @notice event emitted when a value is withdraw from the contract
+    /// @notice Event emitted when a value is withdrawn from the contract.
     event WithdrawalCompleted(
         bytes32 indexed requestId,
         address indexed liquidityProvider,
@@ -15,7 +15,7 @@ interface ILancaParentPool {
         uint256 amount
     );
 
-    /// @notice event emitted when a Cross-chain tx is received.
+    /// @notice Event emitted when a cross-chain transaction is received.
     event CCIPReceived(
         bytes32 indexed ccipMessageId,
         uint64 srcChainSelector,
@@ -24,7 +24,7 @@ interface ILancaParentPool {
         uint256 amount
     );
 
-    /// @notice event emitted when a Cross-chain message is sent.
+    /// @notice Event emitted when a cross-chain message is sent.
     event CCIPSent(
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
@@ -32,7 +32,7 @@ interface ILancaParentPool {
         uint256 amount
     );
 
-    /// @notice event emitted in depositLiquidity when a deposit is successful executed
+    /// @notice Event emitted in depositLiquidity when a deposit is successfully executed.
     event DepositInitiated(
         bytes32 indexed requestId,
         address indexed liquidityProvider,
@@ -40,7 +40,7 @@ interface ILancaParentPool {
         uint256 deadline
     );
 
-    /// @notice event emitted when a deposit is completed
+    /// @notice Event emitted when a deposit is completed.
     event DepositCompleted(
         bytes32 indexed requestId,
         address indexed liquidityProvider,
@@ -48,3 +48,4 @@ interface ILancaParentPool {
         uint256 lpTokensToMint
     );
 }
+
