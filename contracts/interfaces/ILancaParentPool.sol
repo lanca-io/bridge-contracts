@@ -60,8 +60,6 @@ interface ILancaParentPool is ILancaPool {
 
     event FailedExecutionLayerTxSettled(bytes32 indexed conceroMessageId);
 
-    /// @notice Event emitted when a new withdrawal request is made.
-
     /// @notice Event emitted when a value is withdrawn from the contract.
     event WithdrawalCompleted(
         bytes32 indexed requestId,
