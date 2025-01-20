@@ -105,18 +105,18 @@ contract LancaParentPool is
             ILancaParentPoolCLFCLA.sendCLFRequest.selector,
             args
         );
-        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
             address(i_parentPoolCLFCLA),
             delegateCallArgs
         );
         bytes32 clfRequestId = bytes32(delegateCallResponse);
-        uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
+        uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
         s_depositRequests[clfRequestId].lpAddress = msg.sender;
         s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
-        s_depositRequests[clfRequestId].deadline = _deadline;
+        s_depositRequests[clfRequestId].deadline = deadline;
 
-        emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, _deadline);
+        emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, deadline);
     }
 }
