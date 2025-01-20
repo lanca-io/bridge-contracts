@@ -13,9 +13,9 @@ interface ILancaParentPool is ILancaPool {
 
     /// @notice Struct to track Functions Requests Type
     enum CLFRequestType {
-        startDepositgetChildPoolsLiquidity,
-        startWithdrawalgetChildPoolsLiquidity,
-        withdrawalrequestLiquidityCollection,
+        startDeposit_getChildPoolsLiquidity,
+        startWithdrawal_getChildPoolsLiquidity,
+        withdrawal_requestLiquidityCollection,
         liquidityRedistribution
     }
 
