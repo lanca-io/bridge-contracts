@@ -37,6 +37,7 @@
     "@nomicfoundation/hardhat-ethers": "3.0.8",
     "@nomicfoundation/hardhat-verify": "2.0.12",
     "@nomicfoundation/hardhat-viem": "2.0.6",
+    "@openzeppelin/contracts": "5.2.0",
     "@tenderly/hardhat-tenderly": "2.5.1",
     "@tenderly/api-client": "1.1.0",
     "@typechain/ethers-v6": "0.5.1",
