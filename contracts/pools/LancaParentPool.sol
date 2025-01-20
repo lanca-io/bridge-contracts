@@ -117,11 +117,9 @@ contract LancaParentPool is
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
-        s_depositRequests[clfRequestId] = ILancaParentPool.DepositRequest({
-            lpAddress: msg.sender,
-            usdcAmountToDeposit: usdcAmount,
-            deadline: deadline
-        });
+        s_depositRequests[clfRequestId].lpAddress = msg.sender;
+        s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
+        s_depositRequests[clfRequestId].deadline = deadline;
 
         emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, deadline);
     }
@@ -132,7 +130,7 @@ contract LancaParentPool is
      * @param depositRequestId the ID of the deposit request
      */
     function completeDeposit(bytes32 depositRequestId) external onlyProxyContext {
-        DepositRequest memory request = s_depositRequests[depositRequestId];
+        DepositRequest storage request = s_depositRequests[depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
         uint256 usdcAmountAfterFee = usdcAmount - DEPOSIT_FEE_USDC;
@@ -249,10 +247,8 @@ contract LancaParentPool is
 
     function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
         uint8 index;
-        DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT]
-            memory depositsOnTheWay = s_depositsOnTheWayArray;
         for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; i++) {
-            if (depositsOnTheWay[i].ccipMessageId == bytes32(0)) {
+            if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
                 index = i;
                 s_latestDepositOnTheWayIndex = i;
                 break;
