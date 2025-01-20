@@ -158,6 +158,49 @@ contract LancaParentPool is
         delete s_depositRequests[depositRequestId];
     }
 
+    /*
+     * @notice Allows liquidity providers to initiate the withdrawal
+     * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
+     * @param lpAmount the amount of LP tokens to be burnt
+     */
+    function startWithdrawal(uint256 lpAmount) external onlyProxyContext {
+        address lpAddress = msg.sender;
+        require(lpAmount >= 1 ether, WithdrawAmountBelowMinimum(1 ether));
+        require(
+            s_withdrawalIdByLPAddress[lpAddress] == bytes32(0),
+            WithdrawalRequestAlreadyExists()
+        );
+
+        bytes[] memory args = new bytes[](2);
+        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
+
+        IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IParentPoolCLFCLA.sendCLFRequest.selector,
+            args
+        );
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 clfRequestId = bytes32(delegateCallResponse);
+
+        bytes32 withdrawalId = keccak256(
+            abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
+        );
+
+        s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
+
+        // partially initialise withdrawalRequest struct
+        s_withdrawRequests[withdrawalId].lpAddress = lpAddress;
+        s_withdrawRequests[withdrawalId].lpAmountToBurn = lpAmount;
+
+        s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
+        s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
+    }
+
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
      * @param childPoolsTotalBalance The total cross chain balance of child pools
