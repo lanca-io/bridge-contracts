@@ -220,4 +220,47 @@ contract LancaParentPool is
             }
         }
     }
+
+    /**
+     * @notice adds a new DepositOnTheWay struct to the s_depositsOnTheWayArray.
+     * @dev This function will either add a new element to the array if there is available space,
+     * or overwrite the lowest unused DepositOnTheWay struct.
+     * @param ccipMessageId the CCIP Message ID associated with the deposit
+     * @param chainSelector the chain selector of the pool that will receive the deposit
+     * @param amount the amount of USDC being deposited
+     */
+    function _addDepositOnTheWay(
+        bytes32 ccipMessageId,
+        uint64 chainSelector,
+        uint256 amount
+    ) internal {
+        uint8 index = s_latestDepositOnTheWayIndex < (MAX_DEPOSITS_ON_THE_WAY_COUNT - 1)
+            ? ++s_latestDepositOnTheWayIndex
+            : _findLowestDepositOnTheWayUnusedIndex();
+
+        s_depositsOnTheWayArray[index] = DepositOnTheWay({
+            ccipMessageId: ccipMessageId,
+            chainSelector: chainSelector,
+            amount: amount
+        });
+
+        s_depositsOnTheWayAmount += amount;
+    }
+
+    function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
+        uint8 index;
+        DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT]
+            memory depositsOnTheWay = s_depositsOnTheWayArray;
+        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; i++) {
+            if (depositsOnTheWay[i].ccipMessageId == bytes32(0)) {
+                index = i;
+                s_latestDepositOnTheWayIndex = i;
+                break;
+            }
+        }
+
+        require(index != 0, DepositsOnTheWayArrayFull());
+
+        return index;
+    }
 }
