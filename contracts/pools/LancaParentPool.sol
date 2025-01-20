@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
+import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
 import {LancaOwnable} from "../LancaOwnable.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
+import {ZERO_ADDRESS} from "../Constants.sol";
 
 contract LancaParentPool is
     ILancaParentPool,
@@ -73,8 +74,8 @@ contract LancaParentPool is
     /* MODIFIERS */
     /**
      * @notice CCIP Modifier to check Chains And senders
-     * @param _chainSelector Id of the source chain of the message
-     * @param _sender address of the sender contract
+     * @param chainSelector Id of the source chain of the message
+     * @param sender address of the sender contract
      */
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(s_isSenderContractAllowed[chainSelector][sender], SenderNotAllowed(sender));
@@ -212,6 +213,26 @@ contract LancaParentPool is
         );
 
         LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+    }
+
+    /**
+     * @notice Function called by Messenger to send USDC to a recently added pool.
+     * @param chainSelector The chain selector of the new pool
+     * @param amountToSend the amount to redistribute between pools.
+     */
+    function distributeLiquidity(
+        uint64 chainSelector,
+        uint256 amountToSend,
+        bytes32 requestId
+    ) external onlyProxyContext onlyMessenger {
+        require(s_childPools[chainSelector] != ZERO_ADDRESS, InvalidAddress());
+        require(
+            !s_distributeLiquidityRequestProcessed[requestId],
+            DistributeLiquidityRequestAlreadyProceeded(requestId)
+        );
+        s_distributeLiquidityRequestProcessed[requestId] = true;
+
+        _ccipSend(chainSelector, amountToSend, ICcip.CcipTxType.liquidityRebalancing);
     }
 
     /* INTERNAL FUNCTIONS */
