@@ -22,7 +22,7 @@ contract LancaParentPool is
 
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
-    IParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
+    ILancaParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
@@ -60,7 +60,7 @@ contract LancaParentPool is
     {
         i_linkToken = LinkTokenInterface(link);
         i_owner = _owner;
-        i_parentPoolCLFCLA = IParentPoolCLFCLA(parentPoolCLFCLA);
+        i_parentPoolCLFCLA = ILancaParentPoolCLFCLA(parentPoolCLFCLA);
         i_clfRouter = clfRouter;
         i_automationForwarder = automationForwarder;
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
@@ -85,22 +85,18 @@ contract LancaParentPool is
      * @param usdcAmount amount to be deposited
      */
     function startDeposit(uint256 usdcAmount) external {
-        if (usdcAmount < MIN_DEPOSIT) {
-            revert DepositAmountBelowMinimum(MIN_DEPOSIT);
-        }
+        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum(MIN_DEPOSIT));
 
         uint256 liquidityCap = s_liquidityCap;
 
-        if (
-            usdcAmount +
+        require(usdcAmount +
                 i_USDC.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
-                s_withdrawAmountLocked >
-            liquidityCap
-        ) {
-            revert MaxDepositCapReached(liquidityCap);
-        }
+                s_withdrawAmountLocked <=
+            liquidityCap,
+        MaxDepositCapReached(liquidityCap)
+        )
 
         bytes[] memory args = new bytes[](3);
         args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
@@ -119,9 +115,11 @@ contract LancaParentPool is
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
-        s_depositRequests[clfRequestId].lpAddress = msg.sender;
-        s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
-        s_depositRequests[clfRequestId].deadline = deadline;
+        s_depositRequests[clfRequestId] = ILancaParentPool.DepositRequest({
+            lpAddress: msg.sender,
+            usdcAmountToDeposit: usdcAmount,
+            deadline: deadline
+        });
 
         emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, deadline);
     }
