@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
+
 abstract contract LancaParentPoolStorage {
     /* STATE VARIABLES */
 
@@ -22,15 +24,8 @@ abstract contract LancaParentPoolStorage {
     /// @notice incremented when `ccipSend` is called on child pools by CLA, decremented with each `ccipReceive`
     uint256 internal s_withdrawalsOnTheWayAmount;
 
-    /* PACKED SLOT */
-    /// @notice variable to store the Chainlink Function DON Slot ID
-    uint8 internal s_donHostedSecretsSlotId;
-
     /// @notice variable to store latest index for deposit tracking
     uint8 internal s_latestDepositOnTheWayIndex;
-
-    /// @notice variable to store the Chainlink Function DON Secret Version
-    uint64 internal s_donHostedSecretsVersion;
 
     /* PACKED SLOT - HASHES */
     /// @notice variable to store the Chainlink Function Source Hashsum

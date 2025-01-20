@@ -27,6 +27,8 @@ contract LancaParentPool is
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
+    uint8 internal immutable i_donHostedSecretsSlotId;
+    uint64 internal immutable i_donHostedSecretsVersion;
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -48,6 +50,8 @@ contract LancaParentPool is
         address owner,
         bytes32 collectLiquidityJsCodeHashSum,
         bytes32 distributeLiquidityJsCodeHashSum,
+        uint8 donHostedSecretsSlotId,
+        uint64 donHostedSecretsVersion,
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
@@ -61,6 +65,8 @@ contract LancaParentPool is
         i_automationForwarder = automationForwarder;
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
         i_distributeLiquidityJsCodeHashSum = distributeLiquidityJsCodeHashSum;
+        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
+        i_donHostedSecretsVersion = donHostedSecretsVersion;
     }
 
     /* MODIFIERS */
