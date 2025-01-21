@@ -27,4 +27,9 @@ interface ICcip {
         uint256 amount;
         address recipient;
     }
+
+    struct SettlementTx {
+        uint256 amount;
+        address recipient;
+    }
 }
