@@ -68,16 +68,6 @@ contract LancaParentPoolCommon {
     address internal immutable i_msgr2;
 
     /**
-     * @notice Modifier to ensure if the function is being executed in the proxy context.
-     */
-    modifier onlyProxyContext() {
-        if (address(this) != i_parentPoolProxy) {
-            revert NotParentPoolProxy(address(this));
-        }
-        _;
-    }
-
-    /**
      * @notice Modifier to check if the caller is the an approved messenger.
      */
     modifier onlyMessenger() {
