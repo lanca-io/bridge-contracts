@@ -63,4 +63,33 @@ abstract contract LancaParentPoolStorage is LancaPoolStorage {
     /* STORAGE GAP */
     /// @notice gap to reserve storage in the contract for future variable additions
     uint256[50] private __gap;
+
+    /* GETTERS */
+    function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32) {
+        return s_withdrawalIdByLPAddress[lpAddress];
+    }
+
+    function getUsdcInUse() external view returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function getWithdrawalsOnTheWayAmount() external view returns (uint256) {
+        return s_withdrawalsOnTheWayAmount;
+    }
+
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
+    {
+        return s_depositsOnTheWayArray;
+    }
+
+    function getPendingWithdrawalRequestIds() external view returns (bytes32[] memory) {
+        return s_withdrawalRequestIds;
+    }
+
+    function getLiquidityCap() external view returns (uint256) {
+        return s_liquidityCap;
+    }
 }
