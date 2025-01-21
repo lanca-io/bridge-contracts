@@ -303,6 +303,16 @@ contract LancaParentPool is
         }
     }
 
+    /* PUBLIC FUNCTIONS */
+    /**
+     * @notice getter function to calculate Destination fee amount on Source
+     * @param amount the amount of tokens to calculate over
+     * @return the fee amount
+     */
+    function getDstTotalFeeInUsdc(uint256 amount) public pure override returns (uint256) {
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+    }
+
     /* INTERNAL FUNCTIONS */
 
     /**
