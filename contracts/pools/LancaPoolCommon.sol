@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {LancaOwnable} from "../LancaOwnable.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 
 abstract contract LancaPoolCommon {
@@ -45,15 +44,4 @@ abstract contract LancaPoolCommon {
     function _isMessenger(address messenger) internal view returns (bool) {
         return (messenger == i_msgr0 || messenger == i_msgr1 || messenger == i_msgr2);
     }
-
-    //TODO: _ccipSend, ccipReceived and other mutual pool functions should be moved to a separate contract
-    /**
-     * @notice Function to distribute funds automatically right after LP deposits into the pool
-     * @dev this function will only be called internally.
-     */
-    function _ccipSend(
-        uint64 chainSelector,
-        uint256 amount,
-        ICcip.CcipTxType ccipTxType
-    ) internal virtual returns (bytes32);
 }
