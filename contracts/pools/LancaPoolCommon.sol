@@ -31,7 +31,7 @@ abstract contract LancaPoolCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!_isMessenger(msg.sender)) revert NotMessenger();
+        require(_isMessenger(msg.sender), NotMessenger());
         _;
     }
 

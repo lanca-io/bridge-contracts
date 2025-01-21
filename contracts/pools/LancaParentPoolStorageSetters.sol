@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
 import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaOwnable} from "../LancaOwnable.sol";
+import {ZERO_ADDRESS} from "../Constants.sol";
 
 abstract contract LancaParentPoolStorageSetters is
     LancaParentPoolStorage,
@@ -39,7 +40,7 @@ abstract contract LancaParentPoolStorageSetters is
         address contractAddress,
         bool isAllowed
     ) external payable onlyOwner {
-        require(contractAddress != address(0), InvalidAddress());
+        require(contractAddress != ZERO_ADDRESS, InvalidAddress());
         s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
     }
 
@@ -64,9 +65,7 @@ abstract contract LancaParentPoolStorageSetters is
         address pool,
         bool isRebalancingNeeded
     ) external payable onlyOwner {
-        if (s_childPools[chainSelector] == pool || pool == ZERO_ADDRESS) {
-            revert InvalidAddress();
-        }
+        require(s_childPools[chainSelector] != pool && pool != ZERO_ADDRESS, InvalidAddress());
 
         spoolChainSelectors.push(chainSelector);
         s_childPools[chainSelector] = pool;

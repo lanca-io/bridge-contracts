@@ -509,9 +509,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
-            if (request.amountToWithdraw == 0) {
-                revert WithdrawRequestDoesntExist(withdrawalId);
-            }
+            require(request.amountToWithdraw != 0, WithdrawRequestDoesntExist(withdrawalId));
 
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
                 ccipReceivedAmount
