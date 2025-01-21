@@ -132,7 +132,7 @@ contract LancaParentPool is
      * @notice This function needs to be called within the deadline of DEPOSIT_DEADLINE_SECONDS, set in startDeposit().
      * @param depositRequestId the ID of the deposit request
      */
-    function completeDeposit(bytes32 depositRequestId) external onlyProxyContext {
+    function completeDeposit(bytes32 depositRequestId) external {
         DepositRequest storage request = s_depositRequests[depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
@@ -166,7 +166,7 @@ contract LancaParentPool is
      * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
      * @param lpAmount the amount of LP tokens to be burnt
      */
-    function startWithdrawal(uint256 lpAmount) external onlyProxyContext {
+    function startWithdrawal(uint256 lpAmount) external {
         address lpAddress = msg.sender;
         require(lpAmount >= 1 ether, WithdrawAmountBelowMinimum(1 ether));
         require(
@@ -184,7 +184,7 @@ contract LancaParentPool is
             IParentPoolCLFCLA.sendCLFRequest.selector,
             args
         );
-        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
             address(i_parentPoolCLFCLA),
             delegateCallArgs
         );
@@ -224,7 +224,7 @@ contract LancaParentPool is
         uint64 chainSelector,
         uint256 amountToSend,
         bytes32 requestId
-    ) external onlyProxyContext onlyMessenger {
+    ) external onlyMessenger {
         require(s_childPools[chainSelector] != ZERO_ADDRESS, InvalidAddress());
         require(
             !s_distributeLiquidityRequestProcessed[requestId],
@@ -233,6 +233,74 @@ contract LancaParentPool is
         s_distributeLiquidityRequestProcessed[requestId] = true;
 
         _ccipSend(chainSelector, amountToSend, ICcip.CcipTxType.liquidityRebalancing);
+    }
+
+    function takeLoan(address token, uint256 amount, address receiver) external payable {
+        require(receiver != ZERO_ADDRESS, InvalidAddress());
+        if (token != address(i_USDC)) revert NotUsdcToken();
+        IERC20(token).safeTransfer(receiver, amount);
+        s_loansInUse += amount;
+    }
+
+    /**
+     * @notice function to manage the Cross-chain ConceroPool contracts
+     * @param chainSelector chain identifications
+     * @param _pool address of the Cross-chain ConceroPool contract
+     * @dev only owner can call it
+     * @dev it's payable to save some gas.
+     * @dev this functions is used on ConceroPool.sol
+     */
+    function setPools(
+        uint64 chainSelector,
+        address pool,
+        bool isRebalancingNeeded
+    ) external payable onlyOwner {
+        if (s_childPools[chainSelector] == pool || pool == address(0)) {
+            revert InvalidAddress();
+        }
+
+        s_poolChainSelectors.push(chainSelector);
+        s_childPools[chainSelector] = pool;
+
+        if (isRebalancingNeeded) {
+            bytes32 distributeLiquidityRequestId = keccak256(
+                abi.encodePacked(pool, chainSelector, RedistributeLiquidityType.addPool)
+            );
+
+            bytes[] memory args = new bytes[](7);
+            args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
+            args[1] = abi.encodePacked(s_ethersHashSum);
+            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+            args[3] = abi.encodePacked(chainSelector);
+            args[4] = abi.encodePacked(distributeLiquidityRequestId);
+            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
+            args[6] = abi.encodePacked(block.chainid);
+
+            bytes memory delegateCallArgs = abi.encodeWithSelector(
+                IParentPoolCLFCLA.sendCLFRequest.selector,
+                args
+            );
+            LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+        }
+    }
+
+    /**
+     * @notice Function to remove Cross-chain address disapproving transfers
+     * @param chainSelector the CCIP chainSelector for the specific chain
+     */
+    function removePools(uint64 chainSelector) external payable onlyOwner {
+        uint256 poolChainSelectorsLen = s_poolChainSelectors.length;
+        uint256 poolChainSelectorsLast = poolChainSelectorsLen - 1;
+        address removedPool;
+
+        for (uint256 i; i < poolChainSelectorsLen; ++i) {
+            if (s_poolChainSelectors[i] == chainSelector) {
+                removedPool = s_childPools[chainSelector];
+                s_poolChainSelectors[i] = s_poolChainSelectors[poolChainSelectorsLast];
+                s_poolChainSelectors.pop();
+                delete s_childPools[chainSelector];
+            }
+        }
     }
 
     /* INTERNAL FUNCTIONS */
@@ -337,5 +405,152 @@ contract LancaParentPool is
         require(index != 0, DepositsOnTheWayArrayFull());
 
         return index;
+    }
+
+    /**
+     * @notice CCIP function to receive bridged values
+     * @param any2EvmMessage the CCIP message
+     * @dev only allowed chains and sender must be able to deliver a message in this function.
+     */
+    function _ccipReceive(
+        Client.Any2EVMMessage memory any2EvmMessage
+    )
+        internal
+        override
+        onlyAllowlistedSenderOfChainSelector(
+            any2EvmMessage.sourceChainSelector,
+            abi.decode(any2EvmMessage.sender, (address))
+        )
+    {
+        ICcip.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICcip.CcipTxData));
+        uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
+        address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
+
+        if (ccipReceivedToken != address(i_USDC)) {
+            revert NotUsdcToken();
+        }
+
+        if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
+            IConceroBridge.CcipSettlementTx[] memory settlementTxs = abi.decode(
+                ccipTxData.data,
+                (IConceroBridge.CcipSettlementTx[])
+            );
+            for (uint256 i; i < settlementTxs.length; ++i) {
+                bytes32 txId = settlementTxs[i].id;
+                uint256 txAmount = settlementTxs[i].amount;
+                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+
+                if (isTxConfirmed) {
+                    txAmount -= getDstTotalFeeInUsdc(txAmount);
+                    s_loansInUse -= txAmount;
+                } else {
+                    IInfraOrchestrator(i_infraProxy).confirmTx(txId);
+                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
+                }
+            }
+        } else if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
+            bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
+
+            WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+
+            if (request.amountToWithdraw == 0) {
+                revert WithdrawRequestDoesntExist(withdrawalId);
+            }
+
+            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
+                ccipReceivedAmount
+                ? request.remainingLiquidityFromChildPools - ccipReceivedAmount
+                : 0;
+
+            s_withdrawalsOnTheWayAmount = s_withdrawalsOnTheWayAmount >= ccipReceivedAmount
+                ? s_withdrawalsOnTheWayAmount - ccipReceivedAmount
+                : 0;
+
+            s_withdrawAmountLocked += ccipReceivedAmount;
+
+            if (request.remainingLiquidityFromChildPools < 10) {
+                _completeWithdrawal(withdrawalId);
+            }
+        }
+
+        // TODO: maybe we can use underlying ccipReceived event?
+        emit CCIPReceived(
+            any2EvmMessage.messageId,
+            any2EvmMessage.sourceChainSelector,
+            abi.decode(any2EvmMessage.sender, (address)),
+            ccipReceivedToken,
+            ccipReceivedAmount
+        );
+    }
+
+    function _ccipSend(
+        uint64 chainSelector,
+        uint256 amount,
+        ICCIP.CcipTxType ccipTxType
+    ) internal override returns (bytes32) {
+        IInfraStorage.SettlementTx[] memory emptyBridgeTxArray;
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ccipTxType,
+            data: abi.encode(emptyBridgeTxArray)
+        });
+
+        address recipient = s_childPools[chainSelector];
+        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+            recipient,
+            address(i_USDC),
+            amount,
+            ccipTxData
+        );
+
+        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(chainSelector, evm2AnyMessage);
+
+        i_USDC.approve(i_ccipRouter, amount);
+        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
+
+        return IRouterClient(i_ccipRouter).ccipSend(chainSelector, evm2AnyMessage);
+    }
+
+    /**
+     * @notice Function to process the withdraw request
+     * @param withdrawalId the id of the withdraw request
+     */
+    function _completeWithdrawal(bytes32 withdrawalId) internal {
+        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+        uint256 amountToWithdraw = request.amountToWithdraw;
+        address lpAddress = request.lpAddress;
+
+        i_lpToken.burn(request.lpAmountToBurn);
+        i_USDC.safeTransfer(lpAddress, amountToWithdraw);
+
+        s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
+            ? s_withdrawAmountLocked - amountToWithdraw
+            : 0;
+
+        delete s_withdrawalIdByLPAddress[lpAddress];
+        delete s_withdrawRequests[withdrawalId];
+
+        emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_USDC), amountToWithdraw);
+    }
+
+    function _buildCCIPMessage(
+        address recipient,
+        address token,
+        uint256 amount,
+        ICCIP.CcipTxData memory ccipTxData
+    ) internal view returns (Client.EVM2AnyMessage memory) {
+        Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+        tokenAmounts[0] = Client.EVMTokenAmount({token: token, amount: amount});
+
+        return
+            Client.EVM2AnyMessage({
+                receiver: abi.encode(recipient),
+                data: abi.encode(ccipTxData),
+                tokenAmounts: tokenAmounts,
+                extraArgs: Client._argsToBytes(
+                    Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})
+                ),
+                feeToken: address(i_linkToken)
+            });
     }
 }
