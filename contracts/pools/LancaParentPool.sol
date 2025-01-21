@@ -55,7 +55,8 @@ contract LancaParentPool is
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers, owner)
+        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers)
+        LancaParentPoolStorageSetters(owner)
     {
         i_linkToken = LinkTokenInterface(link);
         i_owner = owner;

@@ -51,9 +51,8 @@ contract LancaParentPoolCommon is LancaPoolCommon {
         address parentPool,
         address lpToken,
         address usdc,
-        address[3] memory messengers,
-        address owner
-    ) LancaPoolCommon(usdc, messengers, owner) {
+        address[3] memory messengers
+    ) LancaPoolCommon(usdc, messengers) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
     }

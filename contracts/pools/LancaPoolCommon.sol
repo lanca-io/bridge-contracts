@@ -6,7 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {LancaOwnable} from "../LancaOwnable.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 
-abstract contract LancaPoolCommon is LancaOwnable {
+abstract contract LancaPoolCommon {
     using SafeERC20 for IERC20;
     /**
      * @notice Thrown when the caller is not an approved messenger.
@@ -22,7 +22,7 @@ abstract contract LancaPoolCommon is LancaOwnable {
     address internal immutable i_msgr1;
     address internal immutable i_msgr2;
 
-    constructor(address usdc, address[3] memory messengers, address owner) LancaOwnable(owner) {
+    constructor(address usdc, address[3] memory messengers) {
         i_USDC = IERC20(usdc);
         (i_msgr0, i_msgr1, i_msgr2) = messengers;
     }
