@@ -142,4 +142,6 @@ interface ILancaParentPool is ILancaPool {
     ) external view returns (uint256);
 
     function setPoolCap(uint256 newCap) external payable;
+
+    function withdrawDepositFees() external payable;
 }
