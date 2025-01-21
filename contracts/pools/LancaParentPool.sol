@@ -83,6 +83,23 @@ contract LancaParentPool is
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
 
+    function handleOracleFulfillment(
+        bytes32 requestId,
+        bytes memory delegateCallResponse,
+        bytes memory err
+    ) external {
+        require(msg.sender == i_clfRouter, OnlyRouterCanFulfill(msg.sender));
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.fulfillRequestWrapper.selector,
+            requestId,
+            delegateCallResponse,
+            err
+        );
+
+        LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+    }
+
     /**
      * @notice Allows a user to initiate the deposit. Currently supports USDC only.
      * @param usdcAmount amount to be deposited
