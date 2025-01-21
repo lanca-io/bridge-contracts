@@ -89,14 +89,14 @@ contract LancaParentPoolCommon {
      * @notice Constructor for the LancaParentPoolCommon contract.
      * @param parentPool the parent pool proxy contract address.
      * @param lpToken the LP token contract address.
-     * @param USDC the USDC token contract address.
+     * @param usdc the USDC token contract address.
      * @param messengers the approved messengers.
      */
-    constructor(address parentPool, address lpToken, address USDC, address[3] memory messengers) {
+    constructor(address parentPool, address lpToken, address usdc, address[3] memory messengers) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
         (i_msgr0, i_msgr1, i_msgr2) = messengers;
-        i_USDC = IERC20(USDC);
+        i_USDC = IERC20(usdc);
     }
 
     /**
