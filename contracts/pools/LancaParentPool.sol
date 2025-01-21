@@ -496,10 +496,10 @@ contract LancaParentPool is
     function _ccipSend(
         uint64 chainSelector,
         uint256 amount,
-        ICCIP.CcipTxType ccipTxType
+        ICcip.CcipTxType ccipTxType
     ) internal override returns (bytes32) {
         IInfraStorage.SettlementTx[] memory emptyBridgeTxArray;
-        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
             ccipTxType: ccipTxType,
             data: abi.encode(emptyBridgeTxArray)
         });
@@ -546,7 +546,7 @@ contract LancaParentPool is
         address recipient,
         address token,
         uint256 amount,
-        ICCIP.CcipTxData memory ccipTxData
+        ICcip.CcipTxData memory ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: token, amount: amount});
