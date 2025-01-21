@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LPToken} from "../LPToken.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
+import {ICcip} from "../interfaces/ICcip.sol";
 
 /**
  * @title LancaParentPoolCommon
@@ -75,4 +76,14 @@ contract LancaParentPoolCommon is LancaPoolCommon {
     function _convertToUSDCTokenDecimals(uint256 lpAmount) internal pure returns (uint256) {
         return (lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
     }
+
+    /**
+     * @notice Function to distribute funds automatically right after LP deposits into the pool
+     * @dev this function will only be called internally.
+     */
+    function _ccipSend(
+        uint64 chainSelector,
+        uint256 amount,
+        ICcip.CcipTxType ccipTxType
+    ) internal returns (bytes32);
 }
