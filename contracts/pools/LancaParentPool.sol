@@ -5,11 +5,13 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
+import {LancaLib} from "../libraries/LancaLib.sol";
 
 contract LancaParentPool is
     ILancaParentPool,
@@ -98,6 +100,27 @@ contract LancaParentPool is
         );
 
         LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+    }
+
+    function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
+        (bool isTriggerNeeded, bytes memory data) = IParentPoolCLFCLAViewDelegate(address(this))
+            .checkUpkeepViaDelegate();
+
+        return (isTriggerNeeded, data);
+    }
+
+    function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            AutomationCompatibleInterface.checkUpkeep.selector,
+            bytes("")
+        );
+
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+
+        return abi.decode(delegateCallResponse, (bool, bytes));
     }
 
     /**
