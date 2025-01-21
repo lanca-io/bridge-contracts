@@ -13,12 +13,7 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaLib} from "../libraries/LancaLib.sol";
 
-contract LancaParentPool is
-    ILancaParentPool,
-    CCIPReceiver,
-    LancaParentPoolCommon,
-    LancaParentPoolStorageSetters
-{
+contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
 
@@ -115,12 +110,19 @@ contract LancaParentPool is
             bytes("")
         );
 
-        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
             address(i_parentPoolCLFCLA),
             delegateCallArgs
         );
 
         return abi.decode(delegateCallResponse, (bool, bytes));
+    }
+
+    function calculateLPTokensToMint(
+        uint256 childPoolsBalance,
+        uint256 amountToDeposit
+    ) external view returns (uint256) {
+        return _calculateLPTokensToMint(childPoolsBalance, amountToDeposit);
     }
 
     /**
@@ -200,6 +202,46 @@ contract LancaParentPool is
         delete s_depositRequests[depositRequestId];
     }
 
+    function calculateWithdrawableAmount(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256) {
+        return
+            IParentPoolCLFCLAViewDelegate(address(this)).calculateWithdrawableAmountViaDelegateCall(
+                childPoolsBalance,
+                clpAmount
+            );
+    }
+
+    function calculateWithdrawableAmountViaDelegateCall(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external returns (uint256) {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.calculateWithdrawableAmount.selector,
+            childPoolsBalance,
+            clpAmount
+        );
+
+        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+
+        return abi.decode(delegateCallResponse, (uint256));
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+        require(msg.sender == i_automationForwarder, Unauthorized());
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            AutomationCompatibleInterface.performUpkeep.selector,
+            performData
+        );
+
+        LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+    }
+
     /*
      * @notice Allows liquidity providers to initiate the withdrawal
      * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
@@ -220,7 +262,7 @@ contract LancaParentPool is
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IParentPoolCLFCLA.sendCLFRequest.selector,
+            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
             args
         );
         bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
@@ -254,6 +296,12 @@ contract LancaParentPool is
         LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
+    function withdrawDepositFees() external payable onlyOwner {
+        uint256 amountToSend = s_depositFeeAmount;
+        s_depositFeeAmount = 0;
+        i_USDC.safeTransfer(i_owner, amountToSend);
+    }
+
     /**
      * @notice Function called by Messenger to send USDC to a recently added pool.
      * @param chainSelector The chain selector of the new pool
@@ -282,48 +330,6 @@ contract LancaParentPool is
     }
 
     /**
-     * @notice function to manage the Cross-chain ConceroPool contracts
-     * @param chainSelector chain identifications
-     * @param pool address of the Cross-chain ConceroPool contract
-     * @dev only owner can call it
-     * @dev it's payable to save some gas.
-     * @dev this functions is used on ConceroPool.sol
-     */
-    function setPools(
-        uint64 chainSelector,
-        address pool,
-        bool isRebalancingNeeded
-    ) external payable onlyOwner {
-        if (s_childPools[chainSelector] == pool || pool == address(0)) {
-            revert InvalidAddress();
-        }
-
-        s_poolChainSelectors.push(chainSelector);
-        s_childPools[chainSelector] = pool;
-
-        if (isRebalancingNeeded) {
-            bytes32 distributeLiquidityRequestId = keccak256(
-                abi.encodePacked(pool, chainSelector, RedistributeLiquidityType.addPool)
-            );
-
-            bytes[] memory args = new bytes[](7);
-            args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
-            args[1] = abi.encodePacked(s_ethersHashSum);
-            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
-            args[3] = abi.encodePacked(chainSelector);
-            args[4] = abi.encodePacked(distributeLiquidityRequestId);
-            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
-            args[6] = abi.encodePacked(block.chainid);
-
-            bytes memory delegateCallArgs = abi.encodeWithSelector(
-                IParentPoolCLFCLA.sendCLFRequest.selector,
-                args
-            );
-            LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
-        }
-    }
-
-    /**
      * @notice Function to remove Cross-chain address disapproving transfers
      * @param chainSelector the CCIP chainSelector for the specific chain
      */
@@ -348,7 +354,7 @@ contract LancaParentPool is
      * @param amount the amount of tokens to calculate over
      * @return the fee amount
      */
-    function getDstTotalFeeInUsdc(uint256 amount) public pure override returns (uint256) {
+    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
         return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
     }
 
@@ -487,12 +493,14 @@ contract LancaParentPool is
             for (uint256 i; i < settlementTxs.length; ++i) {
                 bytes32 txId = settlementTxs[i].id;
                 uint256 txAmount = settlementTxs[i].amount;
+                /// @dev we dont have infra orchestrator
                 bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
                 if (isTxConfirmed) {
                     txAmount -= getDstTotalFeeInUsdc(txAmount);
                     s_loansInUse -= txAmount;
                 } else {
+                    /// @dev we dont have infra orchestrator
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
                     i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
