@@ -5,10 +5,9 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
+import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
-import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
-import {LancaOwnable} from "../LancaOwnable.sol";
+import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 
@@ -16,7 +15,7 @@ contract LancaParentPool is
     ILancaParentPool,
     CCIPReceiver,
     LancaParentPoolCommon,
-    LancaParentPoolStorage
+    LancaParentPoolStorageSetters
 {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
@@ -69,6 +68,7 @@ contract LancaParentPool is
         i_donHostedSecretsVersion = donHostedSecretsVersion;
     }
 
+    //@dev TODO: move to LancaPoolStorageSetters
     /* MODIFIERS */
     /**
      * @notice CCIP Modifier to check Chains And senders
@@ -243,7 +243,7 @@ contract LancaParentPool is
     /**
      * @notice function to manage the Cross-chain ConceroPool contracts
      * @param chainSelector chain identifications
-     * @param _pool address of the Cross-chain ConceroPool contract
+     * @param pool address of the Cross-chain ConceroPool contract
      * @dev only owner can call it
      * @dev it's payable to save some gas.
      * @dev this functions is used on ConceroPool.sol

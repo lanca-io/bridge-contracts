@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-abstract contract LancaParentPoolStorageSetters is LancaParentPoolStorage, LancaOwnable {
-    constructor(address owner) LancaOwnable(owner) {}
-
+abstract contract LancaParentPoolStorageSetters is LancaParentPoolStorage {
     function setDonHostedSecretsSlotId(uint8 slotId) external payable onlyOwner {
         s_donHostedSecretsSlotId = slotId;
     }
 
     /**
      * @notice Function to set the Don Secrets Version from Chainlink Functions
-     * @param _version the version
+     * @param version the version
      * @dev this functions was used inside of ConceroFunctions
      */
     function setDonHostedSecretsVersion(uint64 version) external payable onlyOwner {
@@ -19,7 +17,7 @@ abstract contract LancaParentPoolStorageSetters is LancaParentPoolStorage, Lanca
 
     /**
      * @notice Function to set the Source JS code for Chainlink Functions
-     * @param _hashSum  the JsCode
+     * @param hashSum  the JsCode
      * @dev this functions was used inside of ConceroFunctions
      */
     function setCollectLiquidityJsCodeHashSum(bytes32 hashSum) external payable onlyOwner {
@@ -32,7 +30,7 @@ abstract contract LancaParentPoolStorageSetters is LancaParentPoolStorage, Lanca
 
     /**
      * @notice Function to set the Ethers JS code for Chainlink Functions
-     * @param _ethersHashSum the JsCode
+     * @param ethersHashSum the JsCode
      * @dev this functions was used inside of ConceroFunctions
      */
     function setEthersHashSum(bytes32 ethersHashSum) external payable onlyOwner {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
+import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaPoolStorage} from "./LancaPoolStorage.sol";
 
 abstract contract LancaParentPoolStorage is LancaPoolStorage {
