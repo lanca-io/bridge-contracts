@@ -21,4 +21,10 @@ interface ICcip {
         CcipTxType ccipTxType;
         bytes data;
     }
+
+    struct CcipSettlementTx {
+        bytes32 id;
+        uint256 amount;
+        address recipient;
+    }
 }
