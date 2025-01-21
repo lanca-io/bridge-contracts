@@ -16,8 +16,7 @@ contract LancaParentPool is
     ILancaParentPool,
     CCIPReceiver,
     LancaParentPoolCommon,
-    LancaParentPoolStorage,
-    LancaOwnable
+    LancaParentPoolStorage
 {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
@@ -57,8 +56,7 @@ contract LancaParentPool is
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers)
-        LancaOwnable(owner)
+        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers, owner)
     {
         i_linkToken = LinkTokenInterface(link);
         i_owner = _owner;
