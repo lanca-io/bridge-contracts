@@ -120,7 +120,6 @@ interface ILancaParentPool is ILancaPool {
     error NotAllowedToCompleteDeposit();
     /// @notice error emitted when the request doesn't exist
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
-    error NotOwner();
     error OnlyRouterCanFulfill(address);
     error Unauthorized();
     error NotUsdcToken();
