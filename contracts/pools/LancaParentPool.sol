@@ -5,6 +5,7 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
@@ -98,8 +99,9 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
     }
 
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
-        (bool isTriggerNeeded, bytes memory data) = IParentPoolCLFCLAViewDelegate(address(this))
-            .checkUpkeepViaDelegate();
+        (bool isTriggerNeeded, bytes memory data) = ILancaParentPoolCLFCLAViewDelegate(
+            address(this)
+        ).checkUpkeepViaDelegate();
 
         return (isTriggerNeeded, data);
     }
@@ -207,10 +209,8 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         uint256 clpAmount
     ) external view returns (uint256) {
         return
-            IParentPoolCLFCLAViewDelegate(address(this)).calculateWithdrawableAmountViaDelegateCall(
-                childPoolsBalance,
-                clpAmount
-            );
+            ILancaParentPoolCLFCLAViewDelegate(address(this))
+                .calculateWithdrawableAmountViaDelegateCall(childPoolsBalance, clpAmount);
     }
 
     function calculateWithdrawableAmountViaDelegateCall(
@@ -324,7 +324,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
 
     function takeLoan(address token, uint256 amount, address receiver) external payable {
         require(receiver != ZERO_ADDRESS, InvalidAddress());
-        if (token != address(i_USDC)) revert NotUsdcToken();
+        require(token == address(i_USDC), NotUsdcToken());
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
     }
@@ -481,14 +481,12 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        if (ccipReceivedToken != address(i_USDC)) {
-            revert NotUsdcToken();
-        }
+        require(ccipReceivedToken == address(i_USDC), NotUsdcToken());
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            IConceroBridge.CcipSettlementTx[] memory settlementTxs = abi.decode(
+            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
                 ccipTxData.data,
-                (IConceroBridge.CcipSettlementTx[])
+                (ICcip.CcipSettlementTx[])
             );
             for (uint256 i; i < settlementTxs.length; ++i) {
                 bytes32 txId = settlementTxs[i].id;
@@ -526,6 +524,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
 
             s_withdrawAmountLocked += ccipReceivedAmount;
 
+            /// @dev why this number is 10?
             if (request.remainingLiquidityFromChildPools < 10) {
                 _completeWithdrawal(withdrawalId);
             }
@@ -546,7 +545,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         uint256 amount,
         ICcip.CcipTxType ccipTxType
     ) internal override returns (bytes32) {
-        IInfraStorage.SettlementTx[] memory emptyBridgeTxArray;
+        ICcip.SettlementTx[] memory emptyBridgeTxArray;
         ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
             ccipTxType: ccipTxType,
             data: abi.encode(emptyBridgeTxArray)
