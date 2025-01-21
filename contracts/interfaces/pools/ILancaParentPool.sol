@@ -102,8 +102,6 @@ interface ILancaParentPool is ILancaPool {
     );
 
     /* ERRORS */
-    /// @notice error emitted when the receiver is the address(0)
-    error InvalidAddress();
     /// @notice error emitted when the CCIP message sender is not allowed.
     error SenderNotAllowed(address sender);
     error WithdrawalRequestAlreadyExists();

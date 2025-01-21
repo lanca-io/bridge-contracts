@@ -26,9 +26,6 @@ interface ILancaChildPool is ILancaPool {
     /* ERRORS */
     error Unauthorized();
     
-    ///@notice error emitted when the receiver is the address(0)
-    error InvalidAddress();
-
     ///@notice error emitted if the array is empty.
     error NoPoolsToDistribute();
     error DistributeLiquidityRequestAlreadyProceeded(bytes32 reqId);

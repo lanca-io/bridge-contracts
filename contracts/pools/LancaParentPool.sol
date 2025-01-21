@@ -13,10 +13,12 @@ import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol
 import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaLib} from "../libraries/LancaLib.sol";
+import {ErrorsLib} from "../libraries/ErrorsLib.sol";
 
 contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
+    using ErrorsLib for *;
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -312,7 +314,10 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         uint256 amountToSend,
         bytes32 requestId
     ) external onlyMessenger {
-        require(s_childPools[chainSelector] != ZERO_ADDRESS, InvalidAddress());
+        require(
+            s_childPools[chainSelector] != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         require(
             !s_distributeLiquidityRequestProcessed[requestId],
             DistributeLiquidityRequestAlreadyProceeded(requestId)
@@ -323,7 +328,10 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
     }
 
     function takeLoan(address token, uint256 amount, address receiver) external payable {
-        require(receiver != ZERO_ADDRESS, InvalidAddress());
+        require(
+            receiver != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         require(token == address(i_USDC), NotUsdcToken());
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;

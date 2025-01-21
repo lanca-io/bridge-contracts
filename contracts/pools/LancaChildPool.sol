@@ -12,9 +12,11 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
+import {ErrorsLib} from "../libraries/ErrorsLib.sol";
 
 contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
+    using ErrorsLib for *;
 
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
@@ -57,8 +59,11 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     receive() external payable {}
 
     function takeLoan(address token, uint256 amount, address receiver) external payable {
-        require(receiver != ZERO_ADDRESS, InvalidAddress());
-        require(token == address(i_USDC), NotUsdcToken());
+        require(
+            receiver != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
+        require(token == address(i_USDC), ErrorsLib.NotUsdcToken());
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
     }
@@ -80,7 +85,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         uint256 amountToSend,
         bytes32 distributeLiquidityRequestId
     ) external onlyMessenger {
-        require(s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS, InvalidAddress());
+        require(
+            s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         require(
             !s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId],
             DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId)
@@ -101,7 +109,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         uint256 amountToSend,
         bytes32 withdrawalId
     ) external onlyMessenger {
-        require(s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS, InvalidAddress());
+        require(
+            s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         require(!s_isWithdrawalRequestTriggered[withdrawalId], WithdrawalAlreadyTriggered());
 
         s_isWithdrawalRequestTriggered[withdrawalId] = true;
