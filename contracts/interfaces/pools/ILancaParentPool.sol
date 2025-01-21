@@ -111,8 +111,7 @@ interface ILancaParentPool is ILancaPool {
     error DepositRequestNotReady();
     error DepositsOnTheWayArrayFull();
     error WithdrawAmountBelowMinimum(uint256 minAmount);
-    /// @notice error emitted when the caller is not the Orchestrator
-    error NotConceroInfraProxy();
+
     /// @notice error emitted when the max amount accepted by the pool is reached
     error MaxDepositCapReached(uint256 maxCap);
     error DistributeLiquidityRequestAlreadyProceeded(bytes32 requestId);
