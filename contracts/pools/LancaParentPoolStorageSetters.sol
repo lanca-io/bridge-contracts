@@ -85,7 +85,7 @@ abstract contract LancaParentPoolStorageSetters is
             args[6] = abi.encodePacked(block.chainid);
 
             bytes memory delegateCallArgs = abi.encodeWithSelector(
-                IParentPoolCLFCLA.sendCLFRequest.selector,
+                ILancaParentPoolCLFCLA.sendCLFRequest.selector,
                 args
             );
             LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
