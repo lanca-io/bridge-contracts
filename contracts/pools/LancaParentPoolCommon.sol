@@ -10,12 +10,6 @@ import {LPToken} from "../LPToken.sol";
  */
 contract LancaParentPoolCommon {
     /**
-     * @notice Thrown when the function is not being executed in the proxy context.
-     * @param sender the address of the sender
-     */
-    error NotParentPoolProxy(address sender);
-
-    /**
      * @notice Thrown when the caller is not an approved messenger.
      */
     error NotMessenger();
