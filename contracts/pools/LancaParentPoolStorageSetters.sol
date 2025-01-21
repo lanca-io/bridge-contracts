@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
+
 abstract contract LancaParentPoolStorageSetters is LancaParentPoolStorage {
     function setDonHostedSecretsSlotId(uint8 slotId) external payable onlyOwner {
         s_donHostedSecretsSlotId = slotId;
