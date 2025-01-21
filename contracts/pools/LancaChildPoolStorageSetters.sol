@@ -12,7 +12,7 @@ abstract contract LancaChildPoolStorageSetters is
     ILancaChildPool,
     LancaOwnable
 {
-    using ErrorsLib for address;
+    using ErrorsLib for *;
 
     constructor(address owner) LancaOwnable(owner) {}
 
