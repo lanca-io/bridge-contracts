@@ -20,6 +20,14 @@ contract LancaParentPool is
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
 
+    /* CONSTANT VARIABLES */
+    //TODO: move testnet-mainnet-dependent variables to immutables
+    uint256 internal constant MIN_DEPOSIT = 100 * USDC_DECIMALS;
+    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
+    uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
+    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
     ILancaParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
@@ -29,14 +37,6 @@ contract LancaParentPool is
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
     uint8 internal immutable i_donHostedSecretsSlotId;
     uint64 internal immutable i_donHostedSecretsVersion;
-
-    /* CONSTANT VARIABLES */
-    //TODO: move testnet-mainnet-dependent variables to immutables
-    uint256 internal constant MIN_DEPOSIT = 100 * USDC_DECIMALS;
-    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
-    uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
-    uint256 internal constant LP_FEE_FACTOR = 1000;
-    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     constructor(
         address parentPoolProxy,
@@ -59,7 +59,6 @@ contract LancaParentPool is
         LancaParentPoolStorageSetters(owner)
     {
         i_linkToken = LinkTokenInterface(link);
-        i_owner = owner;
         i_parentPoolCLFCLA = ILancaParentPoolCLFCLA(parentPoolCLFCLA);
         i_clfRouter = clfRouter;
         i_automationForwarder = automationForwarder;
@@ -82,6 +81,7 @@ contract LancaParentPool is
     }
 
     /* EXTERNAL FUNCTIONS */
+    receive() external payable {}
 
     /**
      * @notice Allows a user to initiate the deposit. Currently supports USDC only.
