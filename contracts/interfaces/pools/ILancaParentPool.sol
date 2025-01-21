@@ -139,6 +139,11 @@ interface ILancaParentPool is ILancaPool {
         uint256 clpAmount
     ) external view returns (uint256);
 
+    function calculateLPTokensToMint(
+        uint256 childPoolsBalance,
+        uint256 amountToDeposit
+    ) external view returns (uint256);
+
     function setPoolCap(uint256 newCap) external payable;
 
     function withdrawDepositFees() external payable;
