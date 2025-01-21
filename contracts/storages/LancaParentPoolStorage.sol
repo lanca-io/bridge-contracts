@@ -2,8 +2,9 @@
 pragma solidity 0.8.28;
 
 import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
+import {LancaPoolStorage} from "./LancaPoolStorage.sol";
 
-abstract contract LancaParentPoolStorage {
+abstract contract LancaParentPoolStorage is LancaPoolStorage {
     /* STATE VARIABLES */
 
     /// @notice variable to store the maximum value that can be deposited on this pool
@@ -35,8 +36,6 @@ abstract contract LancaParentPoolStorage {
     bytes32 internal s_ethersHashSum;
 
     /* ARRAYS */
-    /// @notice Array of Pools to receive Liquidity through `ccipSend` function
-    uint64[] internal s_poolChainSelectors;
 
     /// @notice Storage for deposit tracking
     ILancaParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
@@ -47,13 +46,6 @@ abstract contract LancaParentPoolStorage {
     /* MAPPINGS */
     /// @notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
     mapping(uint64 chainSelector => address pool) public s_childPools;
-
-    /// @notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address poolAddress => bool))
-        public s_isSenderContractAllowed;
-
-    /// @notice Mapping to keep track of Liquidity Providers withdraw requests
-    mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
 
     mapping(bytes32 clfReqId => ILancaParentPool.CLFRequestType) public s_clfRequestTypes;
 
