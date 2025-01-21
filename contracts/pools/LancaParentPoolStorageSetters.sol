@@ -89,7 +89,7 @@ abstract contract LancaParentPoolStorageSetters is
                 IParentPoolCLFCLA.sendCLFRequest.selector,
                 args
             );
-            LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+            LancaLib.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
         }
     }
 }
