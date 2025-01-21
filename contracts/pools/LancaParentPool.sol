@@ -59,7 +59,7 @@ contract LancaParentPool is
         LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers, owner)
     {
         i_linkToken = LinkTokenInterface(link);
-        i_owner = _owner;
+        i_owner = owner;
         i_parentPoolCLFCLA = ILancaParentPoolCLFCLA(parentPoolCLFCLA);
         i_clfRouter = clfRouter;
         i_automationForwarder = automationForwarder;
