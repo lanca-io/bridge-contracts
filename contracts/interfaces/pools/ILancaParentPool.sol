@@ -129,21 +129,11 @@ interface ILancaParentPool is ILancaPool {
     /* FUNCTIONS */
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
     function startDeposit(uint256 usdcAmount) external;
-    function distributeLiquidity(
-        uint64 chainSelector,
-        uint256 amountToSend,
-        bytes32 distributeLiquidityRequestId
-    ) external;
+
     function setPools(
         uint64 chainSelector,
         address pool,
         bool isRebalancingNeeded
-    ) external payable;
-
-    function setConceroContractSender(
-        uint64 chainSelector,
-        address contractAddress,
-        bool isAllowed
     ) external payable;
 
     function calculateWithdrawableAmount(
