@@ -92,7 +92,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
         );
     }
 
-    /// @inheritdoc ILancaIntegration
+    /// @inheritdoc LancaIntegration
     function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
         address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {
