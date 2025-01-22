@@ -4,7 +4,6 @@ pragma solidity 0.8.28;
 /// @title Pause Dummy
 /// @dev This contract is a dummy that reverts all calls. It is used in the tests
 /// to simulate a paused contract.
-/// @custom:security-contact security@concero.io
 contract PauseDummy {
     /// @notice Reverts when the contract is paused.
     error Paused();
