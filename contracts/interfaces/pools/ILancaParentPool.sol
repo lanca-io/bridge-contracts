@@ -101,6 +101,21 @@ interface ILancaParentPool is ILancaPool {
         uint256 lpTokensToMint
     );
 
+    event CLFRequestError(
+        bytes32 indexed requestId,
+        ILancaParentPool.CLFRequestType requestType,
+        bytes err
+    );
+    event RetryWithdrawalPerformed(bytes32 id);
+    event WithdrawUpkeepPerformed(bytes32 id);
+    event WithdrawRequestUpdated(bytes32 id);
+    event PendingWithdrawRequestAdded(bytes32 id);
+    event WithdrawalRequestInitiated(
+        bytes32 indexed requestId,
+        address caller,
+        uint256 triggedAtTimestamp
+    );
+
     /* ERRORS */
     /// @notice error emitted when the CCIP message sender is not allowed.
     error SenderNotAllowed(address sender);
@@ -121,6 +136,11 @@ interface ILancaParentPool is ILancaPool {
     error Unauthorized();
     error NotUsdcToken();
     error DepositDeadlinePassed();
+
+    error WithdrawalAlreadyTriggered(bytes32 id);
+    error WithdrawalRequestDoesntExist(bytes32 id);
+    error WithdrawalRequestNotReady(bytes32 id);
+    error WithdrawalAlreadyPerformed(bytes32 id);
 
     /* FUNCTIONS */
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
@@ -145,4 +165,19 @@ interface ILancaParentPool is ILancaPool {
     function setPoolCap(uint256 newCap) external payable;
 
     function withdrawDepositFees() external payable;
+
+    function sendCLFRequest(bytes[] memory args) external returns (bytes32);
+
+    function calculateWithdrawableAmount(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256);
+
+    function fulfillRequestWrapper(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) external;
+
+    function retryPerformWithdrawalRequest() external;
 }
