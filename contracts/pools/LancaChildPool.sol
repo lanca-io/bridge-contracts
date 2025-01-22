@@ -63,7 +63,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             receiver != ZERO_ADDRESS,
             ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
         );
-        require(token == address(i_USDC), ErrorsLib.NotUsdcToken());
+        require(
+            token == address(i_USDC),
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.notUsdcToken)
+        );
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
     }
