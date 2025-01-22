@@ -42,7 +42,6 @@ contract LancaParentPool is
 
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
-    ILancaParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
@@ -52,7 +51,6 @@ contract LancaParentPool is
 
     constructor(
         address parentPoolProxy,
-        address parentPoolCLFCLA,
         address automationForwarder,
         address link,
         address ccipRouter,
@@ -72,7 +70,6 @@ contract LancaParentPool is
         LancaParentPoolStorageSetters(owner)
     {
         i_linkToken = LinkTokenInterface(link);
-        i_parentPoolCLFCLA = ILancaParentPoolCLFCLA(parentPoolCLFCLA);
         i_clfRouter = clfRouter;
         i_automationForwarder = automationForwarder;
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
@@ -165,15 +162,7 @@ contract LancaParentPool is
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
-            args
-        );
-        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
-            address(i_parentPoolCLFCLA),
-            delegateCallArgs
-        );
-        bytes32 clfRequestId = bytes32(delegateCallResponse);
+        bytes32 clfRequestId = sendClfRequest(args);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
@@ -216,6 +205,10 @@ contract LancaParentPool is
         emit DepositCompleted(depositRequestId, lpAddress, usdcAmount, lpTokensToMint);
 
         delete s_depositRequests[depositRequestId];
+    }
+
+    function sendCLFRequest(bytes[] memory args) external returns (bytes32) {
+        return _sendRequest(args);
     }
 
     function calculateWithdrawableAmount(
@@ -292,15 +285,7 @@ contract LancaParentPool is
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
-            args
-        );
-        bytes memory delegateCallResponse = LancaLib.safeDelegateCall(
-            address(i_parentPoolCLFCLA),
-            delegateCallArgs
-        );
-        bytes32 clfRequestId = bytes32(delegateCallResponse);
+        bytes32 clfRequestId = sendCLFRequest(args);
 
         bytes32 withdrawalId = keccak256(
             abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
