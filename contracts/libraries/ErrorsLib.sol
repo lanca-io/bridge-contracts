@@ -5,7 +5,8 @@ library ErrorsLib {
     enum InvalidAddressType {
         zeroAddress,
         notMessenger,
-        unsupportedCcipToken
+        unsupportedCcipToken,
+        notOwner
     }
 
     /// @dev Reverts when the address is invalid.
