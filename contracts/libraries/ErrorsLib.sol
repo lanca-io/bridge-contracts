@@ -6,7 +6,8 @@ library ErrorsLib {
         zeroAddress,
         notMessenger,
         unsupportedCcipToken,
-        notOwner
+        notOwner,
+        notUsdcToken
     }
 
     /// @dev Reverts when the address is invalid.
