@@ -13,5 +13,9 @@ abstract contract LancaOrchestratorStorage is ReentrancyGuard {
     /// @notice mapping to keep track of allowed routers to perform swaps.
     mapping(address router => bool isAllowed) internal s_routerAllowed;
 
+    mapping(address sender => bool isAllowed) internal s_isLancaBridgeSenderAllowed;
+
+    mapping(uint64 srcChainSelector => bool isAllowed) internal s_isLancaBridgeSrcChainAllowed;
+
     /* GETTERS */
 }

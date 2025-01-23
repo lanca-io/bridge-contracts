@@ -308,6 +308,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         ) = abi.decode(conceroMessage.data, (uint8, address, address, uint24, uint256, bytes));
 
         ILancaBridgeClient.LancaBridgeData memory bridgeData = ILancaBridgeClient.LancaBridgeData({
+            id: conceroMessage.id,
             sender: sender,
             token: i_usdc,
             amount: amount,

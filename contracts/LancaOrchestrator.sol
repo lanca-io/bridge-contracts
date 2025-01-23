@@ -12,8 +12,10 @@ import {ICcip} from "./interfaces/ICcip.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
+import {LancaBridgeClient} from "./LancaBridgeClient/LancaBridgeClient.sol";
+import {LibZip} from "solady/src/utils/LibZip.sol";
 
-contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
+contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -26,7 +28,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
-    address internal immutable i_lancaBridge;
     address internal immutable i_addressThis;
 
     /* ERRORS */
@@ -34,26 +35,29 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
     error InvalidBridgeData();
     error InvalidRecipient();
     error TransferFailed();
+    error InvalidLancaBridgeSender();
+    error InvalidLancaBridgeSrcChain();
+
+    /* EVENTS */
+    event LancaBridgeReceived(bytes32 indexed id, address token, address receiver, uint256 amount);
 
     /**
      * @dev Constructor for the LancaOrchestrator contract.
      * @param usdc The address of the USDC token.
      * @param lancaBridge The address of the LancaBridge contract.
      */
-    constructor(address usdc, address lancaBridge) LancaDexSwap(msg.sender) {
+    constructor(
+        address usdc,
+        address lancaBridge
+    ) LancaDexSwap(msg.sender) LancaBridgeClient(lancaBridge) {
         i_usdc = usdc;
-        i_lancaBridge = lancaBridge;
+        // @dev TODO: remove it, it is wrong!
         i_addressThis = address(this);
     }
 
     /* MODIFIERS */
     modifier validateSwapData(ILancaDexSwap.SwapData[] memory swapData) {
-        require(
-            swapData.length != 0 &&
-                swapData.length <= MAX_TOKEN_PATH_LENGTH &&
-                swapData[0].fromAmount != 0,
-            InvalidSwapData()
-        );
+        _validateSwapData(swapData);
         _;
     }
 
@@ -144,7 +148,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
             message: compressedDstSwapData
         });
 
-        ILancaBridge(i_lancaBridge).bridge(bridgeData);
+        ILancaBridge(getLancaBridge()).bridge(bridgeData);
     }
 
     /// @inheritdoc ILancaDexSwap
@@ -202,5 +206,52 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
         return integratorFeeAmount;
     }
 
-    /* PRIVATE FUNCTIONS */
+    function _lancaBridgeReceive(LancaBridgeData calldata bridgeData) internal override {
+        // @dev: mb it is possible to pack it into one sload
+        require(s_isLancaBridgeSenderAllowed[bridgeData.sender], InvalidLancaBridgeSender());
+        require(
+            s_isLancaBridgeSrcChainAllowed[bridgeData.srcChainSelector],
+            InvalidLancaBridgeSrcChain()
+        );
+
+        (address receiver, bytes memory compressedDstSwapData) = abi.decode(
+            bridgeData.data,
+            (address, bytes)
+        );
+
+        SwapData[] memory swapData = _decompressSwapData(compressedDstSwapData);
+
+        if (swapData.length == 0) {
+            IERC20(bridgeData.token).safeTransfer(receiver, bridgeData.amount);
+        } else {
+            swapData[0].fromToken = bridgeData.token;
+            swapData[0].fromAmount = bridgeData.amount;
+
+            _validateSwapData(swapData);
+            _swap(swapData, receiver);
+        }
+
+        emit LancaBridgeReceived(bridgeData.id, bridgeData.token, receiver, bridgeData.amount);
+    }
+
+    function _decompressSwapData(
+        bytes memory compressedSwapData
+    ) internal pure returns (SwapData[] memory swapData) {
+        bytes memory decompressedSwapData = LibZip.cdDecompress(compressedSwapData);
+
+        if (decompressedSwapData.length == 0) {
+            return new SwapData[](0);
+        } else {
+            return abi.decode(decompressedSwapData, (SwapData[]));
+        }
+    }
+
+    function _validateSwapData(SwapData[] memory swapData) internal pure {
+        require(
+            swapData.length != 0 &&
+                swapData.length <= MAX_TOKEN_PATH_LENGTH &&
+                swapData[0].fromAmount != 0,
+            InvalidSwapData()
+        );
+    }
 }
