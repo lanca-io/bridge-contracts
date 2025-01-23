@@ -13,7 +13,6 @@ import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
 import {LancaBridgeClient} from "./LancaBridgeClient/LancaBridgeClient.sol";
-import {LibZip} from "solady/src/utils/LibZip.sol";
 
 contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient {
     using SafeERC20 for IERC20;
@@ -21,9 +20,8 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
     /* TYPES */
 
     /* CONSTANTS */
-    uint8 internal constant MAX_TOKEN_PATH_LENGTH = 5;
-    uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
-    uint16 internal constant BPS_DIVISOR = 10000;
+    uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1_000;
+    uint16 internal constant BPS_DIVISOR = 10_000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
 
     /* IMMUTABLES */
@@ -88,6 +86,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
         bridgeReq.amount = _swap(swapData, i_addressThis);
 
+        // @dev: we call nonReentrant 2 times, mb it is a problem
         bridge(
             bridgeReq.token,
             bridgeReq.amount,
@@ -235,24 +234,12 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         emit LancaBridgeReceived(bridgeData.id, bridgeData.token, receiver, bridgeData.amount);
     }
 
-    function _decompressSwapData(
-        bytes memory compressedSwapData
-    ) internal pure returns (SwapData[] memory swapData) {
-        bytes memory decompressedSwapData = LibZip.cdDecompress(compressedSwapData);
-
-        if (decompressedSwapData.length == 0) {
-            return new SwapData[](0);
-        } else {
-            return abi.decode(decompressedSwapData, (SwapData[]));
+    /// @notice Calculates the Lanca fee for a given amount.
+    /// @param amount the amount for which to calculate the fee
+    /// @return the calculated Lanca fee
+    function _getLancaFee(uint256 amount) internal pure virtual returns (uint256) {
+        unchecked {
+            return (amount / LANCA_FEE_FACTOR);
         }
-    }
-
-    function _validateSwapData(SwapData[] memory swapData) internal pure {
-        require(
-            swapData.length != 0 &&
-                swapData.length <= MAX_TOKEN_PATH_LENGTH &&
-                swapData[0].fromAmount != 0,
-            InvalidSwapData()
-        );
     }
 }
