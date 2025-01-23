@@ -9,6 +9,7 @@ interface ILancaBridge {
         address token;
         address feeToken;
         address receiver;
+        address fallbackReceiver;
         uint64 dstChainSelector;
         uint32 dstChainGasLimit;
         bytes message;

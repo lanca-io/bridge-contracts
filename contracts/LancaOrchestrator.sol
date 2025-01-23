@@ -143,6 +143,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
             token: token,
             feeToken: i_usdc,
             receiver: dstLancaContract,
+            fallbackReceiver: msg.sender,
             dstChainSelector: dstChainSelector,
             dstChainGasLimit: DST_CHAIN_GAS_LIMIT,
             message: compressedDstSwapData

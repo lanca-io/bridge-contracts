@@ -14,7 +14,7 @@ import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 
-contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
+contract LancaBridge is LancaBridgeStorage, ConceroClient, ILancaBridge {
     using SafeERC20 for IERC20;
 
     /* ERRORS */
@@ -52,7 +52,8 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     struct CcipSettlementTxs {
         bytes32 id;
-        bytes32 bridgeDataHash;
+        address receiver;
+        uint256 amount;
     }
 
     /* CONSTANTS */
@@ -110,19 +111,10 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         });
 
         bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
-        bytes32 bridgeDataHash = keccak256(
-            abi.encode(
-                bridgeReq.amount,
-                bridgeReq.token,
-                bridgeReq.receiver,
-                bridgeReq.dstChainSelector,
-                uint24(bridgeReq.dstChainGasLimit),
-                keccak256(bridgeReq.message)
-            )
-        );
+
         uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
             conceroMessageId,
-            bridgeDataHash,
+            bridgeReq.fallbackReceiver,
             amountToSendAfterFee,
             bridgeReq.dstChainSelector
         );
@@ -168,12 +160,16 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     function _addPendingSettlementTx(
         bytes32 conceroMessageId,
-        bytes32 bridgeDataHash,
+        address fallbackReceiver,
         uint256 amount,
         uint64 dstChainSelector
     ) internal returns (uint256) {
         s_pendingSettlementIdsByDstChain[dstChainSelector].push(conceroMessageId);
-        s_pendingSettlementTxHashById[conceroMessageId] = bridgeDataHash;
+        PendingSettlementTx memory settlementTx = PendingSettlementTx({
+            receiver: fallbackReceiver,
+            amount: amount
+        });
+        s_pendingSettlementTxById[conceroMessageId] = settlementTx;
         return s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amount;
     }
 
@@ -216,10 +212,11 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         CcipSettlementTxs[] memory ccipSettlementTxs = new CcipSettlementTxs[](pendingTxsLength);
 
         for (uint256 i; i < pendingTxsLength; ++i) {
-            ccipSettlementTxs[i] = CcipSettlementTxs(
-                pendingTxs[i],
-                s_pendingSettlementTxHashById[pendingTxs[i]]
-            );
+            ccipSettlementTxs[i] = CcipSettlementTxs({
+                id: pendingTxs[i],
+                receiver: s_pendingSettlementTxById[pendingTxs[i]].receiver,
+                amount: s_pendingSettlementTxById[pendingTxs[i]].amount
+            });
         }
 
         return ccipSettlementTxs;
