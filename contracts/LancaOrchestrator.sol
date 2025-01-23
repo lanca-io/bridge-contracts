@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaDexSwap} from "./LancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
@@ -12,7 +13,7 @@ import {LancaLib} from "./libraries/LancaLib.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
 
-contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, LancaIntegration {
+contract LancaOrchestrator is LancaDexSwap, LancaIntegration {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -39,7 +40,7 @@ contract LancaOrchestrator is LancaOrchestratorStorageSetters, LancaDexSwap, Lan
      * @param usdc The address of the USDC token.
      * @param lancaBridge The address of the LancaBridge contract.
      */
-    constructor(address usdc, address lancaBridge) LancaOrchestratorStorageSetters(msg.sender) {
+    constructor(address usdc, address lancaBridge) LancaDexSwap(msg.sender) {
         i_usdc = usdc;
         i_lancaBridge = lancaBridge;
         i_addressThis = address(this);

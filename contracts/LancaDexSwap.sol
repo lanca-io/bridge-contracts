@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
+import {ZERO_ADDRESS} from "./Constants.sol";
+import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 
-abstract contract LancaDexSwap is ILancaDexSwap {
+abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters {
+    using SafeERC20 for IERC20;
+
     /* CONSTANTS */
     uint16 internal constant LANCA_FEE_FACTOR = 1000;
+
+    constructor(address owner) LancaOrchestratorStorageSetters(owner) {}
 
     /* INTERNAL FUNCTIONS */
 
@@ -20,18 +28,19 @@ abstract contract LancaDexSwap is ILancaDexSwap {
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
     ) internal virtual returns (uint256) {
+        address addressThis = address(this);
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
-        uint256 dstTokenProxyInitialBalance = LancaLib.getBalance(dstToken, i_addressThis);
+        uint256 dstTokenProxyInitialBalance = LancaLib.getBalance(dstToken, addressThis);
         uint256 balanceAfter;
 
         for (uint256 i; i < swapDataLength; ++i) {
-            uint256 balanceBefore = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
+            uint256 balanceBefore = LancaLib.getBalance(swapData[i].toToken, addressThis);
 
             _performSwap(swapData[i]);
 
-            balanceAfter = LancaLib.getBalance(swapData[i].toToken, i_addressThis);
+            balanceAfter = LancaLib.getBalance(swapData[i].toToken, addressThis);
             uint256 tokenReceived = balanceAfter - balanceBefore;
             require(tokenReceived >= swapData[i].toAmountMin, InsufficientAmount(tokenReceived));
 
@@ -46,7 +55,7 @@ abstract contract LancaDexSwap is ILancaDexSwap {
 
         uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
 
-        if (receiver != i_addressThis) {
+        if (receiver != addressThis) {
             LancaLib.transferTokenToUser(receiver, dstToken, dstTokenReceived);
         }
 
