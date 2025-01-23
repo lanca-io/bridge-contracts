@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 interface ILancaBridge {
     /* TYPES */
 
-    struct BridgeData {
+    struct BridgeReq {
         uint256 amount;
         address token;
         address feeToken;
@@ -15,5 +15,5 @@ interface ILancaBridge {
     }
 
     /* FUNCTIONS */
-    function bridge(BridgeData calldata bridgeData) external;
+    function bridge(BridgeReq calldata bridgeReq) external;
 }

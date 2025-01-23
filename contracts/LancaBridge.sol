@@ -81,88 +81,88 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     /* EXTERNAL FUNCTIONS */
 
-    function bridge(BridgeData calldata bridgeData) external {
-        _validateBridgeData(bridgeData);
-        uint256 fee = _getFee(bridgeData);
-        require(bridgeData.amount > fee, InsufficientBridgeAmount());
+    function bridge(BridgeReq calldata bridgeReq) external {
+        _validateBridgeReq(bridgeReq);
+        uint256 fee = _getFee(bridgeReq);
+        require(bridgeReq.amount > fee, InsufficientBridgeAmount());
 
-        IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+        IERC20(bridgeReq.token).safeTransferFrom(msg.sender, address(this), bridgeReq.amount);
 
-        uint256 amountToSendAfterFee = bridgeData.amount - fee;
-        address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeData.dstChainSelector];
+        uint256 amountToSendAfterFee = bridgeReq.amount - fee;
+        address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeReq.dstChainSelector];
         require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
         bytes memory bridgeDataMessage = abi.encode(
             LancaBridgeMessageVersion.V1,
             msg.sender,
-            bridgeData.receiver,
-            uint24(bridgeData.dstChainGasLimit),
-            bridgeData.amount,
-            bridgeData.message
+            bridgeReq.receiver,
+            uint24(bridgeReq.dstChainGasLimit),
+            bridgeReq.amount,
+            bridgeReq.message
         );
 
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: i_usdc,
             receiver: dstLancaBridgeContract,
-            dstChainSelector: bridgeData.dstChainSelector,
-            dstChainGasLimit: bridgeData.dstChainGasLimit,
+            dstChainSelector: bridgeReq.dstChainSelector,
+            dstChainGasLimit: bridgeReq.dstChainGasLimit,
             data: bridgeDataMessage
         });
 
         bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
         bytes32 bridgeDataHash = keccak256(
             abi.encode(
-                bridgeData.amount,
-                bridgeData.token,
-                bridgeData.receiver,
-                bridgeData.dstChainSelector,
-                uint24(bridgeData.dstChainGasLimit),
-                keccak256(bridgeData.message)
+                bridgeReq.amount,
+                bridgeReq.token,
+                bridgeReq.receiver,
+                bridgeReq.dstChainSelector,
+                uint24(bridgeReq.dstChainGasLimit),
+                keccak256(bridgeReq.message)
             )
         );
         uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
             conceroMessageId,
             bridgeDataHash,
             amountToSendAfterFee,
-            bridgeData.dstChainSelector
+            bridgeReq.dstChainSelector
         );
 
         if (
             updatedBatchedTxAmount >= BATCHED_TX_THRESHOLD ||
-            s_pendingSettlementIdsByDstChain[bridgeData.dstChainSelector].length >=
+            s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
             MAX_PENDING_SETTLEMENT_TXS_BY_LANE
         ) {
             _sendBatchViaSettlement(
-                bridgeData.token,
+                bridgeReq.token,
                 updatedBatchedTxAmount,
-                bridgeData.dstChainSelector
+                bridgeReq.dstChainSelector
             );
         }
 
         emit LancaBridgeSent(
             conceroMessageId,
-            bridgeData.token,
+            bridgeReq.token,
             amountToSendAfterFee,
-            bridgeData.receiver,
-            bridgeData.dstChainSelector
+            bridgeReq.receiver,
+            bridgeReq.dstChainSelector
         );
     }
 
-    function getFee(BridgeData calldata bridgeData) external view returns (uint256) {
-        _validateBridgeData(bridgeData);
-        return _getFee(bridgeData);
+    function getFee(BridgeReq calldata bridgeReq) external view returns (uint256) {
+        _validateBridgeReq(bridgeReq);
+        return _getFee(bridgeReq);
     }
 
     /* INTERNAL FUNCTIONS */
 
-    function _validateBridgeData(BridgeData calldata bridgeData) internal view {
-        require(bridgeData.token == i_usdc, InvalidBridgeToken());
-        require(bridgeData.feeToken == i_usdc, InvalidFeeToken());
-        require(bridgeData.receiver != ZERO_ADDRESS, InvalidReceiver());
-        require(bridgeData.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
+    function _validateBridgeReq(BridgeReq calldata bridgeReq) internal view {
+        require(bridgeReq.token == i_usdc, InvalidBridgeToken());
+        require(bridgeReq.feeToken == i_usdc, InvalidFeeToken());
+        require(bridgeReq.receiver != ZERO_ADDRESS, InvalidReceiver());
+        require(bridgeReq.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
-    function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
+    function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
         return 0;
     }
 

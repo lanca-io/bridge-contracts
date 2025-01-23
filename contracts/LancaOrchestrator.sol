@@ -61,8 +61,8 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         _;
     }
 
-    modifier validateBridgeData(ILancaBridge.BridgeData memory bridgeData) {
-        require(bridgeData.amount != 0 && bridgeData.receiver != ZERO_ADDRESS, InvalidBridgeData());
+    modifier validateBridgeData(ILancaBridge.BridgeReq memory bridgeReq) {
+        require(bridgeReq.amount != 0 && bridgeReq.receiver != ZERO_ADDRESS, InvalidBridgeData());
         _;
     }
 
@@ -70,29 +70,29 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
     /**
      * @notice Performs a token swap followed by a cross-chain bridge operation.
-     * @param bridgeData The data required for the bridging process.
+     * @param bridgeReq The data required for the bridging process.
      * @param swapData The list of swap operations to perform before bridging.
      * @param compressedDstSwapData Additional swap data for the destination chain.
      * @param integration Integration details for fee calculation.
      */
     function swapAndBridge(
-        ILancaBridge.BridgeData memory bridgeData,
+        ILancaBridge.BridgeReq memory bridgeReq,
         ILancaDexSwap.SwapData[] memory swapData,
         bytes calldata compressedDstSwapData,
         Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
+    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeReq) {
         address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
         require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
 
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
-        bridgeData.amount = _swap(swapData, i_addressThis);
+        bridgeReq.amount = _swap(swapData, i_addressThis);
 
         bridge(
-            bridgeData.token,
-            bridgeData.amount,
-            bridgeData.receiver,
-            bridgeData.dstChainSelector,
+            bridgeReq.token,
+            bridgeReq.amount,
+            bridgeReq.receiver,
+            bridgeReq.dstChainSelector,
             compressedDstSwapData,
             integration
         );
@@ -138,7 +138,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         address dstLancaContract = s_lancaOrchestratorDstByChainSelector[dstChainSelector];
         bytes memory message = abi.encode(receiver, compressedDstSwapData);
 
-        ILancaBridge.BridgeData memory bridgeData = ILancaBridge.BridgeData({
+        ILancaBridge.BridgeReq memory bridgeReq = ILancaBridge.BridgeReq({
             amount: amount,
             token: token,
             feeToken: i_usdc,
@@ -148,7 +148,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
             message: compressedDstSwapData
         });
 
-        ILancaBridge(getLancaBridge()).bridge(bridgeData);
+        ILancaBridge(getLancaBridge()).bridge(bridgeReq);
     }
 
     /// @inheritdoc ILancaDexSwap
