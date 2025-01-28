@@ -17,7 +17,8 @@ interface ICcip {
     }
 
     /// @notice CCIP transaction data ie infraType with txIds, recipients, amounts
-    struct CcipTxData {
+    // @dev md add msg version to ccip tx struct
+    struct CcipSettleMessage {
         CcipTxType ccipTxType;
         bytes data;
     }
