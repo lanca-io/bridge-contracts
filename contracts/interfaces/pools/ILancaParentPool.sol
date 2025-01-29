@@ -185,10 +185,6 @@ interface ILancaParentPool is ILancaPool {
     /// @notice error emitted when the request doesn't exist
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 
-    /// @notice Error emitted when only the router can fulfill this action
-    /// @param addr The address attempting the action
-    error OnlyRouterCanFulfill(address addr);
-
     /// @notice Error emitted when the caller is unauthorized
     error Unauthorized();
 
