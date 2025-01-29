@@ -28,7 +28,6 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
-    //    ICcipRouterClient internal immutable i_ccipRouter;
 
     constructor(
         address conceroRouter,
@@ -38,7 +37,6 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
     ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) {
         i_usdc = usdc;
         i_link = IERC20(link);
-        //        i_ccipRouter = ICcipRouterClient(ccipRouter);
     }
 
     /* EXTERNAL FUNCTIONS */
