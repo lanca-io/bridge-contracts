@@ -81,7 +81,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
         LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
-        bridgeReq.amount = _swap(swapData, i_addressThis);
+        bridgeReq.amount = _swap(swapData, address(this));
 
         // @dev: we call nonReentrant 2 times, mb it is a problem
         bridge(
@@ -128,7 +128,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
     ) public nonReentrant {
         require(token == i_usdc, InvalidBridgeToken());
 
-        IERC20(token).safeTransferFrom(msg.sender, i_addressThis, amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         amount -= _collectIntegratorFee(token, amount, integration);
 
         address dstLancaContract = s_lancaOrchestratorDstByChainSelector[dstChainSelector];
@@ -177,7 +177,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
     function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
-            s_integratorFeesAmountByToken[i_addressThis][token] += lancaFee;
+            s_integratorFeesAmountByToken[address(this)][token] += lancaFee;
         }
         return lancaFee;
     }
