@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {ILancaBridgeStorage} from "../interfaces/ILancaBridgeStorage.sol";
 
-abstract contract LancaBridgeStorage {
+abstract contract LancaBridgeStorage is ILancaBridgeStorage {
     /// @notice Variable to store the Link to USDC latest rate
     uint256 internal s_latestLinkUsdcRate;
 

@@ -146,8 +146,8 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
         (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
-            bridgeData.dstChainSelector,
-            bridgeData.amount
+            bridgeReq.dstChainSelector,
+            bridgeReq.amount
         );
         return ccipFee + lancaFee + messengerFee;
     }
