@@ -2,6 +2,9 @@
 pragma solidity 0.8.28;
 
 abstract contract LancaBridgeStorage {
+    /// @notice Variable to store the Link to USDC latest rate
+    uint256 internal s_latestLinkUsdcRate;
+
     mapping(uint64 chainSelector => address lancaBridge) internal s_lancaBridgeContractsByChain;
     mapping(uint64 dstChainSelector => bytes32[] bridgeTxIds)
         internal s_pendingSettlementIdsByDstChain;
