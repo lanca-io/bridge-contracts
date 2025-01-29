@@ -101,7 +101,7 @@ contract LancaParentPool is
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
 
-    function handleOracleFulfillment(
+    function fulfillRequestWrapper(
         bytes32 requestId,
         bytes memory delegateCallResponse,
         bytes memory err
@@ -259,14 +259,6 @@ contract LancaParentPool is
         uint256 clpAmount
     ) external view returns (uint256) {
         return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lpToken.totalSupply());
-    }
-
-    function fulfillRequestWrapper(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) external {
-        fulfillRequest(requestId, response, err);
     }
 
     /**
@@ -949,7 +941,7 @@ contract LancaParentPool is
                 receiver: abi.encode(recipient),
                 data: abi.encode(ccipTxData),
                 tokenAmounts: tokenAmounts,
-                extraArgs: Client.argsToBytes(
+                extraArgs: Client._argsToBytes(
                     Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})
                 ),
                 feeToken: address(i_linkToken)
