@@ -50,6 +50,8 @@ contract LancaParentPool is
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
     uint8 internal immutable i_donHostedSecretsSlotId;
     uint64 internal immutable i_donHostedSecretsVersion;
+    bytes32 private immutable i_clfDonId;
+    uint64 private immutable i_clfSubId;
 
     constructor(
         address parentPoolProxy,
@@ -59,6 +61,8 @@ contract LancaParentPool is
         address usdc,
         address lpToken,
         address clfRouter,
+        uint64 clfSubId,
+        bytes32 clfDonId,
         address owner,
         bytes32 collectLiquidityJsCodeHashSum,
         bytes32 distributeLiquidityJsCodeHashSum,
@@ -78,6 +82,8 @@ contract LancaParentPool is
         i_distributeLiquidityJsCodeHashSum = distributeLiquidityJsCodeHashSum;
         i_donHostedSecretsSlotId = donHostedSecretsSlotId;
         i_donHostedSecretsVersion = donHostedSecretsVersion;
+        i_clfDonId = clfDonId;
+        i_clfSubId = clfSubId;
     }
 
     //@dev TODO: move to LancaPoolStorageSetters
