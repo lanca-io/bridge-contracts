@@ -189,15 +189,17 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             for (uint256 i; i < settlementTxs.length; ++i) {
                 bytes32 txId = settlementTxs[i].id;
                 uint256 txAmount = settlementTxs[i].amount;
-                // @dev we dont have infra orchestrator
-                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+
+                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+                // @dev change it
+                bool isTxConfirmed = true;
 
                 if (isTxConfirmed) {
                     txAmount -= getDstTotalFeeInUsdc(txAmount);
                     s_loansInUse -= txAmount;
                 } else {
                     // @dev we dont have infra orchestrator
-                    IInfraOrchestrator(i_infraProxy).confirmTx(txId);
+                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
                     i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
