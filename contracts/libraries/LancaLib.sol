@@ -4,10 +4,12 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
+import {ErrorsLib} from "./ErrorsLib.sol";
 import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM, CHAIN_ID_AVALANCHE, CHAIN_ID_ARBITRUM, CHAIN_ID_BASE, CHAIN_ID_POLYGON, CHAIN_ID_OPTIMISM, CHAIN_ID_ETHEREUM} from "../Constants.sol";
 
 library LancaLib {
     using SafeERC20 for IERC20;
+    using ErrorsLib for *;
 
     /* ERRORS */
     /// @dev Reverts when transfer data is invalid (e.g., zero amount or recipient address).
@@ -28,11 +30,9 @@ library LancaLib {
     /// @param tokenType The unsupported token type.
     error TokenTypeNotSupported(ICcip.CcipToken tokenType);
 
-    /// @dev Reverts when the token transfer is attempted to the null address.
-    error TransferToNullAddress();
-
-    /// @dev Reverts when the token is not an ERC20 token.
-    error TokenIsNotERC20();
+    /// @dev Reverts when the delegate call failed.
+    /// @param data The data that was passed to the delegate call.
+    error UnableToCompleteDelegateCall(bytes data);
 
     /**
      * @dev Returns the balance of the token for the contractAddress.
@@ -65,14 +65,26 @@ library LancaLib {
     }
 
     function transferFromERC20(address token, address from, address to, uint256 amount) internal {
-        require(token != ZERO_ADDRESS, TokenIsNotERC20());
-        require(to != ZERO_ADDRESS, TransferToNullAddress());
+        require(
+            token != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
+        require(
+            to != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         IERC20(token).safeTransferFrom(from, to, amount);
     }
 
     function transferERC20(address token, uint256 amount, address recipient) internal {
-        require(token != ZERO_ADDRESS, TokenIsNotERC20());
-        require(recipient != ZERO_ADDRESS, TransferToNullAddress());
+        require(
+            token != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
+        require(
+            recipient != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
         IERC20(token).safeTransfer(recipient, amount);
     }
 
@@ -87,7 +99,10 @@ library LancaLib {
     function getUSDCAddressByChain(
         ICcip.CcipToken tokenType
     ) internal view returns (address usdcAddress) {
-        require(tokenType == ICcip.CcipToken.usdc, TokenTypeNotSupported(tokenType));
+        require(
+            tokenType == ICcip.CcipToken.usdc,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.unsupportedCcipToken)
+        );
         uint256 chainId = block.chainid;
 
         if (chainId == CHAIN_ID_AVALANCHE) {
@@ -110,5 +125,15 @@ library LancaLib {
         }
 
         revert ChainNotSupported(chainId);
+    }
+
+    function safeDelegateCall(address target, bytes calldata args) internal returns (bytes memory) {
+        require(
+            target != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
+        (bool success, bytes memory response) = target.delegatecall(args);
+        require(success, UnableToCompleteDelegateCall(args));
+        return response;
     }
 }
