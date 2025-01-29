@@ -5,14 +5,16 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaLib} from "./libraries/LancaLib.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
+import {ZERO_ADDRESS} from "./Constants.sol";
+import {LibZip} from "solady/src/utils/LibZip.sol";
 
 abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters {
     using SafeERC20 for IERC20;
 
     /* CONSTANTS */
     uint16 internal constant LANCA_FEE_FACTOR = 1000;
+    uint8 internal constant MAX_SWAPS_LENGTH = 5;
 
     constructor(address owner) LancaOrchestratorStorageSetters(owner) {}
 
@@ -96,12 +98,24 @@ abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters
         require(success, LancaSwapFailed());
     }
 
-    /// @notice Calculates the Lanca fee for a given amount.
-    /// @param amount the amount for which to calculate the fee
-    /// @return the calculated Lanca fee
-    function _getLancaFee(uint256 amount) internal pure virtual returns (uint256) {
-        unchecked {
-            return (amount / LANCA_FEE_FACTOR);
+    function _decompressSwapData(
+        bytes memory compressedSwapData
+    ) internal pure returns (SwapData[] memory swapData) {
+        bytes memory decompressedSwapData = LibZip.cdDecompress(compressedSwapData);
+
+        if (decompressedSwapData.length == 0) {
+            return new SwapData[](0);
+        } else {
+            return abi.decode(decompressedSwapData, (SwapData[]));
         }
+    }
+
+    function _validateSwapData(SwapData[] memory swapData) internal pure {
+        require(
+            swapData.length != 0 &&
+                swapData.length <= MAX_SWAPS_LENGTH &&
+                swapData[0].fromAmount != 0,
+            InvalidSwapData()
+        );
     }
 }

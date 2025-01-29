@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import "./interfaces/ILancaBridge.sol";
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
@@ -13,47 +12,10 @@ import {IRouterClient as ICcipRouterClient} from "@chainlink/contracts/src/v0.8/
 import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
+import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 
-contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
+contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaBridge {
     using SafeERC20 for IERC20;
-
-    /* ERRORS */
-    error InvalidBridgeToken();
-    error InvalidReceiver();
-    error InvalidDstChainGasLimit();
-    error InsufficientBridgeAmount();
-    error InvalidDstChainSelector();
-    error InvalidFeeToken();
-    error UnauthorizedConceroMessageSender();
-    error UnauthorizedConceroMessageSrcChain();
-    error InvalidLancaBridgeMessageVersion();
-
-    /* EVENTS */
-    event LancaBridgeSent(
-        bytes32 indexed conceroMessageId,
-        address token,
-        uint256 amount,
-        address receiver,
-        uint64 dstChainSelector
-    );
-
-    event LancaSettlementSent(
-        bytes32 indexed ccipMessageId,
-        address token,
-        uint256 amount,
-        uint64 dstChainSelector
-    );
-
-    /* TYPES */
-
-    enum LancaBridgeMessageVersion {
-        V1
-    }
-
-    struct CcipSettlementTxs {
-        bytes32 id;
-        bytes32 bridgeDataHash;
-    }
 
     /* CONSTANTS */
     uint256 internal constant LANCA_FEE_FACTOR = 1_000;
@@ -67,91 +29,80 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
-    ICcipRouterClient internal immutable i_ccipRouter;
 
     constructor(
         address conceroRouter,
         address ccipRouter,
         address usdc,
         address link
-    ) ConceroClient(conceroRouter) {
+    ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) {
         i_usdc = usdc;
         i_link = IERC20(link);
-        i_ccipRouter = ICcipRouterClient(ccipRouter);
     }
 
     /* EXTERNAL FUNCTIONS */
 
-    function bridge(BridgeData calldata bridgeData) external {
-        _validateBridgeData(bridgeData);
-        uint256 fee = _getFee(bridgeData);
-        require(bridgeData.amount > fee, InsufficientBridgeAmount());
+    function bridge(BridgeReq calldata bridgeReq) external {
+        _validateBridgeReq(bridgeReq);
+        uint256 fee = _getFee(bridgeReq);
+        require(bridgeReq.amount > fee, InsufficientBridgeAmount());
 
-        IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+        IERC20(bridgeReq.token).safeTransferFrom(msg.sender, address(this), bridgeReq.amount);
 
-        uint256 amountToSendAfterFee = bridgeData.amount - fee;
-        address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeData.dstChainSelector];
+        uint256 amountToSendAfterFee = bridgeReq.amount - fee;
+        address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeReq.dstChainSelector];
         require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
         bytes memory bridgeDataMessage = abi.encode(
             LancaBridgeMessageVersion.V1,
             msg.sender,
-            bridgeData.receiver,
-            uint24(bridgeData.dstChainGasLimit),
-            bridgeData.amount,
-            bridgeData.message
+            bridgeReq.receiver,
+            uint24(bridgeReq.dstChainGasLimit),
+            bridgeReq.amount,
+            bridgeReq.message
         );
 
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: i_usdc,
             receiver: dstLancaBridgeContract,
-            dstChainSelector: bridgeData.dstChainSelector,
-            dstChainGasLimit: bridgeData.dstChainGasLimit,
+            dstChainSelector: bridgeReq.dstChainSelector,
+            dstChainGasLimit: bridgeReq.dstChainGasLimit,
             data: bridgeDataMessage
         });
 
         bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
-        bytes32 bridgeDataHash = keccak256(
-            abi.encode(
-                bridgeData.amount,
-                bridgeData.token,
-                bridgeData.receiver,
-                bridgeData.dstChainSelector,
-                uint24(bridgeData.dstChainGasLimit),
-                keccak256(bridgeData.message)
-            )
-        );
+
         uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
             conceroMessageId,
-            bridgeDataHash,
+            bridgeReq.fallbackReceiver,
             amountToSendAfterFee,
-            bridgeData.dstChainSelector
+            bridgeReq.dstChainSelector
         );
 
         if (
             updatedBatchedTxAmount >= BATCHED_TX_THRESHOLD ||
-            s_pendingSettlementIdsByDstChain[bridgeData.dstChainSelector].length >=
+            s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
             MAX_PENDING_SETTLEMENT_TXS_BY_LANE
         ) {
             _sendBatchViaSettlement(
-                bridgeData.token,
+                bridgeReq.token,
                 updatedBatchedTxAmount,
-                bridgeData.dstChainSelector
+                bridgeReq.dstChainSelector
             );
         }
 
         emit LancaBridgeSent(
             conceroMessageId,
-            bridgeData.token,
+            bridgeReq.token,
             amountToSendAfterFee,
-            bridgeData.receiver,
-            bridgeData.dstChainSelector
+            bridgeReq.receiver,
+            bridgeReq.dstChainSelector
         );
     }
 
-    function getFee(BridgeData calldata bridgeData) external view returns (uint256) {
-        _validateBridgeData(bridgeData);
-        return _getFee(bridgeData);
+    function getFee(BridgeReq calldata bridgeReq) external view returns (uint256) {
+        _validateBridgeReq(bridgeReq);
+        return _getFee(bridgeReq);
     }
 
     /* PUBLIC FUNCTIONS */
@@ -186,14 +137,14 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         return (ccipFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
     }
 
-    function _validateBridgeData(BridgeData calldata bridgeData) internal view {
-        require(bridgeData.token == i_usdc, InvalidBridgeToken());
-        require(bridgeData.feeToken == i_usdc, InvalidFeeToken());
-        require(bridgeData.receiver != ZERO_ADDRESS, InvalidReceiver());
-        require(bridgeData.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
+    function _validateBridgeReq(BridgeReq calldata bridgeReq) internal view {
+        require(bridgeReq.token == i_usdc, InvalidBridgeToken());
+        require(bridgeReq.feeToken == i_usdc, InvalidFeeToken());
+        require(bridgeReq.receiver != ZERO_ADDRESS, InvalidReceiver());
+        require(bridgeReq.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
-    function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
+    function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
         (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
             bridgeData.dstChainSelector,
             bridgeData.amount
@@ -203,12 +154,16 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
     function _addPendingSettlementTx(
         bytes32 conceroMessageId,
-        bytes32 bridgeDataHash,
+        address fallbackReceiver,
         uint256 amount,
         uint64 dstChainSelector
     ) internal returns (uint256) {
         s_pendingSettlementIdsByDstChain[dstChainSelector].push(conceroMessageId);
-        s_pendingSettlementTxHashById[conceroMessageId] = bridgeDataHash;
+        PendingSettlementTx memory settlementTx = PendingSettlementTx({
+            receiver: fallbackReceiver,
+            amount: amount
+        });
+        s_pendingSettlementTxById[conceroMessageId] = settlementTx;
         return s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amount;
     }
 
@@ -228,7 +183,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
         _clearPendingSettlementTxByLane(dstChainSelector);
 
-        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.batchedSettlement,
             data: abi.encode(ccipSettlementTxs)
         });
@@ -251,10 +206,11 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         CcipSettlementTxs[] memory ccipSettlementTxs = new CcipSettlementTxs[](pendingTxsLength);
 
         for (uint256 i; i < pendingTxsLength; ++i) {
-            ccipSettlementTxs[i] = CcipSettlementTxs(
-                pendingTxs[i],
-                s_pendingSettlementTxHashById[pendingTxs[i]]
-            );
+            ccipSettlementTxs[i] = CcipSettlementTxs({
+                id: pendingTxs[i],
+                receiver: s_pendingSettlementTxById[pendingTxs[i]].receiver,
+                amount: s_pendingSettlementTxById[pendingTxs[i]].amount
+            });
         }
 
         return ccipSettlementTxs;
@@ -273,13 +229,13 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
             amount,
             ccipMessageData
         );
-        uint256 fees = i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
+        uint256 fees = ICcipRouterClient(i_ccipRouter).getFee(dstChainSelector, evm2AnyMessage);
 
         i_link.approve(address(i_ccipRouter), fees);
         IERC20(token).approve(address(i_ccipRouter), amount);
         s_lastCcipFeeInLink[dstChainSelector] = fees;
 
-        return i_ccipRouter.ccipSend(dstChainSelector, evm2AnyMessage);
+        return ICcipRouterClient(i_ccipRouter).ccipSend(dstChainSelector, evm2AnyMessage);
     }
 
     function _buildCcipMessage(
@@ -356,6 +312,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         ) = abi.decode(conceroMessage.data, (uint8, address, address, uint24, uint256, bytes));
 
         ILancaBridgeClient.LancaBridgeData memory bridgeData = ILancaBridgeClient.LancaBridgeData({
+            id: conceroMessage.id,
             sender: sender,
             token: i_usdc,
             amount: amount,
@@ -365,5 +322,56 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
 
         IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);
         ILancaBridgeClient(lancaBridgeReceiver).lancaBridgeReceive{gas: gasLimit}(bridgeData);
+    }
+
+    /* CCIP CLIENT FUNCTIONS */
+
+    function _ccipReceive(LibCcipClient.Any2EVMMessage memory ccipMessage) internal override {
+        // @dev mb pack it into one sload
+        require(
+            s_isCcipMessageSenderAllowed[abi.decode(ccipMessage.sender, (address))],
+            UnauthorizedCcipMessageSender()
+        );
+        require(
+            s_isCcipMessageSrcChainAllowed[ccipMessage.sourceChainSelector],
+            UnauthorizedCcipMessageSender()
+        );
+
+        address receivedToken = ccipMessage.destTokenAmounts[0].token;
+        require(receivedToken == i_usdc, InvalidCcipToken());
+
+        ICcip.CcipSettleMessage memory ccipTx = abi.decode(
+            ccipMessage.data,
+            (ICcip.CcipSettleMessage)
+        );
+
+        if (ccipTx.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
+            _handleCcipBatchedSettlement(ccipTx);
+        } else {
+            revert InvalidCcipTxType();
+        }
+    }
+
+    function _handleCcipBatchedSettlement(
+        ICcip.CcipSettleMessage memory ccipSettleMessage
+    ) internal {
+        CcipSettlementTxs[] memory ccipSettlementTxs = abi.decode(
+            ccipSettleMessage.data,
+            (CcipSettlementTxs[])
+        );
+
+        for (uint256 i; i < ccipSettlementTxs.length; ++i) {
+            bytes32 txId = ccipSettlementTxs[i].id;
+            uint256 txAmount = ccipSettlementTxs[i].amount;
+
+            if (s_isBridgeProcessed[txId]) {
+                // @dev TODO: call receive rebalance function in pool
+            } else {
+                s_isBridgeProcessed[txId] = true;
+                IERC20(i_usdc).safeTransfer(ccipSettlementTxs[i].receiver, txAmount);
+
+                emit FailedExecutionLayerTxSettled(txId);
+            }
+        }
     }
 }
