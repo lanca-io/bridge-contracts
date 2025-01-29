@@ -226,7 +226,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     function _ccipSend(
         uint64 chainSelector,
         uint256 amount,
-        ICcip.CcipSettleMessage ccipTxData
+        ICcip.CcipSettleMessage memory ccipTxData
     ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: amount});
