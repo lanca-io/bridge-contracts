@@ -17,8 +17,6 @@ import {LancaBridgeClient} from "./LancaBridgeClient/LancaBridgeClient.sol";
 contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient {
     using SafeERC20 for IERC20;
 
-    /* TYPES */
-
     /* CONSTANTS */
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1_000;
     uint16 internal constant BPS_DIVISOR = 10_000;
