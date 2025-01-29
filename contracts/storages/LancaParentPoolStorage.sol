@@ -77,14 +77,6 @@ abstract contract LancaParentPoolStorage is LancaPoolStorage {
         return s_withdrawalsOnTheWayAmount;
     }
 
-    function getDepositsOnTheWay()
-        external
-        view
-        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
-    {
-        return s_depositsOnTheWayArray;
-    }
-
     function getPendingWithdrawalRequestIds() external view returns (bytes32[] memory) {
         return s_withdrawalRequestIds;
     }
