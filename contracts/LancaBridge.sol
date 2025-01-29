@@ -163,16 +163,17 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     function getBridgeFees(
         uint64 dstChainSelector,
         uint256 amount
-    ) public view returns (uint256, uint256) {
-        uint256 ccipFee = getCCIPFee(dstChainSelector, amount);
-        uint256 lancaFee = getLancaFee(amount);
-        return (ccipFee, lancaFee);
+    ) public view returns (uint256, uint256, uint256) {
+        uint256 ccipFee = _getCCIPFee(dstChainSelector, amount);
+        uint256 lancaFee = _getLancaFee(amount);
+        uint256 messengerFee = IConceroRouter(getConceroRouter()).getFee(dstChainSelector);
+        return (ccipFee, lancaFee, messengerFee);
     }
 
     /* INTERNAL FUNCTIONS */
 
     function _getCCIPFee(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
-        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+        uint256 ccipFeeInUsdc = _getCCIPFeeInUsdc(dstChainSelector);
         return _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
     }
 
@@ -193,11 +194,11 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     }
 
     function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
-        (uint256 ccipFee, uint256 lancaFee) = getBridgeFees(
+        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
             bridgeData.dstChainSelector,
             bridgeData.amount
         );
-        return ccipFee + lancaFee;
+        return ccipFee + lancaFee + messengerFee;
     }
 
     function _addPendingSettlementTx(
