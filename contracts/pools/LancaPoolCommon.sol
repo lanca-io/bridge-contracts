@@ -23,7 +23,9 @@ abstract contract LancaPoolCommon {
 
     constructor(address usdc, address[3] memory messengers) {
         i_USDC = IERC20(usdc);
-        (i_msgr0, i_msgr1, i_msgr2) = messengers;
+        i_msgr0 = messengers[0];
+        i_msgr1 = messengers[1];
+        i_msgr2 = messengers[2];
     }
 
     /* MODIFIERS */

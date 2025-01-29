@@ -185,10 +185,6 @@ interface ILancaParentPool is ILancaPool {
     /// @notice error emitted when the request doesn't exist
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 
-    /// @notice Error emitted when only the router can fulfill this action
-    /// @param addr The address attempting the action
-    error OnlyRouterCanFulfill(address addr);
-
     /// @notice Error emitted when the caller is unauthorized
     error Unauthorized();
 
@@ -215,12 +211,7 @@ interface ILancaParentPool is ILancaPool {
     error WithdrawalAlreadyPerformed(bytes32 id);
 
     /* FUNCTIONS */
-    /**
-     * @notice returns the withdrawalId associated with the given LP address
-     * @param lpAddress the address of the LP
-     * @return the withdrawalId
-     */
-    function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
+
 
     /**
      * @notice starts a deposit request for the given amount of USDC
@@ -272,13 +263,6 @@ interface ILancaParentPool is ILancaPool {
      * @notice withdraws the deposit fees
      */
     function withdrawDepositFees() external payable;
-
-    /**
-     * @notice sends a request to Chainlink Functions
-     * @param args the arguments for the request as bytes array
-     * @return the request ID
-     */
-    function sendCLFRequest(bytes[] memory args) external returns (bytes32);
 
     /**
      * @notice wrapper function for fulfillRequest, to allow the router to call it

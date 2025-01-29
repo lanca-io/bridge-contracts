@@ -10,7 +10,7 @@ import {ICcip} from "../interfaces/ICcip.sol";
  * @title LancaParentPoolCommon
  * @notice This contract is the base for all the parent pool contracts.
  */
-contract LancaParentPoolCommon is LancaPoolCommon {
+abstract contract LancaParentPoolCommon is LancaPoolCommon {
     /**
      * @notice The USDC token decimals.
      */
@@ -85,5 +85,5 @@ contract LancaParentPoolCommon is LancaPoolCommon {
         uint64 chainSelector,
         uint256 amount,
         ICcip.CcipTxType ccipTxType
-    ) internal returns (bytes32);
+    ) internal virtual returns (bytes32);
 }
