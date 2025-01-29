@@ -211,12 +211,7 @@ interface ILancaParentPool is ILancaPool {
     error WithdrawalAlreadyPerformed(bytes32 id);
 
     /* FUNCTIONS */
-    /**
-     * @notice returns the withdrawalId associated with the given LP address
-     * @param lpAddress the address of the LP
-     * @return the withdrawalId
-     */
-    function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
+
 
     /**
      * @notice starts a deposit request for the given amount of USDC
