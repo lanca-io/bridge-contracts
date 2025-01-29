@@ -11,4 +11,5 @@ interface IConceroRouter {
     }
 
     function sendMessage(MessageRequest memory messageReq) external returns (bytes32);
+    function getFee(uint64 dstChainSelector) external view returns (uint256);
 }
