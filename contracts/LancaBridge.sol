@@ -56,11 +56,12 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     }
 
     /* CONSTANTS */
-
+    uint256 internal constant LANCA_FEE_FACTOR = 1_000;
     uint24 internal constant MAX_DST_CHAIN_GAS_LIMIT = 1_400_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
     uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * 1e6;
     uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 1_000_000;
+    uint256 private constant STANDARD_TOKEN_DECIMALS = 1e18;
 
     /* IMMUTABLES */
 
@@ -153,7 +154,36 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         return _getFee(bridgeData);
     }
 
+    /* PUBLIC FUNCTIONS */
+    /**
+     * @notice Function to get the total amount of CCIP fees in USDC
+     * @param dstChainSelector the destination blockchain chain selector
+     */
+
+    function getBridgeFees(
+        uint64 dstChainSelector,
+        uint256 amount
+    ) public view returns (uint256, uint256) {
+        uint256 ccipFee = getCCIPFee(dstChainSelector, amount);
+        uint256 lancaFee = getLancaFee(amount);
+        return (ccipFee, lancaFee);
+    }
+
     /* INTERNAL FUNCTIONS */
+
+    function _getCCIPFee(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
+        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+        return _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
+    }
+
+    function _getLancaFee(uint256 amount) internal pure returns (uint256) {
+        return amount / LANCA_FEE_FACTOR;
+    }
+
+    function _getCCIPFeeInUsdc(uint64 dstChainSelector) internal view returns (uint256) {
+        uint256 ccipFeeInLink = s_lastCcipFeeInLink[dstChainSelector];
+        return (ccipFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
+    }
 
     function _validateBridgeData(BridgeData calldata bridgeData) internal view {
         require(bridgeData.token == i_usdc, InvalidBridgeToken());
@@ -163,7 +193,11 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     }
 
     function _getFee(BridgeData calldata bridgeData) internal view returns (uint256) {
-        return 0;
+        (uint256 ccipFee, uint256 lancaFee) = getBridgeFees(
+            bridgeData.dstChainSelector,
+            bridgeData.amount
+        );
+        return ccipFee + lancaFee;
     }
 
     function _addPendingSettlementTx(
@@ -270,6 +304,19 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
                 ),
                 feeToken: feeToken
             });
+    }
+
+    /**
+     * @notice Function to calculate the proportional CCIP fee based on the amount
+     * @param ccipFeeInUsdc the total CCIP fee for a full batch
+     * @param amount the amount of USDC being transferred
+     */
+    function _calculateProportionalCCIPFee(
+        uint256 ccipFeeInUsdc,
+        uint256 amount
+    ) internal pure returns (uint256) {
+        if (amount >= BATCHED_TX_THRESHOLD) return ccipFeeInUsdc;
+        return (ccipFeeInUsdc * amount) / BATCHED_TX_THRESHOLD;
     }
 
     /* CONCERO CLIENT FUNCTIONS */
