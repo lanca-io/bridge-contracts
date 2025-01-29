@@ -65,6 +65,11 @@ abstract contract LancaParentPoolStorage is LancaPoolStorage {
     uint256[50] private __gap;
 
     /* GETTERS */
+    /**
+     * @notice returns the withdrawalId associated with the given LP address
+     * @param lpAddress the address of the LP
+     * @return the withdrawalId
+     */
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32) {
         return s_withdrawalIdByLPAddress[lpAddress];
     }
