@@ -8,12 +8,8 @@ import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 
 abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, LancaOwnable {
     using ErrorsLib for *;
-
-    /* IMMUTABLE VARIABLES */
-    address internal immutable i_addressThis;
-    constructor(address owner) LancaOwnable(owner) {
-        i_addressThis = address(this);
-    }
+    
+    constructor(address owner) LancaOwnable(owner) {}
 
     /**
      * @notice Sets the address of a DEX Router as approved or not approved to perform swaps.

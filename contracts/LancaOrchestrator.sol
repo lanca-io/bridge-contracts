@@ -26,7 +26,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
-    address internal immutable i_addressThis;
 
     /* ERRORS */
     error InvalidBridgeToken();
@@ -49,8 +48,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         address lancaBridge
     ) LancaDexSwap(msg.sender) LancaBridgeClient(lancaBridge) {
         i_usdc = usdc;
-        // @dev TODO: remove it, it is wrong!
-        i_addressThis = address(this);
     }
 
     /* MODIFIERS */
