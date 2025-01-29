@@ -26,6 +26,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     error InvalidFeeToken();
     error UnauthorizedConceroMessageSender();
     error UnauthorizedConceroMessageSrcChain();
+    error InvalidLancaBridgeMessageVersion();
 
     /* EVENTS */
     event LancaBridgeSent(
@@ -44,6 +45,10 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
     );
 
     /* TYPES */
+
+    enum LancaBridgeMessageVersion {
+        V1
+    }
 
     struct CcipSettlementTxs {
         bytes32 id;
@@ -88,9 +93,10 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
         require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
         bytes memory bridgeDataMessage = abi.encode(
+            LancaBridgeMessageVersion.V1,
             msg.sender,
             bridgeData.receiver,
-            bridgeData.dstChainGasLimit,
+            uint24(bridgeData.dstChainGasLimit),
             bridgeData.amount,
             bridgeData.message
         );
@@ -110,7 +116,7 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
                 bridgeData.token,
                 bridgeData.receiver,
                 bridgeData.dstChainSelector,
-                bridgeData.dstChainGasLimit,
+                uint24(bridgeData.dstChainGasLimit),
                 keccak256(bridgeData.message)
             )
         );
@@ -280,15 +286,28 @@ contract LancaBridge is ConceroClient, ILancaBridge, LancaBridgeStorage {
             UnauthorizedConceroMessageSrcChain()
         );
 
+        LancaBridgeMessageVersion lancaBridgeMessageVersion = LancaBridgeMessageVersion(
+            uint8(conceroMessage.data[0])
+        );
+
+        if (lancaBridgeMessageVersion == LancaBridgeMessageVersion.V1) {
+            _handleLancaBridgeMessageV1(conceroMessage);
+        } else {
+            revert InvalidLancaBridgeMessageVersion();
+        }
+    }
+
+    function _handleLancaBridgeMessageV1(Message calldata conceroMessage) internal {
         (
+            ,
             address sender,
             address lancaBridgeReceiver,
-            uint32 gasLimit,
+            uint24 gasLimit,
             uint256 amount,
             bytes memory data
-        ) = abi.decode(conceroMessage.data, (address, address, uint32, uint256, bytes));
+        ) = abi.decode(conceroMessage.data, (uint8, address, address, uint24, uint256, bytes));
 
-        ILancaBridgeClient.LancaBridgeData bridgeData = ILancaBridgeClient.LancaBridgeData({
+        ILancaBridgeClient.LancaBridgeData memory bridgeData = ILancaBridgeClient.LancaBridgeData({
             sender: sender,
             token: i_usdc,
             amount: amount,

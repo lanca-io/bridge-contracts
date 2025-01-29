@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaDexSwap} from "./LancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
