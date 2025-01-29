@@ -4,6 +4,8 @@ pragma solidity 0.8.28;
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
@@ -98,7 +100,7 @@ contract LancaParentPool is
         bytes memory delegateCallResponse,
         bytes memory err
     ) external {
-        require(msg.sender == i_clfRouter, OnlyRouterCanFulfill(msg.sender));
+        require(msg.sender == i_clfRouter, OnlyRouterCanFulfill());
         fulfillRequest(requestId, delegateCallResponse, err);
     }
 
@@ -162,7 +164,7 @@ contract LancaParentPool is
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
-        bytes32 clfRequestId = sendClfRequest(args);
+        bytes32 clfRequestId = sendCLFRequest(args);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
@@ -207,8 +209,43 @@ contract LancaParentPool is
         delete s_depositRequests[depositRequestId];
     }
 
-    function sendCLFRequest(bytes[] memory args) external returns (bytes32) {
-        return _sendRequest(args);
+    /**
+     * @notice function to manage the Cross-chain ConceroPool contracts
+     * @param chainSelector chain identifications
+     * @param pool address of the Cross-chain ConceroPool contract
+     * @dev only owner can call it
+     * @dev it's payable to save some gas.
+     * @dev this functions is used on ConceroPool.sol
+     */
+    function setPools(
+        uint64 chainSelector,
+        address pool,
+        bool isRebalancingNeeded
+    ) external payable onlyOwner {
+        require(
+            s_childPools[chainSelector] != pool && pool != ZERO_ADDRESS,
+            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+        );
+
+        s_poolChainSelectors.push(chainSelector);
+        s_childPools[chainSelector] = pool;
+
+        if (isRebalancingNeeded) {
+            bytes32 distributeLiquidityRequestId = keccak256(
+                abi.encodePacked(pool, chainSelector, RedistributeLiquidityType.addPool)
+            );
+
+            bytes[] memory args = new bytes[](7);
+            args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
+            args[1] = abi.encodePacked(s_ethersHashSum);
+            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+            args[3] = abi.encodePacked(chainSelector);
+            args[4] = abi.encodePacked(distributeLiquidityRequestId);
+            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
+            args[6] = abi.encodePacked(block.chainid);
+
+            sendCLFRequest(args);
+        }
     }
 
     function calculateWithdrawableAmount(
@@ -275,7 +312,7 @@ contract LancaParentPool is
         address lpAddress = msg.sender;
         require(lpAmount >= 1 ether, WithdrawAmountBelowMinimum(1 ether));
         require(
-            swithdrawalIdByLPAddress[lpAddress] == bytes32(0),
+            s_withdrawalIdByLPAddress[lpAddress] == bytes32(0),
             WithdrawalRequestAlreadyExists()
         );
 
@@ -297,15 +334,15 @@ contract LancaParentPool is
         s_withdrawRequests[withdrawalId].lpAddress = lpAddress;
         s_withdrawRequests[withdrawalId].lpAmountToBurn = lpAmount;
 
-        swithdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
-        swithdrawalIdByLPAddress[lpAddress] = withdrawalId;
+        s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
+        s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
     }
 
     /**
      * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
      */
     function retryPerformWithdrawalRequest() external {
-        bytes32 withdrawalId = swithdrawalIdByLPAddress[msg.sender];
+        bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
 
         if (msg.sender != s_withdrawRequests[withdrawalId].lpAddress) {
             revert Unauthorized();
@@ -394,6 +431,14 @@ contract LancaParentPool is
         }
     }
 
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (ILancaParentPool.DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
+    {
+        return s_depositsOnTheWayArray;
+    }
+
     /* PUBLIC FUNCTIONS */
     /**
      * @notice getter function to calculate Destination fee amount on Source
@@ -441,13 +486,22 @@ contract LancaParentPool is
         }
     }
 
+    /**
+     * @notice sends a request to Chainlink Functions
+     * @param args the arguments for the request as bytes array
+     * @return the request ID
+     */
+    function sendCLFRequest(bytes[] memory args) internal returns (bytes32) {
+        return _sendRequest(args);
+    }
+
     function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {
         (
             uint256 childPoolsLiquidity,
             bytes1[] memory depositsOnTheWayIdsToDelete
         ) = _decodeCLFResponse(response);
 
-        bytes32 withdrawalId = swithdrawalIdByCLFRequestId[requestId];
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
         ILancaParentPool.WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
         _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
@@ -456,7 +510,7 @@ contract LancaParentPool is
 
     /// @dev taken from the ConceroAutomation::fulfillRequest logic
     function _handleAutomationCLFFulfill(bytes32 requestId) internal {
-        bytes32 withdrawalId = swithdrawalIdByCLFRequestId[requestId];
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
 
         for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
             if (s_withdrawalRequestIds[i] == withdrawalId) {
@@ -533,7 +587,7 @@ contract LancaParentPool is
     function _sendRequest(bytes[] memory args) internal returns (bytes32) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(JS_CODE);
-        req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+        req.addDONHostedSecrets(i_donHostedSecretsSlotId, i_donHostedSecretsVersion);
         req.setBytesArgs(args);
 
         return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
@@ -562,7 +616,7 @@ contract LancaParentPool is
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {
         bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
+        args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(
             ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
@@ -610,15 +664,15 @@ contract LancaParentPool is
                 requestType ==
                 ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
-                bytes32 withdrawalId = swithdrawalIdByCLFRequestId[requestId];
+                bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
                 address lpAddress = s_withdrawRequests[withdrawalId].lpAddress;
                 uint256 lpAmountToBurn = s_withdrawRequests[withdrawalId].lpAmountToBurn;
 
                 IERC20(i_lpToken).safeTransfer(lpAddress, lpAmountToBurn);
 
                 delete s_withdrawRequests[withdrawalId];
-                delete swithdrawalIdByLPAddress[lpAddress];
-                delete swithdrawalIdByCLFRequestId[requestId];
+                delete s_withdrawalIdByLPAddress[lpAddress];
+                delete s_withdrawalIdByCLFRequestId[requestId];
             }
 
             emit CLFRequestError(requestId, requestType, err);
@@ -632,7 +686,7 @@ contract LancaParentPool is
                 ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 _handleStartWithdrawalCLFFulfill(requestId, response);
-                delete swithdrawalIdByCLFRequestId[requestId];
+                delete s_withdrawalIdByCLFRequestId[requestId];
             } else if (
                 requestType == ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
             ) {
@@ -755,7 +809,7 @@ contract LancaParentPool is
     )
         internal
         override
-        onlyAllowlistedSenderOfChainSelector(
+        onlyAllowListedSenderOfChainSelector(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
         )
@@ -778,14 +832,16 @@ contract LancaParentPool is
                 bytes32 txId = settlementTxs[i].id;
                 uint256 txAmount = settlementTxs[i].amount;
                 /// @dev we dont have infra orchestrator
-                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+                /// @dev change it
+                bool isTxConfirmed = true;
 
                 if (isTxConfirmed) {
                     txAmount -= getDstTotalFeeInUsdc(txAmount);
                     s_loansInUse -= txAmount;
                 } else {
                     /// @dev we dont have infra orchestrator
-                    IInfraOrchestrator(i_infraProxy).confirmTx(txId);
+                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
                     i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
@@ -867,7 +923,7 @@ contract LancaParentPool is
             ? s_withdrawAmountLocked - amountToWithdraw
             : 0;
 
-        delete swithdrawalIdByLPAddress[lpAddress];
+        delete s_withdrawalIdByLPAddress[lpAddress];
         delete s_withdrawRequests[withdrawalId];
 
         emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_USDC), amountToWithdraw);
