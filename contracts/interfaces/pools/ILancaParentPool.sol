@@ -270,13 +270,6 @@ interface ILancaParentPool is ILancaPool {
     function withdrawDepositFees() external payable;
 
     /**
-     * @notice sends a request to Chainlink Functions
-     * @param args the arguments for the request as bytes array
-     * @return the request ID
-     */
-    function sendCLFRequest(bytes[] memory args) external returns (bytes32);
-
-    /**
      * @notice wrapper function for fulfillRequest, to allow the router to call it
      * @param requestId the ID of the request
      * @param response the response from Chainlink Functions
