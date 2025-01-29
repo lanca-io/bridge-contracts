@@ -99,7 +99,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
 
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
 
-        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.liquidityRebalancing,
             data: bytes("")
         });
@@ -120,7 +120,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
 
         s_isWithdrawalRequestTriggered[withdrawalId] = true;
 
-        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.withdrawal,
             data: abi.encode(withdrawalId)
         });
@@ -140,7 +140,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         require(poolsCount != 0, NoPoolsToDistribute());
 
         uint256 amountToSendPerPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
-        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.liquidityRebalancing,
             data: bytes("")
         });
@@ -172,7 +172,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        ICcip.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICcip.CcipTxData));
+        ICcip.CcipSettleMessage memory ccipTxData = abi.decode(
+            any2EvmMessage.data,
+            (ICcip.CcipSettleMessage)
+        );
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
@@ -221,7 +224,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     function _ccipSend(
         uint64 chainSelector,
         uint256 amount,
-        ICcip.CcipTxData ccipTxData
+        ICcip.CcipSettleMessage ccipTxData
     ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: amount});

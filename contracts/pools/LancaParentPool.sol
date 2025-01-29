@@ -760,7 +760,10 @@ contract LancaParentPool is
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        ICcip.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICcip.CcipTxData));
+        ICcip.CcipSettleMessage memory ccipTxData = abi.decode(
+            any2EvmMessage.data,
+            (ICcip.CcipSettleMessage)
+        );
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
@@ -827,7 +830,7 @@ contract LancaParentPool is
         ICcip.CcipTxType ccipTxType
     ) internal override returns (bytes32) {
         ICcip.SettlementTx[] memory emptyBridgeTxArray;
-        ICcip.CcipTxData memory ccipTxData = ICcip.CcipTxData({
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ccipTxType,
             data: abi.encode(emptyBridgeTxArray)
         });
@@ -874,7 +877,7 @@ contract LancaParentPool is
         address recipient,
         address token,
         uint256 amount,
-        ICcip.CcipTxData memory ccipTxData
+        ICcip.CcipSettleMessage memory ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: token, amount: amount});
