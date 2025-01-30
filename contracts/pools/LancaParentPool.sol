@@ -730,9 +730,7 @@ contract LancaParentPool is
         WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
         uint256 amountToWithdraw = request.amountToWithdraw;
         address lpAddress = request.lpAddress;
-
-        i_lpToken.burn(request.lpAmountToBurn);
-        i_USDC.safeTransfer(lpAddress, amountToWithdraw);
+        uint256 lpAmountToBurn = request.lpAmountToBurn;
 
         s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
             ? s_withdrawAmountLocked - amountToWithdraw
@@ -740,6 +738,9 @@ contract LancaParentPool is
 
         delete s_withdrawalIdByLPAddress[lpAddress];
         delete s_withdrawRequests[withdrawalId];
+
+        i_lpToken.burn(lpAmountToBurn);
+        i_USDC.safeTransfer(lpAddress, amountToWithdraw);
 
         emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_USDC), amountToWithdraw);
     }
