@@ -43,17 +43,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         i_linkToken = LinkTokenInterface(link);
     }
 
-    /* MODIFIERS */
-    /**
-     * @notice CCIP Modifier to check Chains And senders
-     * @param chainSelector Id of the source chain of the message
-     * @param sender address of the sender contract
-     */
-    modifier onlyAllowlistedSenderOfChainSelector(uint64 chainSelector, address sender) {
-        require(s_isSenderContractAllowed[chainSelector][sender], Unauthorized());
-        _;
-    }
-
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
 
@@ -166,7 +155,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     )
         internal
         override
-        onlyAllowlistedSenderOfChainSelector(
+        onlyAllowListedSenderOfChainSelector(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
         )

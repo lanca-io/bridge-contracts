@@ -59,7 +59,7 @@ contract LancaParentPool is
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
-    uint256 internal constant MIN_DEPOSIT = 100 * USDC_DECIMALS;
+    uint256 internal constant MIN_DEPOSIT = 250 * USDC_DECIMALS;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
     uint256 internal constant LP_FEE_FACTOR = 1000;
@@ -81,7 +81,6 @@ contract LancaParentPool is
         Hash memory hash,
         address[3] memory messengers
     )
-        FunctionsClient(clf.router)
         CCIPReceiver(addr.ccipRouter)
         LancaParentPoolCommon(addr.parentPoolProxy, token.lpToken, token.usdc, messengers)
         LancaParentPoolStorageSetters(addr.owner)
@@ -98,16 +97,6 @@ contract LancaParentPool is
     }
 
     //@dev TODO: move to LancaPoolStorageSetters
-    /* MODIFIERS */
-    /**
-     * @notice CCIP Modifier to check Chains And senders
-     * @param chainSelector Id of the source chain of the message
-     * @param sender address of the sender contract
-     */
-    modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
-        require(s_isSenderContractAllowed[chainSelector][sender], SenderNotAllowed(sender));
-        _;
-    }
 
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
