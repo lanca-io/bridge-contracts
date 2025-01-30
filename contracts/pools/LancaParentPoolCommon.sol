@@ -76,5 +76,4 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
     function _convertToUSDCTokenDecimals(uint256 lpAmount) internal pure returns (uint256) {
         return (lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
     }
-
 }

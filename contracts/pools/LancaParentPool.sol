@@ -22,7 +22,6 @@ import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../int
 import {LancaLoan} from "./LancaLoan.sol";
 
 contract LancaParentPool is
-    FunctionsClient,
     CCIPReceiver,
     LancaParentPoolCommon,
     LancaLoan,
@@ -91,6 +90,7 @@ contract LancaParentPool is
         CCIPReceiver(addr.ccipRouter)
         LancaParentPoolCommon(addr.parentPoolProxy, token.lpToken, token.usdc, messengers)
         LancaParentPoolStorageSetters(addr.owner)
+        LancaLoan(token.usdc)
     {
         i_linkToken = LinkTokenInterface(token.link);
         i_clfRouter = clf.router;
@@ -681,7 +681,7 @@ contract LancaParentPool is
         uint64 chainSelector,
         uint256 amount,
         ICcip.CcipTxType ccipTxType
-    ) internal override returns (bytes32) {
+    ) internal returns (bytes32) {
         ICcip.SettlementTx[] memory emptyBridgeTxArray;
         ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ccipTxType,

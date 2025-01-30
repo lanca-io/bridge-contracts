@@ -39,6 +39,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
         CCIPReceiver(ccipRouter)
         LancaPoolCommon(usdc, messengers)
         LancaChildPoolStorageSetters(owner)
+        LancaLoan(usdc)
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
