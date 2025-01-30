@@ -285,7 +285,10 @@ contract LancaParentPool is
             receiver != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
-        require(token == address(i_USDC), NotUsdcToken());
+        require(
+            token == address(i_USDC),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
+        );
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
     }
@@ -307,6 +310,25 @@ contract LancaParentPool is
                 delete s_childPools[chainSelector];
             }
         }
+    }
+
+    function handleOracleFulfillment(
+        bytes32 requestId,
+        bytes memory delegateCallResponse,
+        bytes memory err
+    ) external {
+        if (msg.sender != i_clfRouter) {
+            revert OnlyRouterCanFulfill(msg.sender);
+        }
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.fulfillRequestWrapper.selector,
+            requestId,
+            delegateCallResponse,
+            err
+        );
+
+        LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
     }
 
     function getDepositsOnTheWay()
@@ -468,7 +490,10 @@ contract LancaParentPool is
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        require(ccipReceivedToken == address(i_USDC), NotUsdcToken());
+        require(
+            ccipReceivedToken == address(i_USDC),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
+        );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
             ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
