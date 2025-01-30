@@ -149,11 +149,12 @@ interface ILancaParentPool is ILancaPool {
     /// @notice error emitted when the request doesn't exist
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 
-    /// @notice Error emitted when the token is not USDC
-    error NotUsdcToken();
-
     /// @notice Error emitted when the deposit deadline has passed
     error DepositDeadlinePassed();
+
+    /// @notice Error emitted when a function is called by an unauthorized entity
+    /// @param caller The address of the unauthorized caller
+    error OnlyRouterCanFulfill(address caller);
 
     /* FUNCTIONS */
 
