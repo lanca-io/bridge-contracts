@@ -10,10 +10,10 @@ import {ZERO_ADDRESS} from "../Constants.sol";
 abstract contract LancaLoan is LancaPoolStorage {
     using SafeERC20 for IERC20;
 
-    address internal immutable i_usdc;
+    IERC20 internal immutable i_usdc;
 
     constructor(address usdc) {
-        i_usdc = usdc;
+        i_usdc = IERC20(usdc);
     }
 
     function takeLoan(address token, uint256 amount, address receiver) external payable {
