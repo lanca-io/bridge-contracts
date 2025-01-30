@@ -274,6 +274,17 @@ contract LancaParentPool is
         s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
     }
 
+    /**
+     * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
+     */
+    function retryPerformWithdrawalRequest() external {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.retryPerformWithdrawalRequest.selector
+        );
+
+        LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+    }
+
     function withdrawDepositFees() external payable onlyOwner {
         uint256 amountToSend = s_depositFeeAmount;
         s_depositFeeAmount = 0;
