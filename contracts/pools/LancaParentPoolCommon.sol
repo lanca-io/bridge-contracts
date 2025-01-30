@@ -77,13 +77,4 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
         return (lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
     }
 
-    /**
-     * @notice Function to distribute funds automatically right after LP deposits into the pool
-     * @dev this function will only be called internally.
-     */
-    function _ccipSend(
-        uint64 chainSelector,
-        uint256 amount,
-        ICcip.CcipTxType ccipTxType
-    ) internal virtual returns (bytes32);
 }
