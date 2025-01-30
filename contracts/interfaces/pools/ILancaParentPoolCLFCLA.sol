@@ -58,6 +58,9 @@ interface ILancaParentPoolCLFCLA {
     /// @param id The ID of the withdrawal
     error WithdrawalAlreadyPerformed(bytes32 id);
 
+    /// @notice Error emitted when the type of a Cross-chain Functions request is invalid
+    error InvalidCLFRequestType();
+
     /* FUNCTIONS */
 
     function sendCLFRequest(bytes[] memory args) external returns (bytes32);
