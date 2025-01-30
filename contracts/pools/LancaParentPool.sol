@@ -133,11 +133,10 @@ contract LancaParentPool is
             MaxDepositCapReached(liquidityCap)
         );
 
-        bytes[] memory args = [
-            abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum),
-            abi.encodePacked(s_ethersHashSum),
-            abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity)
-        ];
+        bytes[] memory args = new bytes[](3);
+        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -221,15 +220,15 @@ contract LancaParentPool is
                 abi.encodePacked(pool, chainSelector, RedistributeLiquidityType.addPool)
             );
 
-            bytes[] memory args = [
-                abi.encodePacked(i_distributeLiquidityJsCodeHashSum),
-                abi.encodePacked(s_ethersHashSum),
-                abi.encodePacked(CLFRequestType.liquidityRedistribution),
-                abi.encodePacked(chainSelector),
-                abi.encodePacked(distributeLiquidityRequestId),
-                abi.encodePacked(RedistributeLiquidityType.addPool),
-                abi.encodePacked(block.chainid)
-            ];
+            bytes[] memory args = new bytes[](7);
+            args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
+            args[1] = abi.encodePacked(s_ethersHashSum);
+            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+            args[3] = abi.encodePacked(chainSelector);
+            args[4] = abi.encodePacked(distributeLiquidityRequestId);
+            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
+            args[6] = abi.encodePacked(block.chainid);
+            
 
             bytes memory delegateCallArgs = abi.encodeWithSelector(
                 ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -252,10 +251,9 @@ contract LancaParentPool is
             WithdrawalRequestAlreadyExists()
         );
 
-        bytes[] memory args = [
-            abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum),
-            abi.encodePacked(s_ethersHashSum)
-        ];
+        bytes[] memory args = new bytes[](2);
+        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
