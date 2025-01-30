@@ -30,6 +30,34 @@ contract LancaParentPool is
     using FunctionsRequest for FunctionsRequest.Request;
     using ErrorsLib for *;
 
+    /* TYPES */
+
+    struct Clf {
+        address router;
+        uint64 subId;
+        bytes32 donId;
+        uint8 donHostedSecretsSlotId;
+        uint64 donHostedSecretsVersion;
+    }
+
+    struct Token {
+        address link;
+        address usdc;
+        address lpToken;
+    }
+
+    struct Addr {
+        address ccipRouter;
+        address automationForwarder;
+        address parentPoolProxy;
+        address owner;
+    }
+
+    struct Hash {
+        bytes32 collectLiquidityJs;
+        bytes32 distributeLiquidityJs;
+    }
+
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
     string internal constant JS_CODE =
@@ -54,36 +82,26 @@ contract LancaParentPool is
     uint64 private immutable i_clfSubId;
 
     constructor(
-        address parentPoolProxy,
-        address automationForwarder,
-        address link,
-        address ccipRouter,
-        address usdc,
-        address lpToken,
-        address clfRouter,
-        uint64 clfSubId,
-        bytes32 clfDonId,
-        address owner,
-        bytes32 collectLiquidityJsCodeHashSum,
-        bytes32 distributeLiquidityJsCodeHashSum,
-        uint8 donHostedSecretsSlotId,
-        uint64 donHostedSecretsVersion,
+        Token memory token,
+        Addr memory addr,
+        Clf memory clf,
+        Hash memory hash,
         address[3] memory messengers
     )
-        FunctionsClient(clfRouter)
-        CCIPReceiver(ccipRouter)
-        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers)
-        LancaParentPoolStorageSetters(owner)
+        FunctionsClient(clf.router)
+        CCIPReceiver(addr.ccipRouter)
+        LancaParentPoolCommon(addr.parentPoolProxy, token.lpToken, token.usdc, messengers)
+        LancaParentPoolStorageSetters(addr.owner)
     {
-        i_linkToken = LinkTokenInterface(link);
-        i_clfRouter = clfRouter;
-        i_automationForwarder = automationForwarder;
-        i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
-        i_distributeLiquidityJsCodeHashSum = distributeLiquidityJsCodeHashSum;
-        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = donHostedSecretsVersion;
-        i_clfDonId = clfDonId;
-        i_clfSubId = clfSubId;
+        i_linkToken = LinkTokenInterface(token.link);
+        i_clfRouter = clf.router;
+        i_automationForwarder = addr.automationForwarder;
+        i_collectLiquidityJsCodeHashSum = hash.collectLiquidityJs;
+        i_distributeLiquidityJsCodeHashSum = hash.distributeLiquidityJs;
+        i_donHostedSecretsSlotId = clf.donHostedSecretsSlotId;
+        i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
+        i_clfDonId = clf.donId;
+        i_clfSubId = clf.subId;
     }
 
     //@dev TODO: move to LancaPoolStorageSetters
