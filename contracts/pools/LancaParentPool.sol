@@ -17,6 +17,7 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LibLanca} from "../libraries/LibLanca.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
+import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
 
 contract LancaParentPool is
     AutomationCompatible,
@@ -329,6 +330,28 @@ contract LancaParentPool is
         );
 
         LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+    }
+
+    function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            AutomationCompatibleInterface.checkUpkeep.selector,
+            bytes("")
+        );
+
+        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+            address(i_lancaParentPoolCLFCLA),
+            delegateCallArgs
+        );
+
+        return abi.decode(delegateCallResponse, (bool, bytes));
+    }
+
+    function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
+        (bool isTriggerNeeded, bytes memory data) = ILancaParentPoolCLFCLAViewDelegate(
+            address(this)
+        ).checkUpkeepViaDelegate();
+
+        return (isTriggerNeeded, data);
     }
 
     function getDepositsOnTheWay()
