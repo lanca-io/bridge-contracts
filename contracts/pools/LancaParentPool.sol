@@ -228,7 +228,6 @@ contract LancaParentPool is
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
             args[6] = abi.encodePacked(block.chainid);
-            
 
             bytes memory delegateCallArgs = abi.encodeWithSelector(
                 ILancaParentPoolCLFCLA.sendCLFRequest.selector,
