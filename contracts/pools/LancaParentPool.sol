@@ -243,16 +243,25 @@ contract LancaParentPool is
             WithdrawalRequestAlreadyExists()
         );
 
-        bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
+        bytes[] memory args = [
+            abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum),
+            abi.encodePacked(s_ethersHashSum)
+        ];
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
-        bytes32 clfRequestId = sendCLFRequest(args);
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
+            args
+        );
+        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+            address(i_lancaParentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         bytes32 withdrawalId = keccak256(
-            abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
+            abi.encodePacked(msg.sender, lpAmount, block.number, clfRequestId)
         );
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
