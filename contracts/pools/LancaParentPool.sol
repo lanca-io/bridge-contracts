@@ -114,34 +114,47 @@ contract LancaParentPool is
      * @param usdcAmount amount to be deposited
      */
     function startDeposit(uint256 usdcAmount) external {
-        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum(MIN_DEPOSIT));
+        if (usdcAmount < MIN_DEPOSIT) {
+            revert DepositAmountBelowMinimum(MIN_DEPOSIT);
+        }
 
         uint256 liquidityCap = s_liquidityCap;
 
-        require(
+        if (
             usdcAmount +
                 i_USDC.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
-                s_withdrawAmountLocked <=
-                liquidityCap,
-            MaxDepositCapReached(liquidityCap)
+                s_withdrawAmountLocked >
+            liquidityCap
+        ) {
+            revert MaxDepositCapReached(liquidityCap);
+        }
+
+        bytes[] memory args = [
+            abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum),
+            abi.encodePacked(s_ethersHashSum),
+            abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity)
+        ];
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
+            args
         );
-
-        bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
-
-        bytes32 clfRequestId = sendCLFRequest(args);
-        uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
+        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+            address(i_lancaParentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 clfRequestId = bytes32(delegateCallResponse);
+        uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
+
         s_depositRequests[clfRequestId].lpAddress = msg.sender;
         s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
-        s_depositRequests[clfRequestId].deadline = deadline;
+        s_depositRequests[clfRequestId].deadline = _deadline;
 
-        emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, deadline);
+        emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, _deadline);
     }
 
     /**
@@ -335,7 +348,7 @@ contract LancaParentPool is
             performData
         );
 
-        LibConcero.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+        LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
     }
 
     /**
