@@ -2,10 +2,15 @@
 pragma solidity 0.8.28;
 
 abstract contract LancaPoolStorage {
-    ///@notice array of chain IDS of Pools to receive Liquidity through `ccipSend` function
+    /* STATE VARIABLES */
+
+    /// @notice variable to store the amount temporarily used by Chainlink Functions
+    uint256 public s_loansInUse;
+
+    /// @notice array of chain IDS of Pools to receive Liquidity through `ccipSend` function
     uint64[] internal s_poolChainSelectors;
 
-    ///@notice Mapping to keep track of allowed pool senders
+    /// @notice Mapping to keep track of allowed pool senders
     mapping(uint64 chainSelector => mapping(address conceroContract => bool isAllowed))
         public s_isSenderContractAllowed;
 

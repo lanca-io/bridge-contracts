@@ -13,8 +13,9 @@ import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
+import {LancaLoan} from "./LancaLoan.sol";
 
-contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
+contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
@@ -45,19 +46,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
 
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
-
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
-        require(
-            receiver != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        require(
-            token == address(i_USDC),
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
-        );
-        IERC20(token).safeTransfer(receiver, amount);
-        s_loansInUse += amount;
-    }
 
     function removePools(uint64 chainSelector) external payable onlyOwner {
         uint256 poolChainSelectorsLen = s_poolChainSelectors.length;

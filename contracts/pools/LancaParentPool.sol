@@ -18,12 +18,14 @@ import {ZERO_ADDRESS} from "../Constants.sol";
 import {LibLanca} from "../libraries/LibLanca.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
+import {LancaLoan} from "./LancaLoan.sol";
 
 contract LancaParentPool is
     AutomationCompatible,
     FunctionsClient,
     CCIPReceiver,
     LancaParentPoolCommon,
+    LancaLoan,
     LancaParentPoolStorageSetters
 {
     /* TYPE DECLARATIONS */
@@ -317,27 +319,6 @@ contract LancaParentPool is
         s_distributeLiquidityRequestProcessed[requestId] = true;
 
         _ccipSend(chainSelector, amountToSend, ICcip.CcipTxType.liquidityRebalancing);
-    }
-
-    /**
-     * @notice Function for the Concero Orchestrator contract to take loans
-     * @param token address of the token being loaned
-     * @param amount being loaned
-     * @param receiver address of the user that will receive the amount
-     * @dev only allowed contract should be able to call this function
-     * @dev for ether transfer, the receiver need to be known and trusted
-     */
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
-        require(
-            receiver != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        require(
-            token == address(i_USDC),
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
-        );
-        IERC20(token).safeTransfer(receiver, amount);
-        s_loansInUse += amount;
     }
 
     /**

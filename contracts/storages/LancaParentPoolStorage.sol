@@ -10,9 +10,6 @@ abstract contract LancaParentPoolStorage is LancaPoolStorage {
     /// @notice variable to store the maximum value that can be deposited on this pool
     uint256 public s_liquidityCap;
 
-    /// @notice variable to store the amount temporarily used by Chainlink Functions
-    uint256 public s_loansInUse;
-
     /// @notice variable to store the amount requested in withdrawals, incremented at startWithdrawal, decremented at completeWithdrawal
     uint256 public s_withdrawAmountLocked;
 
