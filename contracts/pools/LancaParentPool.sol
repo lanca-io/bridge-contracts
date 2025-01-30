@@ -346,12 +346,39 @@ contract LancaParentPool is
         return abi.decode(delegateCallResponse, (bool, bytes));
     }
 
+    function calculateWithdrawableAmountViaDelegateCall(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external returns (uint256) {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaParentPoolCLFCLA.calculateWithdrawableAmount.selector,
+            childPoolsBalance,
+            clpAmount
+        );
+
+        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+            address(i_lancaParentPoolCLFCLA),
+            delegateCallArgs
+        );
+
+        return abi.decode(delegateCallResponse, (uint256));
+    }
+
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
         (bool isTriggerNeeded, bytes memory data) = ILancaParentPoolCLFCLAViewDelegate(
             address(this)
         ).checkUpkeepViaDelegate();
 
         return (isTriggerNeeded, data);
+    }
+
+    function calculateWithdrawableAmount(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256) {
+        return
+            ILancaParentPoolCLFCLAViewDelegate(address(this))
+                .calculateWithdrawableAmountViaDelegateCall(childPoolsBalance, clpAmount);
     }
 
     function getDepositsOnTheWay()
