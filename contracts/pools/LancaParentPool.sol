@@ -313,6 +313,29 @@ contract LancaParentPool is
         }
     }
 
+    /**
+     * @notice Function to fulfill the Automation request for the pool upkeep.
+     * @param performData the data for the upkeep to be performed
+     */
+    function performUpkeep(bytes calldata performData) external {
+        if (msg.sender != i_automationForwarder) {
+            revert LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized);
+        }
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            AutomationCompatibleInterface.performUpkeep.selector,
+            performData
+        );
+
+        LibConcero.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+    }
+
+    /**
+     * @notice Function to fulfill the Automation request for the pool upkeep with oracle result.
+     * @param requestId the request id for the oracle data
+     * @param delegateCallResponse the response from the oracle
+     * @param err the error message if the oracle request failed
+     */
     function handleOracleFulfillment(
         bytes32 requestId,
         bytes memory delegateCallResponse,
@@ -332,6 +355,10 @@ contract LancaParentPool is
         LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
     }
 
+    /**
+     * @notice Function to check if the pool needs upkeep.
+     * @return a boolean indicating if the pool needs upkeep and the data for the upkeep
+     */
     function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.checkUpkeep.selector,
@@ -346,6 +373,12 @@ contract LancaParentPool is
         return abi.decode(delegateCallResponse, (bool, bytes));
     }
 
+    /**
+     * @notice Function to calculate the withdrawable amount for the pool.
+     * @param childPoolsBalance the balance of the child pools
+     * @param clpAmount the amount of CLP tokens
+     * @return the withdrawable amount
+     */
     function calculateWithdrawableAmountViaDelegateCall(
         uint256 childPoolsBalance,
         uint256 clpAmount
@@ -364,6 +397,10 @@ contract LancaParentPool is
         return abi.decode(delegateCallResponse, (uint256));
     }
 
+    /**
+     * @notice Function to check if the pool needs upkeep.
+     * @return a boolean indicating if the pool needs upkeep and the data for the upkeep
+     */
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
         (bool isTriggerNeeded, bytes memory data) = ILancaParentPoolCLFCLAViewDelegate(
             address(this)
@@ -372,6 +409,12 @@ contract LancaParentPool is
         return (isTriggerNeeded, data);
     }
 
+    /**
+     * @notice Function to calculate the withdrawable amount for the pool.
+     * @param childPoolsBalance the balance of the child pools
+     * @param clpAmount the amount of CLP tokens
+     * @return the withdrawable amount
+     */
     function calculateWithdrawableAmount(
         uint256 childPoolsBalance,
         uint256 clpAmount
@@ -381,6 +424,10 @@ contract LancaParentPool is
                 .calculateWithdrawableAmountViaDelegateCall(childPoolsBalance, clpAmount);
     }
 
+    /**
+     * @notice Getter function to get the deposits on the way.
+     * @return the array of deposits on the way
+     */
     function getDepositsOnTheWay()
         external
         view
