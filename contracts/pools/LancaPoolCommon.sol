@@ -13,13 +13,13 @@ abstract contract LancaPoolCommon {
     uint256 internal constant PRECISION_HANDLER = 1e10;
 
     /* IMMUTABLE VARIABLES */
-    IERC20 internal immutable i_USDC;
+    IERC20 internal immutable i_usdc;
     address internal immutable i_msgr0;
     address internal immutable i_msgr1;
     address internal immutable i_msgr2;
 
     constructor(address usdc, address[3] memory messengers) {
-        i_USDC = IERC20(usdc);
+        i_usdc = IERC20(usdc);
         i_msgr0 = messengers[0];
         i_msgr1 = messengers[1];
         i_msgr2 = messengers[2];

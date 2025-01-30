@@ -115,7 +115,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
         uint256 poolsCount = s_poolChainSelectors.length;
         require(poolsCount != 0, NoPoolsToDistribute());
 
-        uint256 amountToSendPerPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
+        uint256 amountToSendPerPool = (i_usdc.balanceOf(address(this)) / poolsCount) - 1;
         ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.liquidityRebalancing,
             data: bytes("")
@@ -156,7 +156,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         require(
-            ccipReceivedToken == address(i_USDC),
+            ccipReceivedToken == address(i_usdc),
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
@@ -179,7 +179,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
                 } else {
                     // @dev we dont have infra orchestrator
                     //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
@@ -208,7 +208,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
         ICcip.CcipSettleMessage memory ccipTxData
     ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
-        tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: amount});
+        tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_usdc), amount: amount});
         address destinationPool = s_dstPoolByChainSelector[chainSelector];
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
@@ -221,7 +221,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
 
         uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(chainSelector, evm2AnyMessage);
 
-        i_USDC.approve(i_ccipRouter, amount);
+        i_usdc.approve(i_ccipRouter, amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         return IRouterClient(i_ccipRouter).ccipSend(chainSelector, evm2AnyMessage);

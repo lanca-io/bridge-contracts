@@ -377,7 +377,7 @@ contract LancaParentPoolCLFCLA is
         uint256 clpAmount,
         uint256 lpSupply
     ) internal view returns (uint256) {
-        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
+        uint256 parentPoolLiquidity = i_usdc.balanceOf(address(this)) +
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
