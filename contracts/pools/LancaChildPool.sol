@@ -12,11 +12,10 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
-    using ErrorsLib for *;
 
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
@@ -61,11 +60,11 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     function takeLoan(address token, uint256 amount, address receiver) external payable {
         require(
             receiver != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             token == address(i_USDC),
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.notUsdcToken)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
@@ -90,7 +89,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     ) external onlyMessenger {
         require(
             s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             !s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId],
@@ -114,7 +113,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     ) external onlyMessenger {
         require(
             s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(!s_isWithdrawalRequestTriggered[withdrawalId], WithdrawalAlreadyTriggered());
 

@@ -5,15 +5,13 @@ import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
 import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaOwnable} from "../LancaOwnable.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 abstract contract LancaParentPoolStorageSetters is
     LancaParentPoolStorage,
     LancaOwnable,
     ILancaParentPool
 {
-    using ErrorsLib for *;
-
     constructor(address owner) LancaOwnable(owner) {}
 
     /**
@@ -45,7 +43,7 @@ abstract contract LancaParentPoolStorageSetters is
     ) external payable onlyOwner {
         require(
             contractAddress != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
     }

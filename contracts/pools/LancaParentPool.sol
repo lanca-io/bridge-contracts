@@ -15,8 +15,8 @@ import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
-import {LancaLib} from "../libraries/LancaLib.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibLanca} from "../libraries/LibLanca.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 contract LancaParentPool is
     AutomationCompatible,
@@ -28,7 +28,6 @@ contract LancaParentPool is
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
-    using ErrorsLib for *;
 
     /* TYPES */
 
@@ -204,7 +203,7 @@ contract LancaParentPool is
     ) external payable onlyOwner {
         require(
             s_childPools[chainSelector] != pool && pool != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
 
         s_poolChainSelectors.push(chainSelector);
@@ -281,7 +280,7 @@ contract LancaParentPool is
     ) external onlyMessenger {
         require(
             s_childPools[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             !s_distributeLiquidityRequestProcessed[requestId],
@@ -295,7 +294,7 @@ contract LancaParentPool is
     function takeLoan(address token, uint256 amount, address receiver) external payable {
         require(
             receiver != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(token == address(i_USDC), NotUsdcToken());
         IERC20(token).safeTransfer(receiver, amount);

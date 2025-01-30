@@ -4,11 +4,9 @@ pragma solidity 0.8.28;
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaOwnable} from "./LancaOwnable.sol";
-import {ErrorsLib} from "./libraries/ErrorsLib.sol";
+import {LibErrors} from "./libraries/LibErrors.sol";
 
 abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, LancaOwnable {
-    using ErrorsLib for *;
-    
     constructor(address owner) LancaOwnable(owner) {}
 
     /**
@@ -19,7 +17,7 @@ abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, L
     function setDexRouterAddress(address router, bool isApproved) external payable onlyOwner {
         require(
             router != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         s_routerAllowed[router] = isApproved;
     }

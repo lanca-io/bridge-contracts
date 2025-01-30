@@ -9,7 +9,7 @@ import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaDexSwap} from "./LancaDexSwap.sol";
 import {ICcip} from "./interfaces/ICcip.sol";
-import {LancaLib} from "./libraries/LancaLib.sol";
+import {LibLanca} from "./libraries/LibLanca.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
 import {LancaBridgeClient} from "./LancaBridgeClient/LancaBridgeClient.sol";
@@ -74,10 +74,10 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         bytes calldata compressedDstSwapData,
         Integration calldata integration
     ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeReq) {
-        address usdc = LancaLib.getUSDCAddressByChain(ICcip.CcipToken.usdc);
+        address usdc = LibLanca.getUSDCAddressByChain(ICcip.CcipToken.usdc);
         require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
 
-        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
+        LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
         bridgeReq.amount = _swap(swapData, address(this));
 
@@ -153,7 +153,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         Integration calldata integration
     ) public payable nonReentrant validateSwapData(swapData) {
         (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
-        LancaLib.transferTokenFromUser(fromToken, fromAmount);
+        LibLanca.transferTokenFromUser(fromToken, fromAmount);
         swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
         _swap(swapData, receiver);
     }
