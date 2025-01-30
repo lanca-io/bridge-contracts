@@ -84,3 +84,12 @@ interface ILancaParentPoolCLFCLA {
         uint256 clpAmount
     ) external view returns (uint256);
 }
+
+interface ILancaParentPoolCLFCLAViewDelegate {
+    function calculateWithdrawableAmountViaDelegateCall(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256);
+
+    function checkUpkeepViaDelegate() external view returns (bool, bytes memory);
+}
