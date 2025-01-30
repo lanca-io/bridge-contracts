@@ -8,12 +8,19 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
 import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
+import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
+import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 
-contract LancaParentPoolCLFCLA is ILancaParentPoolCLFCLA, FunctionsClient, AutomationCompatible {
+contract LancaParentPoolCLFCLA is
+    ILancaParentPoolCLFCLA,
+    FunctionsClient,
+    AutomationCompatible,
+    LancaParentPoolCommon,
+    LancaParentPoolStorage
+{
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
-    using ErrorsLib for *;
 
     /* TYPES */
     /* CONSTANT VARIABLES */
@@ -40,6 +47,9 @@ contract LancaParentPoolCLFCLA is ILancaParentPoolCLFCLA, FunctionsClient, Autom
     }
 
     /* EXTERNAL FUNCTIONS */
+
+    receive() external payable {}
+
     /**
      * @notice sends a request to Chainlink Functions
      * @param args the arguments for the request as bytes array
@@ -56,7 +66,7 @@ contract LancaParentPoolCLFCLA is ILancaParentPoolCLFCLA, FunctionsClient, Autom
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
 
         if (msg.sender != s_withdrawRequests[withdrawalId].lpAddress) {
-            revert Unauthorized();
+            revert LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized);
         }
 
         uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]
