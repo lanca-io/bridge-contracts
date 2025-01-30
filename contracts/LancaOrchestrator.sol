@@ -85,7 +85,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         address usdc = LibLanca.getUSDCAddressByChain(ICcip.CcipToken.usdc);
         require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
 
-        LancaLib.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
+        LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
 
         bridgeData.amount = _swap(swapData, address(this));
 
