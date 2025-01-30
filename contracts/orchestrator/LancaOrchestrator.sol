@@ -86,11 +86,18 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
 
         LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-
         bridgeData.amount = _swap(swapData, address(this));
+        _bridge(bridgeData, integration);
+    }
 
-        // @dev: we call nonReentrant 2 times, mb it is a problem
-        bridge(bridgeData, integration);
+    function bridge(
+        BridgeData memory bridgeData,
+        Integration calldata integration
+    ) external nonReentrant {
+        require(bridgeData.token == i_usdc, InvalidBridgeToken());
+
+        IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+        _bridge(bridgeData, integration);
     }
 
     /// @inheritdoc ILancaIntegration
@@ -115,15 +122,21 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         }
     }
 
-    /* PUBLIC FUNCTIONS */
-
-    function bridge(
-        BridgeData memory bridgeData,
+    /// @inheritdoc ILancaDexSwap
+    function swap(
+        ILancaDexSwap.SwapData[] memory swapData,
+        address receiver,
         Integration calldata integration
-    ) public nonReentrant {
-        require(bridgeData.token == i_usdc, InvalidBridgeToken());
+    ) external payable nonReentrant validateSwapData(swapData) {
+        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
+        LibLanca.transferTokenFromUser(fromToken, fromAmount);
+        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
+        _swap(swapData, receiver);
+    }
 
-        IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+    /* INTERNAL FUNCTIONS */
+
+    function _bridge(BridgeData memory bridgeData, Integration calldata integration) internal {
         bridgeData.amount -= _collectIntegratorFee(
             bridgeData.token,
             bridgeData.amount,
@@ -133,6 +146,11 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         address dstLancaContract = s_lancaOrchestratorDstByChainSelector[
             bridgeData.dstChainSelector
         ];
+
+        if (dstLancaContract == ZERO_ADDRESS) {
+            revert InvalidRecipient();
+        }
+
         bytes memory message = abi.encode(bridgeData.receiver, bridgeData.data);
 
         ILancaBridge.BridgeReq memory bridgeReq = ILancaBridge.BridgeReq({
@@ -148,20 +166,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
         ILancaBridge(getLancaBridge()).bridge(bridgeReq);
     }
-
-    /// @inheritdoc ILancaDexSwap
-    function swap(
-        ILancaDexSwap.SwapData[] memory swapData,
-        address receiver,
-        Integration calldata integration
-    ) public payable nonReentrant validateSwapData(swapData) {
-        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
-        LibLanca.transferTokenFromUser(fromToken, fromAmount);
-        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
-        _swap(swapData, receiver);
-    }
-
-    /* INTERNAL FUNCTIONS */
 
     /// @inheritdoc LancaIntegration
     function _collectSwapFee(
