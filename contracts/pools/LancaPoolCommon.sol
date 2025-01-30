@@ -4,13 +4,10 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 abstract contract LancaPoolCommon {
     using SafeERC20 for IERC20;
-    /**
-     * @notice Thrown when the caller is not an approved messenger.
-     */
-    error NotMessenger();
 
     /* CONSTANT VARIABLES */
     uint256 internal constant PRECISION_HANDLER = 1e10;
@@ -33,7 +30,10 @@ abstract contract LancaPoolCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        require(_isMessenger(msg.sender), NotMessenger());
+        require(
+            _isMessenger(msg.sender),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
+        );
         _;
     }
 
