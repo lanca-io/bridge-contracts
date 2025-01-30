@@ -3,10 +3,10 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ICcip} from "../interfaces/ICcip.sol";
-import {LibErrors} from "../libraries/LibErrors.sol";
-import {LancaPoolStorage} from "../storages/LancaPoolStorage.sol";
-import {ZERO_ADDRESS} from "../Constants.sol";
+import {ICcip} from "../common/interfaces/ICcip.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {LancaPoolStorage} from "./storages/LancaPoolStorage.sol";
+import {ZERO_ADDRESS} from "../common/Constants.sol";
 
 abstract contract LancaPoolCommon is LancaPoolStorage {
     using SafeERC20 for IERC20;

@@ -3,16 +3,16 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
-import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
+import {LancaOrchestratorStorageSetters} from "./storages/LancaOrchestratorStorageSetters.sol";
+import {ILancaBridge} from "../bridge/interfaces/ILancaBridge.sol";
 import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LancaDexSwap} from "./LancaDexSwap.sol";
-import {ICcip} from "./interfaces/ICcip.sol";
-import {LibLanca} from "./libraries/LibLanca.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
+import {ICcip} from "../common/interfaces/ICcip.sol";
+import {LibLanca} from "../common/libraries/LibLanca.sol";
+import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
-import {LancaBridgeClient} from "./LancaBridgeClient/LancaBridgeClient.sol";
+import {LancaBridgeClient} from "../LancaBridgeClient/LancaBridgeClient.sol";
 
 contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient {
     using SafeERC20 for IERC20;

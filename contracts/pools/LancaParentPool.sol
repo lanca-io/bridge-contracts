@@ -11,14 +11,14 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
-import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
+import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
-import {ICcip} from "../interfaces/ICcip.sol";
-import {ZERO_ADDRESS} from "../Constants.sol";
-import {LibLanca} from "../libraries/LibLanca.sol";
-import {LibErrors} from "../libraries/LibErrors.sol";
-import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
+import {ICcip} from "../common/interfaces/ICcip.sol";
+import {ZERO_ADDRESS} from "../common/Constants.sol";
+import {LibLanca} from "../common/libraries/LibLanca.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 
 contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
     /* TYPE DECLARATIONS */

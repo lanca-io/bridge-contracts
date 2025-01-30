@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
-import {LibLanca} from "./libraries/LibLanca.sol";
-import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
-import {ZERO_ADDRESS} from "./Constants.sol";
+import {LibLanca} from "../common/libraries/LibLanca.sol";
+import {LancaOrchestratorStorageSetters} from "./storages/LancaOrchestratorStorageSetters.sol";
+import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
 
 abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters {

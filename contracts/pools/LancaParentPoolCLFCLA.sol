@@ -6,10 +6,10 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
-import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
-import {LibErrors} from "../libraries/LibErrors.sol";
-import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
+import {ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
+import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 
 contract LancaParentPoolCLFCLA is

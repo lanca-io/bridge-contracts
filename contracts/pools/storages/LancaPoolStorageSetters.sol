@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LancaPoolStorage} from "../storages/LancaPoolStorage.sol";
-import {LibErrors} from "../libraries/LibErrors.sol";
+import {LancaPoolStorage} from "./LancaPoolStorage.sol";
+import {LibErrors} from "../../common/libraries/LibErrors.sol";
 
 abstract contract LancaPoolStorageSetters is LancaPoolStorage {
     /* MODIFIERS */
