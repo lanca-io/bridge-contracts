@@ -25,6 +25,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     /* IMMUTABLE VARIABLES */
     address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
+    address internal immutable i_lancaBridge;
+
+    /* EVENTS */
+    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
     /* CONSTRUCTOR */
     constructor(
@@ -33,6 +37,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         address owner,
         address ccipRouter,
         address usdc,
+        address lancaBridge,
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
@@ -41,6 +46,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
+        i_lancaBridge = lancaBridge;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -124,6 +130,13 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
             _ccipSend(s_poolChainSelectors[i], amountToSendPerPool, ccipTxData);
         }
+    }
+
+    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+        amount -= getDstTotalFeeInUsdc(amount);
+        s_loansInUse -= amount;
+
+        emit RebalancingCompleted(id, amount);
     }
 
     /* PUBLIC FUNCTIONS */

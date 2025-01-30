@@ -47,12 +47,16 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         address parentPoolProxy;
         address owner;
         address lancaParentPoolCLFCLA;
+        address lancaBridge;
     }
 
     struct Hash {
         bytes32 collectLiquidityJs;
         bytes32 distributeLiquidityJs;
     }
+
+    /* EVENTS */
+    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -94,6 +98,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
         i_clfDonId = clf.donId;
         i_clfSubId = clf.subId;
+        i_lancaBridge = addr.lancaBridge;
         i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addr.lancaParentPoolCLFCLA);
     }
 
