@@ -6,14 +6,14 @@ import {ILancaParentPool} from "../interfaces/pools/ILancaParentPool.sol";
 import {LancaOwnable} from "../LancaOwnable.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
+import {LancaPoolStorageSetters} from "./LancaPoolStorageSetters.sol";
 
 abstract contract LancaParentPoolStorageSetters is
     LancaParentPoolStorage,
     LancaOwnable,
-    ILancaParentPool
+    ILancaParentPool,
+    LancaPoolStorageSetters
 {
-    using LibErrors for *;
-
     constructor(address owner) LancaOwnable(owner) {}
 
     /**

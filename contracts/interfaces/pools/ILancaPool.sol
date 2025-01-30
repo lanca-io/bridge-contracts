@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 interface ILancaPool {
     /* FUNCTIONS */
-    function takeLoan(address token, uint256 amount, address receiver) external payable;
     function removePools(uint64 chainSelector) external payable;
     function setConceroContractSender(
         uint64 chainSelector,
@@ -16,5 +15,4 @@ interface ILancaPool {
         bytes32 distributeLiquidityRequestId
     ) external;
     function getDstTotalFeeInUsdc(uint256 amount) external pure returns (uint256);
-    function completeRebalancing(bytes32 id, uint256 amount) external;
 }

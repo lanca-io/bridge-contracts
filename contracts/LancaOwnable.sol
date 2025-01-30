@@ -5,8 +5,6 @@ import {ZERO_ADDRESS} from "./Constants.sol";
 import {LibErrors} from "./libraries/LibErrors.sol";
 
 abstract contract LancaOwnable {
-    using LibErrors for *;
-
     /* IMMUTABLE VARIABLES */
     address internal immutable i_owner;
 

@@ -16,7 +16,6 @@ import {LibErrors} from "../libraries/LibErrors.sol";
 
 contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
-    using LibErrors for *;
 
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
@@ -26,7 +25,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     /* IMMUTABLE VARIABLES */
     address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
-    address internal immutable i_lancaBridge;
 
     /* EVENTS */
     event RebalancingCompleted(bytes32 indexed id, uint256 amount);
@@ -42,49 +40,15 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaPoolCommon(usdc, messengers)
+        LancaPoolCommon(usdc, lancaBridge, messengers)
         LancaChildPoolStorageSetters(owner)
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
-        i_lancaBridge = lancaBridge;
-    }
-
-    /* MODIFIERS */
-    /**
-     * @notice CCIP Modifier to check Chains And senders
-     * @param chainSelector Id of the source chain of the message
-     * @param sender address of the sender contract
-     */
-    modifier onlyAllowlistedSenderOfChainSelector(uint64 chainSelector, address sender) {
-        require(s_isSenderContractAllowed[chainSelector][sender], Unauthorized());
-        _;
-    }
-
-    modifier onlyLancaBridge() {
-        require(
-            msg.sender == i_lancaBridge,
-            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notLancaBridge)
-        );
-
-        _;
     }
 
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
-
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
-        require(
-            receiver != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        require(
-            token == address(i_USDC),
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
-        );
-        IERC20(token).safeTransfer(receiver, amount);
-        s_loansInUse += amount;
-    }
 
     function removePools(uint64 chainSelector) external payable onlyOwner {
         uint256 poolChainSelectorsLen = s_poolChainSelectors.length;
@@ -154,7 +118,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         uint256 poolsCount = s_poolChainSelectors.length;
         require(poolsCount != 0, NoPoolsToDistribute());
 
-        uint256 amountToSendPerPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
+        uint256 amountToSendPerPool = (i_usdc.balanceOf(address(this)) / poolsCount) - 1;
         ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.liquidityRebalancing,
             data: bytes("")
@@ -189,7 +153,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     )
         internal
         override
-        onlyAllowlistedSenderOfChainSelector(
+        onlyAllowListedSenderOfChainSelector(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
         )
@@ -201,7 +165,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        require(ccipReceivedToken == address(i_USDC), NotUsdcToken());
+        require(
+            ccipReceivedToken == address(i_usdc),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
+        );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
             ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
@@ -222,7 +189,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
                 } else {
                     // @dev we dont have infra orchestrator
                     //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
@@ -251,7 +218,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         ICcip.CcipSettleMessage memory ccipTxData
     ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
-        tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: amount});
+        tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_usdc), amount: amount});
         address destinationPool = s_dstPoolByChainSelector[chainSelector];
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
@@ -264,7 +231,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
 
         uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(chainSelector, evm2AnyMessage);
 
-        i_USDC.approve(i_ccipRouter, amount);
+        i_usdc.approve(i_ccipRouter, amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         return IRouterClient(i_ccipRouter).ccipSend(chainSelector, evm2AnyMessage);

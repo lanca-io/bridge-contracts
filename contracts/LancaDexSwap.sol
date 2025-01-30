@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
-import {LancaLib} from "./libraries/LancaLib.sol";
+import {LibLanca} from "./libraries/LibLanca.sol";
 import {LancaOrchestratorStorageSetters} from "./LancaOrchestratorStorageSetters.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
@@ -34,15 +34,15 @@ abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
         address dstToken = swapData[lastSwapStepIndex].toToken;
-        uint256 dstTokenProxyInitialBalance = LancaLib.getBalance(dstToken, addressThis);
+        uint256 dstTokenProxyInitialBalance = LibLanca.getBalance(dstToken, addressThis);
         uint256 balanceAfter;
 
         for (uint256 i; i < swapDataLength; ++i) {
-            uint256 balanceBefore = LancaLib.getBalance(swapData[i].toToken, addressThis);
+            uint256 balanceBefore = LibLanca.getBalance(swapData[i].toToken, addressThis);
 
             _performSwap(swapData[i]);
 
-            balanceAfter = LancaLib.getBalance(swapData[i].toToken, addressThis);
+            balanceAfter = LibLanca.getBalance(swapData[i].toToken, addressThis);
             uint256 tokenReceived = balanceAfter - balanceBefore;
             require(tokenReceived >= swapData[i].toAmountMin, InsufficientAmount(tokenReceived));
 
@@ -58,7 +58,7 @@ abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters
         uint256 dstTokenReceived = balanceAfter - dstTokenProxyInitialBalance;
 
         if (receiver != addressThis) {
-            LancaLib.transferTokenToUser(receiver, dstToken, dstTokenReceived);
+            LibLanca.transferTokenToUser(receiver, dstToken, dstTokenReceived);
         }
 
         emit LancaSwap(

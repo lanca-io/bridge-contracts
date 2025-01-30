@@ -46,14 +46,16 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
      * @param parentPool the parent pool proxy contract address.
      * @param lpToken the LP token contract address.
      * @param usdc the USDC token contract address.
+     * @param lancaBridge the LancaBridge contract address.
      * @param messengers the approved messengers.
      */
     constructor(
         address parentPool,
         address lpToken,
         address usdc,
+        address lancaBridge,
         address[3] memory messengers
-    ) LancaPoolCommon(usdc, messengers) {
+    ) LancaPoolCommon(usdc, lancaBridge, messengers) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
     }
@@ -76,14 +78,4 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
     function _convertToUSDCTokenDecimals(uint256 lpAmount) internal pure returns (uint256) {
         return (lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
     }
-
-    /**
-     * @notice Function to distribute funds automatically right after LP deposits into the pool
-     * @dev this function will only be called internally.
-     */
-    function _ccipSend(
-        uint64 chainSelector,
-        uint256 amount,
-        ICcip.CcipTxType ccipTxType
-    ) internal virtual returns (bytes32);
 }

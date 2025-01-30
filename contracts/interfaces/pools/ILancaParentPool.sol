@@ -14,6 +14,7 @@ interface ILancaParentPool is ILancaPool {
 
     /// @notice Struct to track Functions Requests Type
     enum CLFRequestType {
+        empty,
         startDeposit_getChildPoolsLiquidity,
         startWithdrawal_getChildPoolsLiquidity,
         withdrawal_requestLiquidityCollection,
@@ -114,42 +115,6 @@ interface ILancaParentPool is ILancaPool {
         uint256 lpTokensToMint
     );
 
-    /// @notice Emitted when a Cross-chain Functions request fails.
-    /// @param requestId The id of the request sent.
-    /// @param requestType The type of the request.
-    /// @param err The error returned by the request.
-    event CLFRequestError(
-        bytes32 indexed requestId,
-        ILancaParentPool.CLFRequestType requestType,
-        bytes err
-    );
-
-    /// @notice Emitted when a retry is performed for a withdrawal.
-    /// @param id The id of the retry.
-    event RetryWithdrawalPerformed(bytes32 id);
-
-    /// @notice Emitted when a withdrawal upkeep is performed.
-    /// @param id The id of the upkeep.
-    event WithdrawUpkeepPerformed(bytes32 id);
-
-    /// @notice Emitted when a withdrawal request is updated.
-    /// @param id The id of the request.
-    event WithdrawRequestUpdated(bytes32 id);
-
-    /// @notice Emitted when a new withdrawal request is added to the queue.
-    /// @param id The id of the request.
-    event PendingWithdrawRequestAdded(bytes32 id);
-
-    /// @notice Emitted when a withdrawal request is initiated.
-    /// @param requestId The id of the request.
-    /// @param caller The address that initiated the request.
-    /// @param triggedAtTimestamp The timestamp at which the request was initiated.
-    event WithdrawalRequestInitiated(
-        bytes32 indexed requestId,
-        address caller,
-        uint256 triggedAtTimestamp
-    );
-
     /* ERRORS */
     /// @notice error emitted when the sender is not allowed
     /// @param sender the sender of the message
@@ -185,33 +150,14 @@ interface ILancaParentPool is ILancaPool {
     /// @notice error emitted when the request doesn't exist
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 
-    /// @notice Error emitted when the caller is unauthorized
-    error Unauthorized();
-
-    /// @notice Error emitted when the token is not USDC
-    error NotUsdcToken();
-
     /// @notice Error emitted when the deposit deadline has passed
     error DepositDeadlinePassed();
 
-    /// @notice Error emitted when a withdrawal has already been triggered
-    /// @param id The ID of the withdrawal
-    error WithdrawalAlreadyTriggered(bytes32 id);
-
-    /// @notice Error emitted when a withdrawal request does not exist
-    /// @param id The ID of the withdrawal request
-    error WithdrawalRequestDoesntExist(bytes32 id);
-
-    /// @notice Error emitted when a withdrawal request is not yet ready
-    /// @param id The ID of the withdrawal request
-    error WithdrawalRequestNotReady(bytes32 id);
-
-    /// @notice Error emitted when a withdrawal has already been performed
-    /// @param id The ID of the withdrawal
-    error WithdrawalAlreadyPerformed(bytes32 id);
+    /// @notice Error emitted when a function is called by an unauthorized entity
+    /// @param caller The address of the unauthorized caller
+    error OnlyRouterCanFulfill(address caller);
 
     /* FUNCTIONS */
-
 
     /**
      * @notice starts a deposit request for the given amount of USDC
@@ -263,21 +209,4 @@ interface ILancaParentPool is ILancaPool {
      * @notice withdraws the deposit fees
      */
     function withdrawDepositFees() external payable;
-
-    /**
-     * @notice wrapper function for fulfillRequest, to allow the router to call it
-     * @param requestId the ID of the request
-     * @param response the response from Chainlink Functions
-     * @param err the error from Chainlink Functions
-     */
-    function fulfillRequestWrapper(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) external;
-
-    /**
-     * @notice retries to perform the withdrawal request
-     */
-    function retryPerformWithdrawalRequest() external;
 }

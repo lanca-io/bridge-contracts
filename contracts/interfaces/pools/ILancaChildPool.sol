@@ -23,14 +23,10 @@ interface ILancaChildPool is ILancaPool {
         uint256 fees
     );
 
-    /* ERRORS */
-    error Unauthorized();
-    
     ///@notice error emitted if the array is empty.
     error NoPoolsToDistribute();
     error DistributeLiquidityRequestAlreadyProceeded(bytes32 reqId);
     error WithdrawalAlreadyTriggered();
-    error NotUsdcToken();
 
     function setPools(uint64 chainSelector, address pool) external payable;
     function ccipSendToPool(
@@ -39,4 +35,5 @@ interface ILancaChildPool is ILancaPool {
         bytes32 withdrawalId
     ) external;
     function liquidatePool(bytes32 distributeLiquidityRequestId) external;
+    function completeRebalancing(bytes32 id, uint256 amount) external;
 }

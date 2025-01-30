@@ -7,7 +7,8 @@ library LibErrors {
         notMessenger,
         unsupportedCcipToken,
         notOwner,
-        notUsdcToken
+        notUsdcToken,
+        unauthorized
     }
 
     enum UnauthorizedType {

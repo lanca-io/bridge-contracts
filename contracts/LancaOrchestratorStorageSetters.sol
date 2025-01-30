@@ -7,8 +7,6 @@ import {LancaOwnable} from "./LancaOwnable.sol";
 import {LibErrors} from "./libraries/LibErrors.sol";
 
 abstract contract LancaOrchestratorStorageSetters is LancaOrchestratorStorage, LancaOwnable {
-    using LibErrors for *;
-
     constructor(address owner) LancaOwnable(owner) {}
 
     /**

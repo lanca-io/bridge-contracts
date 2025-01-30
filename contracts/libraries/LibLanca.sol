@@ -7,9 +7,8 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {LibErrors} from "./LibErrors.sol";
 import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM, CHAIN_ID_AVALANCHE, CHAIN_ID_ARBITRUM, CHAIN_ID_BASE, CHAIN_ID_POLYGON, CHAIN_ID_OPTIMISM, CHAIN_ID_ETHEREUM} from "../Constants.sol";
 
-library LancaLib {
+library LibLanca {
     using SafeERC20 for IERC20;
-    using LibErrors for *;
 
     /* ERRORS */
     /// @dev Reverts when transfer data is invalid (e.g., zero amount or recipient address).
@@ -127,7 +126,7 @@ library LancaLib {
         revert ChainNotSupported(chainId);
     }
 
-    function safeDelegateCall(address target, bytes calldata args) internal returns (bytes memory) {
+    function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
         require(
             target != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
