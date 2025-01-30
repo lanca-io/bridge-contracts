@@ -67,6 +67,7 @@ contract LancaParentPool is
 
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
+    ILancaParentPoolCLFCLA internal immutable i_lancaParentPoolCLFCLA;
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
@@ -94,9 +95,8 @@ contract LancaParentPool is
         i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
         i_clfDonId = clf.donId;
         i_clfSubId = clf.subId;
+        i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(lancaParentPoolCLFCLA);
     }
-
-    //@dev TODO: move to LancaPoolStorageSetters
 
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
@@ -325,6 +325,21 @@ contract LancaParentPool is
      */
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
         return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+    }
+
+    /**
+     * @notice Check if the pool is full.
+     * @dev Returns true if the pool balance + deposit fee amount is greater than the liquidity cap.
+     * @return true if the pool is full, false otherwise.
+     */
+    function isFull() public view returns (bool) {
+        return
+            MIN_DEPOSIT +
+                i_USDC.balanceOf(address(this)) -
+                s_depositFeeAmount +
+                s_loansInUse -
+                s_withdrawAmountLocked >
+            s_liquidityCap;
     }
 
     /* INTERNAL FUNCTIONS */
