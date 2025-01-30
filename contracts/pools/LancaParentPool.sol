@@ -16,7 +16,7 @@ import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol
 import {ICcip} from "../interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaLib} from "../libraries/LancaLib.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 contract LancaParentPool is
     AutomationCompatible,
@@ -28,7 +28,7 @@ contract LancaParentPool is
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
-    using ErrorsLib for *;
+    using LibErrors for *;
 
     /* TYPES */
 
@@ -51,12 +51,16 @@ contract LancaParentPool is
         address automationForwarder;
         address parentPoolProxy;
         address owner;
+        address lancaBridge;
     }
 
     struct Hash {
         bytes32 collectLiquidityJs;
         bytes32 distributeLiquidityJs;
     }
+
+    /* EVENTS */
+    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -66,20 +70,21 @@ contract LancaParentPool is
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
     uint256 internal constant LP_FEE_FACTOR = 1000;
-    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+    uint32 internal constant CCIP_SEND_GAS_LIMIT = 300_000;
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
     uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
 
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
-    address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
-    uint8 internal immutable i_donHostedSecretsSlotId;
+    bytes32 internal immutable i_clfDonId;
+    uint64 internal immutable i_clfSubId;
+    address internal immutable i_clfRouter;
     uint64 internal immutable i_donHostedSecretsVersion;
-    bytes32 private immutable i_clfDonId;
-    uint64 private immutable i_clfSubId;
+    uint8 internal immutable i_donHostedSecretsSlotId;
+    address internal immutable i_lancaBridge;
 
     constructor(
         Token memory token,
@@ -102,6 +107,7 @@ contract LancaParentPool is
         i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
         i_clfDonId = clf.donId;
         i_clfSubId = clf.subId;
+        i_lancaBridge = addr.lancaBridge;
     }
 
     //@dev TODO: move to LancaPoolStorageSetters
@@ -113,6 +119,15 @@ contract LancaParentPool is
      */
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(s_isSenderContractAllowed[chainSelector][sender], SenderNotAllowed(sender));
+        _;
+    }
+
+    modifier onlyLancaBridge() {
+        require(
+            msg.sender == i_lancaBridge,
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notLancaBridge)
+        );
+
         _;
     }
 
@@ -248,7 +263,7 @@ contract LancaParentPool is
     ) external payable onlyOwner {
         require(
             s_childPools[chainSelector] != pool && pool != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
 
         s_poolChainSelectors.push(chainSelector);
@@ -407,7 +422,7 @@ contract LancaParentPool is
     ) external onlyMessenger {
         require(
             s_childPools[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             !s_distributeLiquidityRequestProcessed[requestId],
@@ -418,14 +433,18 @@ contract LancaParentPool is
         _ccipSend(chainSelector, amountToSend, ICcip.CcipTxType.liquidityRebalancing);
     }
 
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
+    function takeLoan(
+        address token,
+        uint256 amount,
+        address receiver
+    ) external payable onlyLancaBridge {
         require(
             receiver != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(token == address(i_USDC), NotUsdcToken());
-        IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
+        IERC20(token).safeTransfer(receiver, amount);
     }
 
     /**
@@ -453,6 +472,13 @@ contract LancaParentPool is
         returns (ILancaParentPool.DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
     {
         return s_depositsOnTheWayArray;
+    }
+
+    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+        amount -= getDstTotalFeeInUsdc(amount);
+        s_loansInUse -= amount;
+
+        emit RebalancingCompleted(id, amount);
     }
 
     /* PUBLIC FUNCTIONS */

@@ -13,6 +13,7 @@ import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ZERO_ADDRESS} from "./Constants.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {ILancaPool} from "./interfaces/pools/ILancaPool.sol";
 
 contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaBridge {
     using SafeERC20 for IERC20;
@@ -29,15 +30,18 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
+    ILancaPool internal immutable i_lancaPool;
 
     constructor(
         address conceroRouter,
         address ccipRouter,
         address usdc,
-        address link
+        address link,
+        address lancaPool
     ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) {
         i_usdc = usdc;
         i_link = IERC20(link);
+        i_lancaPool = ILancaPool(lancaPool);
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -320,6 +324,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
             data: data
         });
 
+        // @dev TODO: take loan from lanca pool instead transfer
         IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);
         ILancaBridgeClient(lancaBridgeReceiver).lancaBridgeReceive{gas: gasLimit}(bridgeData);
     }
@@ -346,13 +351,14 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
         );
 
         if (ccipTx.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            _handleCcipBatchedSettlement(ccipTx);
+            _handleCcipBatchedSettlement(ccipMessage.messageId, ccipTx);
         } else {
             revert InvalidCcipTxType();
         }
     }
 
     function _handleCcipBatchedSettlement(
+        bytes32 ccipMessageId,
         ICcip.CcipSettleMessage memory ccipSettleMessage
     ) internal {
         CcipSettlementTxs[] memory ccipSettlementTxs = abi.decode(
@@ -360,18 +366,25 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
             (CcipSettlementTxs[])
         );
 
+        uint256 rebalancedAmount;
+
         for (uint256 i; i < ccipSettlementTxs.length; ++i) {
             bytes32 txId = ccipSettlementTxs[i].id;
             uint256 txAmount = ccipSettlementTxs[i].amount;
 
             if (s_isBridgeProcessed[txId]) {
-                // @dev TODO: call receive rebalance function in pool
+                rebalancedAmount += txAmount;
             } else {
                 s_isBridgeProcessed[txId] = true;
                 IERC20(i_usdc).safeTransfer(ccipSettlementTxs[i].receiver, txAmount);
 
                 emit FailedExecutionLayerTxSettled(txId);
             }
+        }
+
+        if (rebalancedAmount > 0) {
+            IERC20(i_usdc).safeTransfer(msg.sender, rebalancedAmount);
+            i_lancaPool.completeRebalancing(ccipMessageId, rebalancedAmount);
         }
     }
 }

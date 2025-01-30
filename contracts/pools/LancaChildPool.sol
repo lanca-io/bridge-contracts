@@ -12,11 +12,11 @@ import {ICcip} from "../interfaces/ICcip.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
-import {ErrorsLib} from "../libraries/ErrorsLib.sol";
+import {LibErrors} from "../libraries/LibErrors.sol";
 
 contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
-    using ErrorsLib for *;
+    using LibErrors for *;
 
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
@@ -26,6 +26,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     /* IMMUTABLE VARIABLES */
     address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
+    address internal immutable i_lancaBridge;
+
+    /* EVENTS */
+    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
     /* CONSTRUCTOR */
     constructor(
@@ -34,6 +38,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         address owner,
         address ccipRouter,
         address usdc,
+        address lancaBridge,
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
@@ -42,6 +47,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
+        i_lancaBridge = lancaBridge;
     }
 
     /* MODIFIERS */
@@ -55,17 +61,26 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         _;
     }
 
+    modifier onlyLancaBridge() {
+        require(
+            msg.sender == i_lancaBridge,
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notLancaBridge)
+        );
+
+        _;
+    }
+
     /* EXTERNAL FUNCTIONS */
     receive() external payable {}
 
     function takeLoan(address token, uint256 amount, address receiver) external payable {
         require(
             receiver != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             token == address(i_USDC),
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.notUsdcToken)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
         IERC20(token).safeTransfer(receiver, amount);
         s_loansInUse += amount;
@@ -90,7 +105,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     ) external onlyMessenger {
         require(
             s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
             !s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId],
@@ -114,7 +129,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     ) external onlyMessenger {
         require(
             s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
-            ErrorsLib.InvalidAddress(ErrorsLib.InvalidAddressType.zeroAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(!s_isWithdrawalRequestTriggered[withdrawalId], WithdrawalAlreadyTriggered());
 
@@ -149,6 +164,13 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
             _ccipSend(s_poolChainSelectors[i], amountToSendPerPool, ccipTxData);
         }
+    }
+
+    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+        amount -= getDstTotalFeeInUsdc(amount);
+        s_loansInUse -= amount;
+
+        emit RebalancingCompleted(id, amount);
     }
 
     /* PUBLIC FUNCTIONS */

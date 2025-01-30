@@ -16,4 +16,5 @@ interface ILancaPool {
         bytes32 distributeLiquidityRequestId
     ) external;
     function getDstTotalFeeInUsdc(uint256 amount) external pure returns (uint256);
+    function completeRebalancing(bytes32 id, uint256 amount) external;
 }
