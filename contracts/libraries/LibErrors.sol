@@ -8,7 +8,7 @@ library LibErrors {
         unsupportedCcipToken,
         notOwner,
         notUsdcToken,
-        unauthorized,
+        unauthorized
     }
 
     /// @dev Reverts when the address is invalid.
