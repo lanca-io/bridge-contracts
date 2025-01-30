@@ -126,7 +126,7 @@ library LibLanca {
         revert ChainNotSupported(chainId);
     }
 
-    function safeDelegateCall(address target, bytes calldata args) internal returns (bytes memory) {
+    function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
         require(
             target != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
