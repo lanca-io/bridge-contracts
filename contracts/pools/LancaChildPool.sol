@@ -167,7 +167,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        require(ccipReceivedToken == address(i_USDC), NotUsdcToken());
+        require(
+            ccipReceivedToken == address(i_USDC),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
+        );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
             ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
