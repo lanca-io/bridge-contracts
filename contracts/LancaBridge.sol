@@ -127,6 +127,16 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     /* INTERNAL FUNCTIONS */
 
+    /* FEES FUNCTIONS */
+
+    function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
+        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
+            bridgeReq.dstChainSelector,
+            bridgeReq.amount
+        );
+        return ccipFee + lancaFee + messengerFee;
+    }
+
     function _getCCIPFee(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
         uint256 ccipFeeInUsdc = _getCCIPFeeInUsdc(dstChainSelector);
         return _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
@@ -148,13 +158,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
         require(bridgeReq.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
-    function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
-        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
-            bridgeReq.dstChainSelector,
-            bridgeReq.amount
-        );
-        return ccipFee + lancaFee + messengerFee;
-    }
+    /* SETTLEMENT FUNCTIONS */
 
     function _addPendingSettlementTx(
         bytes32 conceroMessageId,
@@ -315,14 +319,15 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
             bytes memory data
         ) = abi.decode(conceroMessage.data, (uint8, address, address, uint24, uint256, bytes));
 
-        ILancaBridgeClient.LancaBridgeData memory bridgeData = ILancaBridgeClient.LancaBridgeData({
-            id: conceroMessage.id,
-            sender: sender,
-            token: i_usdc,
-            amount: amount,
-            srcChainSelector: conceroMessage.srcChainSelector,
-            data: data
-        });
+        ILancaBridgeClient.LancaBridgeMessage memory bridgeData = ILancaBridgeClient
+            .LancaBridgeMessage({
+                id: conceroMessage.id,
+                sender: sender,
+                token: i_usdc,
+                amount: amount,
+                srcChainSelector: conceroMessage.srcChainSelector,
+                data: data
+            });
 
         // @dev TODO: take loan from lanca pool instead transfer
         IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);

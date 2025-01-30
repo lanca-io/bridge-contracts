@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 interface ILancaBridgeClient {
-    struct LancaBridgeData {
+    struct LancaBridgeMessage {
         bytes32 id;
         address sender;
         address token;
@@ -11,5 +11,5 @@ interface ILancaBridgeClient {
         bytes data;
     }
 
-    function lancaBridgeReceive(LancaBridgeData calldata message) external;
+    function lancaBridgeReceive(LancaBridgeMessage calldata message) external;
 }

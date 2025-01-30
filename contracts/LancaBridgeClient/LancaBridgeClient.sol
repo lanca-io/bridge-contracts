@@ -17,7 +17,7 @@ abstract contract LancaBridgeClient is ILancaBridgeClient {
         i_lancaBridge = lancaBridge;
     }
 
-    function lancaBridgeReceive(LancaBridgeData calldata message) external {
+    function lancaBridgeReceive(LancaBridgeMessage calldata message) external {
         if (msg.sender != i_lancaBridge) {
             revert InvalidLancaBridge(msg.sender);
         }
@@ -29,5 +29,5 @@ abstract contract LancaBridgeClient is ILancaBridgeClient {
         return i_lancaBridge;
     }
 
-    function _lancaBridgeReceive(LancaBridgeData calldata message) internal virtual;
+    function _lancaBridgeReceive(LancaBridgeMessage calldata message) internal virtual;
 }
