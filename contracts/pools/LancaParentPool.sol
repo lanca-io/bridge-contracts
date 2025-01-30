@@ -21,7 +21,6 @@ import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../int
 import {LancaLoan} from "./LancaLoan.sol";
 
 contract LancaParentPool is
-    AutomationCompatible,
     FunctionsClient,
     CCIPReceiver,
     LancaParentPoolCommon,
@@ -116,22 +115,19 @@ contract LancaParentPool is
      * @param usdcAmount amount to be deposited
      */
     function startDeposit(uint256 usdcAmount) external {
-        if (usdcAmount < MIN_DEPOSIT) {
-            revert DepositAmountBelowMinimum(MIN_DEPOSIT);
-        }
+        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum(MIN_DEPOSIT));
 
         uint256 liquidityCap = s_liquidityCap;
 
-        if (
+        require(
             usdcAmount +
                 i_USDC.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
-                s_withdrawAmountLocked >
-            liquidityCap
-        ) {
-            revert MaxDepositCapReached(liquidityCap);
-        }
+                s_withdrawAmountLocked <=
+                liquidityCap,
+            MaxDepositCapReached(liquidityCap)
+        );
 
         bytes[] memory args = [
             abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum),
@@ -148,15 +144,17 @@ contract LancaParentPool is
             delegateCallArgs
         );
         bytes32 clfRequestId = bytes32(delegateCallResponse);
-        uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
+        uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
 
-        s_depositRequests[clfRequestId].lpAddress = msg.sender;
-        s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
-        s_depositRequests[clfRequestId].deadline = _deadline;
+        address lpAddress = msg.sender;
 
-        emit DepositInitiated(clfRequestId, msg.sender, usdcAmount, _deadline);
+        s_depositRequests[clfRequestId].lpAddress = lpAddress;
+        s_depositRequests[clfRequestId].usdcAmountToDeposit = usdcAmount;
+        s_depositRequests[clfRequestId].deadline = deadline;
+
+        emit DepositInitiated(clfRequestId, lpAddress, usdcAmount, deadline);
     }
 
     /**
@@ -268,7 +266,7 @@ contract LancaParentPool is
         bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         bytes32 withdrawalId = keccak256(
-            abi.encodePacked(msg.sender, lpAmount, block.number, clfRequestId)
+            abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
         );
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
@@ -345,9 +343,10 @@ contract LancaParentPool is
      * @param performData the data for the upkeep to be performed
      */
     function performUpkeep(bytes calldata performData) external {
-        if (msg.sender != i_automationForwarder) {
-            revert LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized);
-        }
+        require(
+            msg.sender == i_automationForwarder,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized)
+        );
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.performUpkeep.selector,
@@ -368,9 +367,7 @@ contract LancaParentPool is
         bytes memory delegateCallResponse,
         bytes memory err
     ) external {
-        if (msg.sender != i_clfRouter) {
-            revert OnlyRouterCanFulfill(msg.sender);
-        }
+        require(msg.sender == i_clfRouter, OnlyRouterCanFulfill(msg.sender));
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             ILancaParentPoolCLFCLA.fulfillRequestWrapper.selector,
@@ -579,7 +576,7 @@ contract LancaParentPool is
 
     function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
         uint8 index;
-        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; i++) {
+        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ++i) {
             if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
                 index = i;
                 s_latestDepositOnTheWayIndex = i;
