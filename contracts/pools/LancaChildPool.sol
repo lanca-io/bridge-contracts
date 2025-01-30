@@ -13,9 +13,8 @@ import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
-import {LancaLoan} from "./LancaLoan.sol";
 
-contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildPoolStorageSetters {
+contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
@@ -39,7 +38,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaLoan, LancaChildP
         CCIPReceiver(ccipRouter)
         LancaPoolCommon(usdc, messengers)
         LancaChildPoolStorageSetters(owner)
-        LancaLoan(usdc)
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);

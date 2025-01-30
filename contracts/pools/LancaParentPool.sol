@@ -19,14 +19,8 @@ import {ZERO_ADDRESS} from "../Constants.sol";
 import {LibLanca} from "../libraries/LibLanca.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "../interfaces/pools/ILancaParentPoolCLFCLA.sol";
-import {LancaLoan} from "./LancaLoan.sol";
 
-contract LancaParentPool is
-    CCIPReceiver,
-    LancaParentPoolCommon,
-    LancaLoan,
-    LancaParentPoolStorageSetters
-{
+contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
@@ -90,7 +84,6 @@ contract LancaParentPool is
         CCIPReceiver(addr.ccipRouter)
         LancaParentPoolCommon(addr.parentPoolProxy, token.lpToken, token.usdc, messengers)
         LancaParentPoolStorageSetters(addr.owner)
-        LancaLoan(token.usdc)
     {
         i_linkToken = LinkTokenInterface(token.link);
         i_clfRouter = clf.router;

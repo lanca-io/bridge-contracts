@@ -5,8 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
+import {LancaPoolStorage} from "../storages/LancaPoolStorage.sol";
+import {ZERO_ADDRESS} from "../Constants.sol";
 
-abstract contract LancaPoolCommon {
+abstract contract LancaPoolCommon is LancaPoolStorage {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
@@ -35,6 +37,20 @@ abstract contract LancaPoolCommon {
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
         );
         _;
+    }
+
+    /* EXTERNAL FUNCTIONS */
+    function takeLoan(address token, uint256 amount, address receiver) external payable {
+        require(
+            receiver != ZERO_ADDRESS,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
+        );
+        require(
+            token == address(i_usdc),
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
+        );
+        IERC20(token).safeTransfer(receiver, amount);
+        s_loansInUse += amount;
     }
 
     /* INTERNAL FUNCTIONS */
