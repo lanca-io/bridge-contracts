@@ -35,4 +35,5 @@ interface ILancaChildPool is ILancaPool {
         bytes32 withdrawalId
     ) external;
     function liquidatePool(bytes32 distributeLiquidityRequestId) external;
+    function completeRebalancing(bytes32 id, uint256 amount) external;
 }
