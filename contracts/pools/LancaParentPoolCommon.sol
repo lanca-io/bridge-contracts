@@ -46,14 +46,16 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
      * @param parentPool the parent pool proxy contract address.
      * @param lpToken the LP token contract address.
      * @param usdc the USDC token contract address.
+     * @param lancaBridge the LancaBridge contract address.
      * @param messengers the approved messengers.
      */
     constructor(
         address parentPool,
         address lpToken,
         address usdc,
+        address lancaBridge,
         address[3] memory messengers
-    ) LancaPoolCommon(usdc, messengers) {
+    ) LancaPoolCommon(usdc, lancaBridge, messengers) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
     }

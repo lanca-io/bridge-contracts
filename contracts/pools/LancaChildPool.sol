@@ -25,7 +25,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     /* IMMUTABLE VARIABLES */
     address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
-    address internal immutable i_lancaBridge;
 
     /* EVENTS */
     event RebalancingCompleted(bytes32 indexed id, uint256 amount);
@@ -41,12 +40,11 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaPoolCommon(usdc, messengers)
+        LancaPoolCommon(usdc, lancaBridge, messengers)
         LancaChildPoolStorageSetters(owner)
     {
         i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
-        i_lancaBridge = lancaBridge;
     }
 
     /* EXTERNAL FUNCTIONS */

@@ -16,12 +16,14 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
 
     /* IMMUTABLE VARIABLES */
     IERC20 internal immutable i_usdc;
+    address internal immutable i_lancaBridge;
     address internal immutable i_msgr0;
     address internal immutable i_msgr1;
     address internal immutable i_msgr2;
 
-    constructor(address usdc, address[3] memory messengers) {
+    constructor(address usdc, address lancaBridge, address[3] memory messengers) {
         i_usdc = IERC20(usdc);
+        i_lancaBridge = lancaBridge;
         i_msgr0 = messengers[0];
         i_msgr1 = messengers[1];
         i_msgr2 = messengers[2];
@@ -35,6 +37,14 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
         require(
             _isMessenger(msg.sender),
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
+        );
+        _;
+    }
+
+    modifier onlyLancaBridge() {
+        require(
+            msg.sender == i_lancaBridge,
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notLancaBridge)
         );
         _;
     }

@@ -40,6 +40,7 @@ contract LancaParentPoolCLFCLA is
         address parentPoolProxy,
         address lpToken,
         address usdc,
+        address lancaBridge,
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,
@@ -47,7 +48,10 @@ contract LancaParentPoolCLFCLA is
         uint64 donHostedSecretsVersion,
         bytes32 collectLiquidityJsCodeHashSum,
         address[3] memory messengers
-    ) LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers) FunctionsClient(clfRouter) {
+    )
+        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, lancaBridge, messengers)
+        FunctionsClient(clfRouter)
+    {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
         i_donHostedSecretsSlotId = donHostedSecretsSlotId;
