@@ -52,6 +52,7 @@ contract LancaParentPool is
         address automationForwarder;
         address parentPoolProxy;
         address owner;
+        address lancaParentPoolCLFCLA;
     }
 
     struct Hash {
@@ -97,7 +98,7 @@ contract LancaParentPool is
         i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
         i_clfDonId = clf.donId;
         i_clfSubId = clf.subId;
-        i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(lancaParentPoolCLFCLA);
+        i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addr.lancaParentPoolCLFCLA);
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -121,7 +122,7 @@ contract LancaParentPool is
 
         require(
             usdcAmount +
-                i_USDC.balanceOf(address(this)) -
+                i_usdc.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
                 s_withdrawAmountLocked <=
@@ -178,7 +179,7 @@ contract LancaParentPool is
             usdcAmountAfterFee
         );
 
-        i_USDC.safeTransferFrom(lpAddress, address(this), usdcAmount);
+        i_usdc.safeTransferFrom(lpAddress, address(this), usdcAmount);
 
         i_lpToken.mint(lpAddress, lpTokensToMint);
 
@@ -293,7 +294,7 @@ contract LancaParentPool is
     function withdrawDepositFees() external payable onlyOwner {
         uint256 amountToSend = s_depositFeeAmount;
         s_depositFeeAmount = 0;
-        i_USDC.safeTransfer(i_owner, amountToSend);
+        i_usdc.safeTransfer(i_owner, amountToSend);
     }
 
     /**
@@ -478,7 +479,7 @@ contract LancaParentPool is
     function isFull() public view returns (bool) {
         return
             MIN_DEPOSIT +
-                i_USDC.balanceOf(address(this)) -
+                i_usdc.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
                 s_withdrawAmountLocked >
@@ -498,7 +499,7 @@ contract LancaParentPool is
         uint256 childPoolsTotalBalance,
         uint256 amountToDeposit
     ) private view returns (uint256) {
-        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
+        uint256 parentPoolLiquidity = i_usdc.balanceOf(address(this)) +
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
@@ -612,7 +613,7 @@ contract LancaParentPool is
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         require(
-            ccipReceivedToken == address(i_USDC),
+            ccipReceivedToken == address(i_usdc),
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
@@ -635,7 +636,7 @@ contract LancaParentPool is
                 } else {
                     /// @dev we dont have infra orchestrator
                     //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
                     emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
@@ -687,14 +688,14 @@ contract LancaParentPool is
         address recipient = s_childPools[chainSelector];
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             recipient,
-            address(i_USDC),
+            address(i_usdc),
             amount,
             ccipTxData
         );
 
         uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(chainSelector, evm2AnyMessage);
 
-        i_USDC.approve(i_ccipRouter, amount);
+        i_usdc.approve(i_ccipRouter, amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         return IRouterClient(i_ccipRouter).ccipSend(chainSelector, evm2AnyMessage);
@@ -718,9 +719,9 @@ contract LancaParentPool is
         delete s_withdrawRequests[withdrawalId];
 
         i_lpToken.burn(lpAmountToBurn);
-        i_USDC.safeTransfer(lpAddress, amountToWithdraw);
+        i_usdc.safeTransfer(lpAddress, amountToWithdraw);
 
-        emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_USDC), amountToWithdraw);
+        emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_usdc), amountToWithdraw);
     }
 
     function _buildCCIPMessage(
