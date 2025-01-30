@@ -281,6 +281,14 @@ contract LancaParentPool is
         _ccipSend(chainSelector, amountToSend, ICcip.CcipTxType.liquidityRebalancing);
     }
 
+    /**
+     * @notice Function for the Concero Orchestrator contract to take loans
+     * @param token address of the token being loaned
+     * @param amount being loaned
+     * @param receiver address of the user that will receive the amount
+     * @dev only allowed contract should be able to call this function
+     * @dev for ether transfer, the receiver need to be known and trusted
+     */
     function takeLoan(address token, uint256 amount, address receiver) external payable {
         require(
             receiver != ZERO_ADDRESS,
