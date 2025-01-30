@@ -32,6 +32,9 @@ contract LancaParentPoolCLFCLA is
     /* IMMUTABLE VARIABLES */
     bytes32 private immutable i_clfDonId;
     uint64 private immutable i_clfSubId;
+    uint8 internal immutable i_donHostedSecretsSlotId;
+    uint64 internal immutable i_donHostedSecretsVersion;
+    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
 
     constructor(
         address parentPoolProxy,
@@ -40,10 +43,15 @@ contract LancaParentPoolCLFCLA is
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,
+        uint8 donHostedSecretsSlotId,
+        uint64 donHostedSecretsVersion,
+        bytes32 collectLiquidityJsCodeHashSum,
         address[3] memory messengers
     ) LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, messengers) FunctionsClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
+        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
+        i_donHostedSecretsVersion = donHostedSecretsVersion;
     }
 
     /* EXTERNAL FUNCTIONS */
