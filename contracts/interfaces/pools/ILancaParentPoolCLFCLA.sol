@@ -42,9 +42,6 @@ interface ILancaParentPoolCLFCLA {
 
     /* ERRORS */
 
-    /// @notice Error emitted when the caller is unauthorized
-    error Unauthorized();
-
     /// @notice Error emitted when a withdrawal has already been triggered
     /// @param id The ID of the withdrawal
     error WithdrawalAlreadyTriggered(bytes32 id);
