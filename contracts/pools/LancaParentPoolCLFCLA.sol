@@ -2,8 +2,8 @@
 pragma solidity 0.8.28;
 
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
-import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
+//import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+//import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
@@ -14,48 +14,48 @@ import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 
 contract LancaParentPoolCLFCLA is
     ILancaParentPoolCLFCLA,
-    FunctionsClient,
+    /*FunctionsClient,*/
     AutomationCompatible,
     LancaParentPoolCommon,
     LancaParentPoolStorage
 {
     using SafeERC20 for IERC20;
-    using FunctionsRequest for FunctionsRequest.Request;
+    //using FunctionsRequest for FunctionsRequest.Request;
 
     /* TYPES */
     /* CONSTANT VARIABLES */
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
-    uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
-    string internal constant JS_CODE =
-        "try{const [b,o,f]=bytesArgs;const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const q=m+'concero/contracts-v1/'+'release'+`/tasks/CLFScripts/dist/pool/${f==='0x02' ? 'withdrawalLiquidityCollection':f==='0x03' ? 'redistributePoolsLiquidity':'getChildPoolsLiquidity'}.min.js`;const [t,p]=await Promise.all([fetch(u),fetch(q)]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);if(r===b.toLowerCase()&& x===o.toLowerCase()){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
+    //uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
+    // string internal constant JS_CODE =
+    //     "try{const [b,o,f]=bytesArgs;const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const q=m+'concero/contracts-v1/'+'release'+`/tasks/CLFScripts/dist/pool/${f==='0x02' ? 'withdrawalLiquidityCollection':f==='0x03' ? 'redistributePoolsLiquidity':'getChildPoolsLiquidity'}.min.js`;const [t,p]=await Promise.all([fetch(u),fetch(q)]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);if(r===b.toLowerCase()&& x===o.toLowerCase()){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
 
     /* IMMUTABLE VARIABLES */
-    bytes32 private immutable i_clfDonId;
-    uint64 private immutable i_clfSubId;
-    uint8 internal immutable i_donHostedSecretsSlotId;
-    uint64 internal immutable i_donHostedSecretsVersion;
-    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
+    // bytes32 private immutable i_clfDonId;
+    // uint64 private immutable i_clfSubId;
+    // uint8 internal immutable i_donHostedSecretsSlotId;
+    // uint64 internal immutable i_donHostedSecretsVersion;
+    // bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
 
     constructor(
         address parentPoolProxy,
         address lpToken,
         address usdc,
         address lancaBridge,
-        address clfRouter,
-        uint64 clfSubId,
-        bytes32 clfDonId,
-        uint8 donHostedSecretsSlotId,
-        uint64 donHostedSecretsVersion,
-        bytes32 collectLiquidityJsCodeHashSum,
-        address[3] memory messengers
+        // address clfRouter,
+        // uint64 clfSubId,
+        // bytes32 clfDonId,
+        // uint8 donHostedSecretsSlotId,
+        // uint64 donHostedSecretsVersion,
+        // bytes32 collectLiquidityJsCodeHashSum,
+        // address[3] memory messengers
     )
-        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, lancaBridge, messengers)
-        FunctionsClient(clfRouter)
+        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, lancaBridge/*, messengers*/)
+        /* FunctionsClient(clfRouter)*/
     {
-        i_clfSubId = clfSubId;
-        i_clfDonId = clfDonId;
-        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = donHostedSecretsVersion;
+        // i_clfSubId = clfSubId;
+        // i_clfDonId = clfDonId;
+        // i_donHostedSecretsSlotId = donHostedSecretsSlotId;
+        // i_donHostedSecretsVersion = donHostedSecretsVersion;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -65,9 +65,10 @@ contract LancaParentPoolCLFCLA is
      * @param args the arguments for the request as bytes array
      * @return the request ID
      */
-    function sendCLFRequest(bytes[] memory args) external returns (bytes32) {
-        return _sendRequest(args);
-    }
+    // function sendCLFRequest(bytes[] memory args) external returns (bytes32) {
+    //     return _sendRequest(args);
+    // }
+
 
     /**
      * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
@@ -332,14 +333,14 @@ contract LancaParentPoolCLFCLA is
      * @notice Function to send a Request to Chainlink Functions
      * @param args the arguments for the request as bytes array
      */
-    function _sendRequest(bytes[] memory args) internal returns (bytes32) {
-        FunctionsRequest.Request memory req;
-        req.initializeRequestForInlineJavaScript(JS_CODE);
-        req.addDONHostedSecrets(i_donHostedSecretsSlotId, i_donHostedSecretsVersion);
-        req.setBytesArgs(args);
+    // function _sendRequest(bytes[] memory args) internal returns (bytes32) {
+    //     FunctionsRequest.Request memory req;
+    //     req.initializeRequestForInlineJavaScript(JS_CODE);
+    //     req.addDONHostedSecrets(i_donHostedSecretsSlotId, i_donHostedSecretsVersion);
+    //     req.setBytesArgs(args);
 
-        return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
-    }
+    //     return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
+    // }
 
     /**
      * @notice adds the amount of a withdrawal request on the way to the total sum

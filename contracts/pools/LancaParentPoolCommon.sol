@@ -53,9 +53,9 @@ abstract contract LancaParentPoolCommon is LancaPoolCommon {
         address parentPool,
         address lpToken,
         address usdc,
-        address lancaBridge,
-        address[3] memory messengers
-    ) LancaPoolCommon(usdc, lancaBridge, messengers) {
+        address lancaBridge /*,
+        address[3] memory messengers*/
+    ) LancaPoolCommon(usdc, lancaBridge /*, messengers*/) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
     }

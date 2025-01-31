@@ -19,21 +19,28 @@ import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
+import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
+import {IConceroRouter} from "../common/interfaces/IConceroRouter.sol";
 
-contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
+contract LancaParentPool is
+    ConceroClient,
+    CCIPReceiver,
+    LancaParentPoolCommon,
+    LancaParentPoolStorageSetters
+{
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
 
     /* TYPES */
 
-    struct Clf {
-        address router;
-        uint64 subId;
-        bytes32 donId;
-        uint8 donHostedSecretsSlotId;
-        uint64 donHostedSecretsVersion;
-    }
+    // struct Clf {
+    //     address router;
+    //     uint64 subId;
+    //     bytes32 donId;
+    //     uint8 donHostedSecretsSlotId;
+    //     uint64 donHostedSecretsVersion;
+    // }
 
     struct Token {
         address link;
@@ -48,12 +55,13 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         address owner;
         address lancaParentPoolCLFCLA;
         address lancaBridge;
+        address conceroRouter;
     }
 
-    struct Hash {
-        bytes32 collectLiquidityJs;
-        bytes32 distributeLiquidityJs;
-    }
+    // struct Hash {
+    //     bytes32 collectLiquidityJs;
+    //     bytes32 distributeLiquidityJs;
+    // }
 
     /* EVENTS */
     event RebalancingCompleted(bytes32 indexed id, uint256 amount);
@@ -69,22 +77,23 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
     ILancaParentPoolCLFCLA internal immutable i_lancaParentPoolCLFCLA;
-    address internal immutable i_clfRouter;
-    bytes32 internal immutable i_clfDonId;
-    uint64 internal immutable i_clfSubId;
+    //address internal immutable i_clfRouter;
+    //bytes32 internal immutable i_clfDonId;
+    //uint64 internal immutable i_clfSubId;
     address internal immutable i_automationForwarder;
-    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
-    bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
-    uint8 internal immutable i_donHostedSecretsSlotId;
-    uint64 internal immutable i_donHostedSecretsVersion;
+    //bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
+    //bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
+    //uint8 internal immutable i_donHostedSecretsSlotId;
+    //uint64 internal immutable i_donHostedSecretsVersion;
 
     constructor(
         Token memory token,
         Addr memory addr,
-        Clf memory clf,
-        Hash memory hash,
-        address[3] memory messengers
+        //Clf memory clf,
+        //Hash memory hash,
+        //address[3] memory messengers
     )
+        ConceroClient(addr.conceroRouter)
         CCIPReceiver(addr.ccipRouter)
         LancaParentPoolCommon(
             addr.parentPoolProxy,
@@ -96,14 +105,14 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         LancaParentPoolStorageSetters(addr.owner)
     {
         i_linkToken = LinkTokenInterface(token.link);
-        i_clfRouter = clf.router;
+        //i_clfRouter = clf.router;
         i_automationForwarder = addr.automationForwarder;
-        i_collectLiquidityJsCodeHashSum = hash.collectLiquidityJs;
-        i_distributeLiquidityJsCodeHashSum = hash.distributeLiquidityJs;
-        i_donHostedSecretsSlotId = clf.donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
-        i_clfDonId = clf.donId;
-        i_clfSubId = clf.subId;
+        //i_collectLiquidityJsCodeHashSum = hash.collectLiquidityJs;
+        //i_distributeLiquidityJsCodeHashSum = hash.distributeLiquidityJs;
+        //i_donHostedSecretsSlotId = clf.donHostedSecretsSlotId;
+        //i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
+        // i_clfDonId = clf.donId;
+        // i_clfSubId = clf.subId;
         i_lancaBridge = addr.lancaBridge;
         i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addr.lancaParentPoolCLFCLA);
     }
@@ -137,19 +146,33 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
             MaxDepositCapReached(liquidityCap)
         );
 
-        bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
+        // bytes[] memory args = new bytes[](3);
+        // args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
+        // args[1] = abi.encodePacked(s_ethersHashSum);
+        // args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
-            args
+        bytes memory data = abi.encode(
+            CLFRequestType.startDeposit_getChildPoolsLiquidity
         );
-        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
-            address(i_lancaParentPoolCLFCLA),
-            delegateCallArgs
-        );
+        IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
+            feeToken: address(i_usdc),
+            receiver: address(i_lancaParentPoolCLFCLA),
+            dstChainSelector: 0, // @dev 
+            dstChainGasLimit: 0, // @dev 
+            data: data
+        });
+
+        bytes32 depositRequestId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
+
+        // bytes memory delegateCallArgs = abi.encodeWithSelector(
+        //     ILancaParentPoolCLFCLA.sendCLFRequest.selector,
+        //     args
+        // );
+        // bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+        //     address(i_lancaParentPoolCLFCLA),
+        //     delegateCallArgs
+        // );
+
         bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
@@ -260,14 +283,14 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            ILancaParentPoolCLFCLA.sendCLFRequest.selector,
-            args
-        );
-        bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
-            address(i_lancaParentPoolCLFCLA),
-            delegateCallArgs
-        );
+        // bytes memory delegateCallArgs = abi.encodeWithSelector(
+        //     ILancaParentPoolCLFCLA.sendCLFRequest.selector,
+        //     args
+        // );
+        // bytes memory delegateCallResponse = LibLanca.safeDelegateCall(
+        //     address(i_lancaParentPoolCLFCLA),
+        //     delegateCallArgs
+        // );
         bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         bytes32 withdrawalId = keccak256(

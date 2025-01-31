@@ -17,29 +17,29 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
     /* IMMUTABLE VARIABLES */
     IERC20 internal immutable i_usdc;
     address internal immutable i_lancaBridge;
-    address internal immutable i_msgr0;
-    address internal immutable i_msgr1;
-    address internal immutable i_msgr2;
+    // address internal immutable i_msgr0;
+    // address internal immutable i_msgr1;
+    // address internal immutable i_msgr2;
 
-    constructor(address usdc, address lancaBridge, address[3] memory messengers) {
+    constructor(address usdc, address lancaBridge /*, address[3] memory messengers*/) {
         i_usdc = IERC20(usdc);
         i_lancaBridge = lancaBridge;
-        i_msgr0 = messengers[0];
-        i_msgr1 = messengers[1];
-        i_msgr2 = messengers[2];
+        // i_msgr0 = messengers[0];
+        // i_msgr1 = messengers[1];
+        // i_msgr2 = messengers[2];
     }
 
     /* MODIFIERS */
     /**
      * @notice modifier to check if the caller is the an approved messenger
      */
-    modifier onlyMessenger() {
-        require(
-            _isMessenger(msg.sender),
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
-        );
-        _;
-    }
+    // modifier onlyMessenger() {
+    //     require(
+    //         _isMessenger(msg.sender),
+    //         LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
+    //     );
+    //     _;
+    // }
 
     modifier onlyLancaBridge() {
         require(
@@ -50,7 +50,11 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
     }
 
     /* EXTERNAL FUNCTIONS */
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
+    function takeLoan(
+        address token,
+        uint256 amount,
+        address receiver
+    ) external payable onlyLancaBridge {
         require(
             receiver != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
@@ -69,7 +73,7 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
      * @param messenger the address of the caller
      * @return allowed true if the caller is an allowed messenger, false otherwise
      */
-    function _isMessenger(address messenger) internal view returns (bool) {
-        return (messenger == i_msgr0 || messenger == i_msgr1 || messenger == i_msgr2);
-    }
+    // function _isMessenger(address messenger) internal view returns (bool) {
+    //     return (messenger == i_msgr0 || messenger == i_msgr1 || messenger == i_msgr2);
+    // }
 }

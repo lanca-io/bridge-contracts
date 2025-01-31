@@ -180,7 +180,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
                 uint256 txAmount = settlementTxs[i].amount;
 
                 //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
-                // @dev change it
+                // @dev how i can got this? It is not CLF
                 bool isTxConfirmed = true;
 
                 if (isTxConfirmed) {
