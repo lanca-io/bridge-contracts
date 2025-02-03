@@ -15,7 +15,7 @@ import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
-import {ZERO_ADDRESS} from "../common/Constants.sol";
+import {ZERO_ADDRESS, CHAIN_SELECTOR_BASE} from "../common/Constants.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
@@ -72,6 +72,7 @@ contract LancaParentPool is
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
     uint256 internal constant LP_FEE_FACTOR = 1000;
+    uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
@@ -156,9 +157,9 @@ contract LancaParentPool is
         );
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: address(i_usdc),
-            receiver: address(i_lancaParentPoolCLFCLA),
-            dstChainSelector: 0, // @dev 
-            dstChainGasLimit: 0, // @dev 
+            receiver: address(this),
+            dstChainSelector: CHAIN_SELECTOR_BASE, 
+            dstChainGasLimit: CLF_CALLBACK_GAS_LIMIT,
             data: data
         });
 
