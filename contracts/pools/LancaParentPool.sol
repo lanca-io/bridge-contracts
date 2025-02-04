@@ -222,7 +222,7 @@ contract LancaParentPool is
 
             IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
                 feeToken: address(i_usdc),
-                receiver: address(this), /// @dev wrong
+                receiver: pool,
                 dstChainSelector: chainSelector, 
                 dstChainGasLimit: CLF_CALLBACK_GAS_LIMIT,
                 data: data
@@ -266,7 +266,18 @@ contract LancaParentPool is
         // args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
         // args[1] = abi.encodePacked(s_ethersHashSum);
 
+
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
+
+        IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
+            feeToken: address(i_usdc),
+            receiver: address(this), /// @dev TODO: change
+            dstChainSelector: bytes4(0), /// @dev TODO: change
+            dstChainGasLimit: CLF_CALLBACK_GAS_LIMIT,
+            data: bytes(0) /// @dev TODO: change
+        });
+
+        bytes32 clfRequestId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
 
         // bytes memory delegateCallArgs = abi.encodeWithSelector(
         //     ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -276,7 +287,7 @@ contract LancaParentPool is
         //     address(i_lancaParentPoolCLFCLA),
         //     delegateCallArgs
         // );
-        bytes32 clfRequestId = bytes32(delegateCallResponse);
+        //bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         bytes32 withdrawalId = keccak256(
             abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
