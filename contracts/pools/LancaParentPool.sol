@@ -157,13 +157,13 @@ contract LancaParentPool is
         );
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
             feeToken: address(i_usdc),
-            receiver: address(this),
-            dstChainSelector: CHAIN_SELECTOR_BASE, 
+            receiver: address(this), /// @dev wrong
+            dstChainSelector: CHAIN_SELECTOR_BASE, /// @dev mb wrong
             dstChainGasLimit: CLF_CALLBACK_GAS_LIMIT,
             data: data
         });
 
-        bytes32 depositRequestId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
+        bytes32 clfRequestId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
 
         // bytes memory delegateCallArgs = abi.encodeWithSelector(
         //     ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -174,7 +174,7 @@ contract LancaParentPool is
         //     delegateCallArgs
         // );
 
-        bytes32 clfRequestId = bytes32(delegateCallResponse);
+        //bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
@@ -248,20 +248,40 @@ contract LancaParentPool is
                 abi.encodePacked(pool, chainSelector, RedistributeLiquidityType.addPool)
             );
 
-            bytes[] memory args = new bytes[](7);
-            args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
-            args[1] = abi.encodePacked(s_ethersHashSum);
-            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
-            args[3] = abi.encodePacked(chainSelector);
-            args[4] = abi.encodePacked(distributeLiquidityRequestId);
-            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
-            args[6] = abi.encodePacked(block.chainid);
-
-            bytes memory delegateCallArgs = abi.encodeWithSelector(
-                ILancaParentPoolCLFCLA.sendCLFRequest.selector,
-                args
+            bytes memory data = abi.encode(
+                CLFRequestType.liquidityRedistribution,
+                chainSelector,
+                distributeLiquidityRequestId,
+                RedistributeLiquidityType.addPool,
+                block.chainid
             );
-            LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+
+            IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
+                feeToken: address(i_usdc),
+                receiver: address(this), /// @dev wrong
+                dstChainSelector: chainSelector, 
+                dstChainGasLimit: CLF_CALLBACK_GAS_LIMIT,
+                data: data
+            });
+
+            bytes32 depositRequestId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
+
+            //bytes[] memory args = new bytes[](7);
+            // args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
+            // args[1] = abi.encodePacked(s_ethersHashSum);
+            // args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+            // args[3] = abi.encodePacked(chainSelector);
+            // args[4] = abi.encodePacked(distributeLiquidityRequestId);
+            // args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
+            // args[6] = abi.encodePacked(block.chainid);
+
+            // bytes memory delegateCallArgs = abi.encodeWithSelector(
+            //     ILancaParentPoolCLFCLA.sendCLFRequest.selector,
+            //     args
+            // );
+            //LibLanca.safeDelegateCall(address(i_lancaParentPoolCLFCLA), delegateCallArgs);
+
+            /// @dev TODO: call receiveMessage
         }
     }
 
@@ -278,9 +298,9 @@ contract LancaParentPool is
             WithdrawalRequestAlreadyExists()
         );
 
-        bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
+        // bytes[] memory args = new bytes[](2);
+        // args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
+        // args[1] = abi.encodePacked(s_ethersHashSum);
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
