@@ -34,14 +34,6 @@ contract LancaParentPool is
 
     /* TYPES */
 
-    // struct Clf {
-    //     address router;
-    //     uint64 subId;
-    //     bytes32 donId;
-    //     uint8 donHostedSecretsSlotId;
-    //     uint64 donHostedSecretsVersion;
-    // }
-
     struct Token {
         address link;
         address usdc;
@@ -58,11 +50,6 @@ contract LancaParentPool is
         address conceroRouter;
     }
 
-    // struct Hash {
-    //     bytes32 collectLiquidityJs;
-    //     bytes32 distributeLiquidityJs;
-    // }
-
     /* EVENTS */
     event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
@@ -78,21 +65,11 @@ contract LancaParentPool is
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface private immutable i_linkToken;
     ILancaParentPoolCLFCLA internal immutable i_lancaParentPoolCLFCLA;
-    //address internal immutable i_clfRouter;
-    //bytes32 internal immutable i_clfDonId;
-    //uint64 internal immutable i_clfSubId;
     address internal immutable i_automationForwarder;
-    //bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
-    //bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
-    //uint8 internal immutable i_donHostedSecretsSlotId;
-    //uint64 internal immutable i_donHostedSecretsVersion;
 
     constructor(
         Token memory token,
         Addr memory addr,
-        //Clf memory clf,
-        //Hash memory hash,
-        //address[3] memory messengers
     )
         ConceroClient(addr.conceroRouter)
         CCIPReceiver(addr.ccipRouter)
@@ -106,14 +83,7 @@ contract LancaParentPool is
         LancaParentPoolStorageSetters(addr.owner)
     {
         i_linkToken = LinkTokenInterface(token.link);
-        //i_clfRouter = clf.router;
         i_automationForwarder = addr.automationForwarder;
-        //i_collectLiquidityJsCodeHashSum = hash.collectLiquidityJs;
-        //i_distributeLiquidityJsCodeHashSum = hash.distributeLiquidityJs;
-        //i_donHostedSecretsSlotId = clf.donHostedSecretsSlotId;
-        //i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
-        // i_clfDonId = clf.donId;
-        // i_clfSubId = clf.subId;
         i_lancaBridge = addr.lancaBridge;
         i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addr.lancaParentPoolCLFCLA);
     }
@@ -147,11 +117,6 @@ contract LancaParentPool is
             MaxDepositCapReached(liquidityCap)
         );
 
-        // bytes[] memory args = new bytes[](3);
-        // args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        // args[1] = abi.encodePacked(s_ethersHashSum);
-        // args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
-
         bytes memory data = abi.encode(
             CLFRequestType.startDeposit_getChildPoolsLiquidity
         );
@@ -174,7 +139,6 @@ contract LancaParentPool is
         //     delegateCallArgs
         // );
 
-        //bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
