@@ -14,8 +14,15 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
+import {LancaOwnable} from "../common/LancaOwnable.sol";
 
-contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaBridge {
+contract LancaBridge is
+    LancaBridgeStorage,
+    CCIPReceiver,
+    ConceroClient,
+    ILancaBridge,
+    LancaOwnable
+{
     using SafeERC20 for IERC20;
 
     /* CONSTANTS */
@@ -28,6 +35,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     /* IMMUTABLES */
 
+    uint64 internal immutable i_chainSelector;
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
     ILancaPool internal immutable i_lancaPool;
@@ -37,18 +45,25 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
         address ccipRouter,
         address usdc,
         address link,
-        address lancaPool
-    ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) {
+        address lancaPool,
+        uint64 chainSelector
+    ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) LancaOwnable(msg.sender) {
         i_usdc = usdc;
         i_link = IERC20(link);
         i_lancaPool = ILancaPool(lancaPool);
+        i_chainSelector = chainSelector;
     }
 
     /* EXTERNAL FUNCTIONS */
 
     function bridge(BridgeReq calldata bridgeReq) external {
         _validateBridgeReq(bridgeReq);
-        uint256 fee = _getFee(bridgeReq);
+        uint256 fee = getFee(
+            bridgeReq.dstChainSelector,
+            bridgeReq.amount,
+            bridgeReq.feeToken,
+            bridgeReq.dstChainGasLimit
+        );
         require(bridgeReq.amount > fee, InsufficientBridgeAmount());
 
         IERC20(bridgeReq.token).safeTransferFrom(msg.sender, address(this), bridgeReq.amount);
@@ -61,7 +76,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
             LancaBridgeMessageVersion.V1,
             msg.sender,
             bridgeReq.receiver,
-            uint24(bridgeReq.dstChainGasLimit),
+            bridgeReq.dstChainGasLimit,
             bridgeReq.amount,
             bridgeReq.message
         );
@@ -74,7 +89,9 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
             data: bridgeDataMessage
         });
 
-        bytes32 conceroMessageId = IConceroRouter(getConceroRouter()).sendMessage(messageReq);
+        address conceroRouter = getConceroRouter();
+        IERC20(messageReq.feeToken).approve(conceroRouter, fee);
+        bytes32 conceroMessageId = IConceroRouter(conceroRouter).sendMessage(messageReq);
 
         uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
             conceroMessageId,
@@ -104,9 +121,19 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
         );
     }
 
-    function getFee(BridgeReq calldata bridgeReq) external view returns (uint256) {
-        _validateBridgeReq(bridgeReq);
-        return _getFee(bridgeReq);
+    function getFee(
+        uint64 dstChainSelector,
+        uint256 amount,
+        address feeToken,
+        uint32 dstChainGasLimit
+    ) public view returns (uint256) {
+        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFeeBreakdown(
+            dstChainSelector,
+            amount,
+            feeToken,
+            dstChainGasLimit
+        );
+        return ccipFee + lancaFee + messengerFee;
     }
 
     /* PUBLIC FUNCTIONS */
@@ -115,27 +142,32 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
      * @param dstChainSelector the destination blockchain chain selector
      */
 
-    function getBridgeFees(
+    function getBridgeFeeBreakdown(
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        address /*feeToken*/,
+        uint32 /*dstChainGasLimit*/
     ) public view returns (uint256, uint256, uint256) {
+        // @dev fee calculation logic based on fee token address and dst chain gas limit will be added in closest future
         uint256 ccipFee = _getCCIPFee(dstChainSelector, amount);
         uint256 lancaFee = _getLancaFee(amount);
         uint256 messengerFee = IConceroRouter(getConceroRouter()).getFee(dstChainSelector);
         return (ccipFee, lancaFee, messengerFee);
     }
 
+    /* ADMIN FUNCTIONS */
+
+    function setLancaBridgeContract(
+        uint64 chainSelector,
+        address lancaBridgeContract
+    ) external onlyOwner {
+        require(chainSelector != 0 && chainSelector != i_chainSelector, InvalidDstChainSelector());
+        s_lancaBridgeContractsByChain[chainSelector] = lancaBridgeContract;
+    }
+
     /* INTERNAL FUNCTIONS */
 
     /* FEES FUNCTIONS */
-
-    function _getFee(BridgeReq calldata bridgeReq) internal view returns (uint256) {
-        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFees(
-            bridgeReq.dstChainSelector,
-            bridgeReq.amount
-        );
-        return ccipFee + lancaFee + messengerFee;
-    }
 
     function _getCCIPFee(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
         uint256 ccipFeeInUsdc = _getCCIPFeeInUsdc(dstChainSelector);

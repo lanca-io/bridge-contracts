@@ -33,9 +33,11 @@ test:
 	forge test $(args)
 
 gas_snapshot:
-	forge snapshot $(args)
+	forge snapshot $(args) --match-path ./test/foundry/src/gas/*
 
 coverage:
 	forge coverage $(args)
 
 .PHONY: all test
+
+

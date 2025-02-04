@@ -4,9 +4,10 @@ pragma solidity 0.8.28;
 import {ILancaBridgeStorage} from "../interfaces/ILancaBridgeStorage.sol";
 
 abstract contract LancaBridgeStorage is ILancaBridgeStorage {
-    /// @notice Variable to store the Link to USDC latest rate
+    /* STORAGE */
     uint256 internal s_latestLinkUsdcRate;
 
+    /* MAPPINGS */
     mapping(uint64 chainSelector => address lancaBridge) internal s_lancaBridgeContractsByChain;
     mapping(uint64 dstChainSelector => bytes32[] bridgeTxIds)
         internal s_pendingSettlementIdsByDstChain;

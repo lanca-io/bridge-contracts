@@ -7,15 +7,18 @@ import {ConceroRouterMock} from "../mocks/ConceroRouterMock.sol";
 
 contract DeployLancaBridgeHarnessScript is DeployLancaBridgeScriptBase {
     function _deployLancaBridge() internal override {
-        vm.prank(s_deployer);
+        vm.startPrank(getDeployer());
         s_lancaBridge = address(
             new LancaBridgeHarness(
                 address(new ConceroRouterMock()),
                 getCcipRouter(),
                 getUsdcAddress(),
                 getLinkAddress(),
-                address(new LancaPoolMock())
+                address(new LancaPoolMock()),
+                getChainSelector()
             )
         );
+
+        vm.stopPrank();
     }
 }

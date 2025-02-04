@@ -8,6 +8,7 @@ contract LancaBridgeHarness is LancaBridge {
         address ccipRouter,
         address usdc,
         address link,
-        address lancaPool
-    ) LancaBridge(conceroRouter, ccipRouter, usdc, link, lancaPool) {}
+        address lancaPool,
+        uint64 chainSelector
+    ) LancaBridge(conceroRouter, ccipRouter, usdc, link, lancaPool, chainSelector) {}
 }
