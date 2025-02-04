@@ -37,7 +37,6 @@ contract LancaParentPoolCLFCLA is
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
 
     constructor(
-        address parentPoolProxy,
         address lpToken,
         address usdc,
         address lancaBridge,
@@ -46,8 +45,7 @@ contract LancaParentPoolCLFCLA is
         bytes32 clfDonId,
         uint8 donHostedSecretsSlotId,
         uint64 donHostedSecretsVersion,
-        bytes32 collectLiquidityJsCodeHashSum,
-        address[3] memory messengers
+        bytes32 collectLiquidityJsCodeHashSum
     )
         LancaParentPoolStorage(usdc, lancaBridge)
         LancaParentPoolCommon(lpToken)
@@ -57,6 +55,7 @@ contract LancaParentPoolCLFCLA is
         i_clfDonId = clfDonId;
         i_donHostedSecretsSlotId = donHostedSecretsSlotId;
         i_donHostedSecretsVersion = donHostedSecretsVersion;
+        i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
     }
 
     /* EXTERNAL FUNCTIONS */

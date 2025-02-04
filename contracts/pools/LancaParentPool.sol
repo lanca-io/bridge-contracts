@@ -4,7 +4,6 @@ pragma solidity 0.8.28;
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
@@ -13,7 +12,7 @@ import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/Aut
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
-import {LancaParentPoolStorageSetters} from "./LancaParentPoolStorageSetters.sol";
+import {LancaParentPoolStorageSetters} from "./storages/LancaParentPoolStorageSetters.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";

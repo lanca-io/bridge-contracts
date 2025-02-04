@@ -11,7 +11,7 @@ import {ILancaChildPool} from "./interfaces/ILancaChildPool.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
-import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
+import {LancaChildPoolStorageSetters} from "./storages/LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 
 contract LancaChildPool is LancaChildPoolStorageSetters, CCIPReceiver, ILancaChildPool {
