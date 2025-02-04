@@ -5,28 +5,32 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
-import {LancaPoolStorage} from "./storages/LancaPoolStorage.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
+import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
+import {ILancaPool} from "./interfaces/ILancaPool.sol";
 
-abstract contract LancaPoolCommon is LancaPoolStorage {
+abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
     uint256 internal constant PRECISION_HANDLER = 1e10;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
 
     /* IMMUTABLE VARIABLES */
     IERC20 internal immutable i_usdc;
     address internal immutable i_lancaBridge;
-    address internal immutable i_msgr0;
-    address internal immutable i_msgr1;
-    address internal immutable i_msgr2;
 
-    constructor(address usdc, address lancaBridge, address[3] memory messengers) {
+    modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
+        require(
+            s_isSenderContractAllowed[chainSelector][sender],
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized)
+        );
+        _;
+    }
+
+    constructor(address usdc, address lancaBridge) {
         i_usdc = IERC20(usdc);
         i_lancaBridge = lancaBridge;
-        i_msgr0 = messengers[0];
-        i_msgr1 = messengers[1];
-        i_msgr2 = messengers[2];
     }
 
     /* MODIFIERS */
@@ -50,7 +54,7 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
     }
 
     /* EXTERNAL FUNCTIONS */
-    function takeLoan(address token, uint256 amount, address receiver) external payable {
+    function takeLoan(address token, uint256 amount, address receiver) external onlyLancaBridge {
         require(
             receiver != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
@@ -63,6 +67,17 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
         s_loansInUse += amount;
     }
 
+    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+        amount -= getDstTotalFeeInUsdc(amount);
+        s_loansInUse -= amount;
+    }
+
+    /* PUBLIC FUNCTIONS */
+
+    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+    }
+
     /* INTERNAL FUNCTIONS */
     /**
      * @notice Internal function to check if a caller address is an allowed messenger
@@ -70,6 +85,7 @@ abstract contract LancaPoolCommon is LancaPoolStorage {
      * @return allowed true if the caller is an allowed messenger, false otherwise
      */
     function _isMessenger(address messenger) internal view returns (bool) {
-        return (messenger == i_msgr0 || messenger == i_msgr1 || messenger == i_msgr2);
+        // @dev TODO: move messengers and messengers related functions in pools to concero messaging
+        return false;
     }
 }

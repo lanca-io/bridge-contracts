@@ -20,7 +20,7 @@ import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 
-contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPoolStorageSetters {
+contract LancaParentPool is LancaParentPoolStorageSetters, LancaParentPoolCommon, CCIPReceiver {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
@@ -55,15 +55,11 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         bytes32 distributeLiquidityJs;
     }
 
-    /* EVENTS */
-    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
-
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
     uint256 internal constant MIN_DEPOSIT = 250 * USDC_DECIMALS;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
-    uint256 internal constant LP_FEE_FACTOR = 1000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
@@ -85,15 +81,9 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         Hash memory hash,
         address[3] memory messengers
     )
+        LancaParentPoolStorageSetters(addr.owner, token.usdc, addr.lancaBridge)
+        LancaParentPoolCommon(token.lpToken)
         CCIPReceiver(addr.ccipRouter)
-        LancaParentPoolCommon(
-            addr.parentPoolProxy,
-            token.lpToken,
-            token.usdc,
-            addr.lancaBridge,
-            messengers
-        )
-        LancaParentPoolStorageSetters(addr.owner)
     {
         i_linkToken = LinkTokenInterface(token.link);
         i_clfRouter = clf.router;
@@ -317,7 +307,7 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         );
         require(
             !s_distributeLiquidityRequestProcessed[requestId],
-            DistributeLiquidityRequestAlreadyProceeded(requestId)
+            DistributeLiquidityRequestAlreadyProceeded()
         );
         s_distributeLiquidityRequestProcessed[requestId] = true;
 
@@ -466,14 +456,6 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
     }
 
     /* PUBLIC FUNCTIONS */
-    /**
-     * @notice getter function to calculate Destination fee amount on Source
-     * @param amount the amount of tokens to calculate over
-     * @return the fee amount
-     */
-    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
-    }
 
     /**
      * @notice Check if the pool is full.
@@ -622,28 +604,29 @@ contract LancaParentPool is CCIPReceiver, LancaParentPoolCommon, LancaParentPool
         );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
-                ccipTxData.data,
-                (ICcip.CcipSettlementTx[])
-            );
-            for (uint256 i; i < settlementTxs.length; ++i) {
-                bytes32 txId = settlementTxs[i].id;
-                uint256 txAmount = settlementTxs[i].amount;
-                /// @dev we dont have infra orchestrator
-                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
-                /// @dev change it
-                bool isTxConfirmed = true;
-
-                if (isTxConfirmed) {
-                    txAmount -= getDstTotalFeeInUsdc(txAmount);
-                    s_loansInUse -= txAmount;
-                } else {
-                    /// @dev we dont have infra orchestrator
-                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
-                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
-                }
-            }
+            // @dev TODO: remove it. moved to lanca bridge
+            //            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
+            //                ccipTxData.data,
+            //                (ICcip.CcipSettlementTx[])
+            //            );
+            //            for (uint256 i; i < settlementTxs.length; ++i) {
+            //                bytes32 txId = settlementTxs[i].id;
+            //                uint256 txAmount = settlementTxs[i].amount;
+            //                /// @dev we dont have infra orchestrator
+            //                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+            //                /// @dev change it
+            //                bool isTxConfirmed = true;
+            //
+            //                if (isTxConfirmed) {
+            //                    txAmount -= getDstTotalFeeInUsdc(txAmount);
+            //                    s_loansInUse -= txAmount;
+            //                } else {
+            //                    /// @dev we dont have infra orchestrator
+            //                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
+            //                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
+            //                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
+            //                }
+            //            }
         } else if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 

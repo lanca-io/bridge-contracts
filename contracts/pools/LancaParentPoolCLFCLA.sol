@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {FunctionsClient as ClfClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,11 +13,11 @@ import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 
 contract LancaParentPoolCLFCLA is
+    LancaParentPoolStorage,
     ILancaParentPoolCLFCLA,
-    FunctionsClient,
+    ClfClient,
     AutomationCompatible,
-    LancaParentPoolCommon,
-    LancaParentPoolStorage
+    LancaParentPoolCommon
 {
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
@@ -49,8 +49,9 @@ contract LancaParentPoolCLFCLA is
         bytes32 collectLiquidityJsCodeHashSum,
         address[3] memory messengers
     )
-        LancaParentPoolCommon(parentPoolProxy, lpToken, usdc, lancaBridge, messengers)
-        FunctionsClient(clfRouter)
+        LancaParentPoolStorage(usdc, lancaBridge)
+        LancaParentPoolCommon(lpToken)
+        ClfClient(clfRouter)
     {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
@@ -166,7 +167,7 @@ contract LancaParentPoolCLFCLA is
             block.timestamp >= s_withdrawRequests[withdrawalId].triggeredAtTimestamp,
             WithdrawalRequestNotReady(withdrawalId)
         );
-        require(!s_withdrawTriggered[withdrawalId], WithdrawalAlreadyTriggered(withdrawalId));
+        require(!s_withdrawTriggered[withdrawalId], WithdrawalAlreadyTriggered());
 
         s_withdrawTriggered[withdrawalId] = true;
 

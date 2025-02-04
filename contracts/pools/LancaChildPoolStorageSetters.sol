@@ -6,14 +6,8 @@ import {LancaOwnable} from "../common/LancaOwnable.sol";
 import {ILancaChildPool} from "./interfaces/ILancaChildPool.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
-import {LancaPoolStorageSetters} from "./storages/LancaPoolStorageSetters.sol";
 
-abstract contract LancaChildPoolStorageSetters is
-    LancaChildPoolStorage,
-    ILancaChildPool,
-    LancaOwnable,
-    LancaPoolStorageSetters
-{
+abstract contract LancaChildPoolStorageSetters is LancaChildPoolStorage, LancaOwnable {
     constructor(address owner) LancaOwnable(owner) {}
 
     /* EXTERNAL FUNCTIONS */

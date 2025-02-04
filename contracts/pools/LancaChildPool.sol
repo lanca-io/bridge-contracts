@@ -14,20 +14,16 @@ import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaChildPoolStorageSetters} from "./LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 
-contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageSetters {
+contract LancaChildPool is LancaChildPoolStorageSetters, CCIPReceiver, ILancaChildPool {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
-    uint256 internal constant LP_FEE_FACTOR = 1000;
 
     /* IMMUTABLE VARIABLES */
     address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
-
-    /* EVENTS */
-    event RebalancingCompleted(bytes32 indexed id, uint256 amount);
 
     /* CONSTRUCTOR */
     constructor(
@@ -36,11 +32,10 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         address owner,
         address ccipRouter,
         address usdc,
-        address lancaBridge,
-        address[3] memory messengers
+        address lancaBridge
     )
         CCIPReceiver(ccipRouter)
-        LancaPoolCommon(usdc, lancaBridge, messengers)
+        LancaPoolCommon(usdc, lancaBridge)
         LancaChildPoolStorageSetters(owner)
     {
         i_childProxy = childProxy;
@@ -73,7 +68,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         );
         require(
             !s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId],
-            DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId)
+            DistributeLiquidityRequestAlreadyProceeded()
         );
 
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
@@ -110,7 +105,7 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
     function liquidatePool(bytes32 distributeLiquidityRequestId) external onlyMessenger {
         require(
             !s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId],
-            DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId)
+            DistributeLiquidityRequestAlreadyProceeded()
         );
 
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
@@ -128,18 +123,6 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
             _ccipSend(s_poolChainSelectors[i], amountToSendPerPool, ccipTxData);
         }
-    }
-
-    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
-        amount -= getDstTotalFeeInUsdc(amount);
-        s_loansInUse -= amount;
-
-        emit RebalancingCompleted(id, amount);
-    }
-
-    /* PUBLIC FUNCTIONS */
-    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
     }
 
     /* INTERNAL FUNCTIONS */
@@ -171,37 +154,37 @@ contract LancaChildPool is CCIPReceiver, LancaPoolCommon, LancaChildPoolStorageS
         );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
-                ccipTxData.data,
-                (ICcip.CcipSettlementTx[])
-            );
-            for (uint256 i; i < settlementTxs.length; ++i) {
-                bytes32 txId = settlementTxs[i].id;
-                uint256 txAmount = settlementTxs[i].amount;
-
-                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
-                // @dev change it
-                bool isTxConfirmed = true;
-
-                if (isTxConfirmed) {
-                    txAmount -= getDstTotalFeeInUsdc(txAmount);
-                    s_loansInUse -= txAmount;
-                } else {
-                    // @dev we dont have infra orchestrator
-                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
-                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
-                }
-            }
+            //            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
+            //                ccipTxData.data,
+            //                (ICcip.CcipSettlementTx[])
+            //            );
+            //            for (uint256 i; i < settlementTxs.length; ++i) {
+            //                bytes32 txId = settlementTxs[i].id;
+            //                uint256 txAmount = settlementTxs[i].amount;
+            //
+            //                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
+            //                // @dev change it
+            //                bool isTxConfirmed = true;
+            //
+            //                if (isTxConfirmed) {
+            //                    txAmount -= getDstTotalFeeInUsdc(txAmount);
+            //                    s_loansInUse -= txAmount;
+            //                } else {
+            //                    // @dev we dont have infra orchestrator
+            //                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
+            //                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
+            //                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
+            //                }
+            //            }
         }
 
-        emit CCIPReceived(
-            any2EvmMessage.messageId,
-            any2EvmMessage.sourceChainSelector,
-            abi.decode(any2EvmMessage.sender, (address)),
-            ccipReceivedToken,
-            ccipReceivedAmount
-        );
+        //        emit CCIPReceived(
+        //            any2EvmMessage.messageId,
+        //            any2EvmMessage.sourceChainSelector,
+        //            abi.decode(any2EvmMessage.sender, (address)),
+        //            ccipReceivedToken,
+        //            ccipReceivedAmount
+        //        );
     }
 
     /**

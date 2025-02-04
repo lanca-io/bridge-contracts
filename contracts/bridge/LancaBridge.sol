@@ -13,7 +13,7 @@ import {LancaBridgeStorage} from "./storages/LancaBridgeStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {ILancaChildPool} from "../pools/interfaces/ILancaChildPool.sol";
+import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
 
 contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaBridge {
     using SafeERC20 for IERC20;
@@ -30,7 +30,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
-    ILancaChildPool internal immutable i_lancaChildPool;
+    ILancaPool internal immutable i_lancaPool;
 
     constructor(
         address conceroRouter,
@@ -41,7 +41,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
     ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) {
         i_usdc = usdc;
         i_link = IERC20(link);
-        i_lancaChildPool = ILancaChildPool(lancaPool);
+        i_lancaPool = ILancaPool(lancaPool);
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -389,7 +389,7 @@ contract LancaBridge is LancaBridgeStorage, CCIPReceiver, ConceroClient, ILancaB
 
         if (rebalancedAmount > 0) {
             IERC20(i_usdc).safeTransfer(msg.sender, rebalancedAmount);
-            i_lancaChildPool.completeRebalancing(ccipMessageId, rebalancedAmount);
+            i_lancaPool.completeRebalancing(ccipMessageId, rebalancedAmount);
         }
     }
 }
