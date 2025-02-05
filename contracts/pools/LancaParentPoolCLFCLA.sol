@@ -11,8 +11,11 @@ import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
+import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
+import {ILancaPool} from "./interfaces/ILancaPool.sol";
 
 contract LancaParentPoolCLFCLA is
+    LancaPoolCommonStorage,
     LancaParentPoolStorage,
     ILancaParentPoolCLFCLA,
     ClfClient,
@@ -22,8 +25,9 @@ contract LancaParentPoolCLFCLA is
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
 
-    /* TYPES */
     /* CONSTANT VARIABLES */
+    IERC20 internal immutable i_usdc;
+    uint256 internal constant PRECISION_HANDLER = 1e10;
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
     uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
@@ -46,16 +50,13 @@ contract LancaParentPoolCLFCLA is
         uint8 donHostedSecretsSlotId,
         uint64 donHostedSecretsVersion,
         bytes32 collectLiquidityJsCodeHashSum
-    )
-        LancaParentPoolStorage(usdc, lancaBridge)
-        LancaParentPoolCommon(lpToken)
-        ClfClient(clfRouter)
-    {
+    ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
         i_donHostedSecretsSlotId = donHostedSecretsSlotId;
         i_donHostedSecretsVersion = donHostedSecretsVersion;
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
+        i_usdc = IERC20(usdc);
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -166,7 +167,7 @@ contract LancaParentPoolCLFCLA is
             block.timestamp >= s_withdrawRequests[withdrawalId].triggeredAtTimestamp,
             WithdrawalRequestNotReady(withdrawalId)
         );
-        require(!s_withdrawTriggered[withdrawalId], WithdrawalAlreadyTriggered());
+        require(!s_withdrawTriggered[withdrawalId], ILancaPool.WithdrawalAlreadyTriggered());
 
         s_withdrawTriggered[withdrawalId] = true;
 

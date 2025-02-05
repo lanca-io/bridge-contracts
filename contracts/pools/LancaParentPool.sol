@@ -18,8 +18,14 @@ import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
+import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 
-contract LancaParentPool is LancaParentPoolStorageSetters, LancaParentPoolCommon, CCIPReceiver {
+contract LancaParentPool is
+    LancaPoolCommon,
+    LancaParentPoolStorageSetters,
+    LancaParentPoolCommon,
+    CCIPReceiver
+{
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
@@ -80,7 +86,8 @@ contract LancaParentPool is LancaParentPoolStorageSetters, LancaParentPoolCommon
         Hash memory hash,
         address[3] memory messengers
     )
-        LancaParentPoolStorageSetters(addr.owner, token.usdc, addr.lancaBridge)
+        LancaPoolCommon(token.usdc, addr.lancaBridge)
+        LancaParentPoolStorageSetters(addr.owner)
         LancaParentPoolCommon(token.lpToken)
         CCIPReceiver(addr.ccipRouter)
     {
@@ -469,6 +476,20 @@ contract LancaParentPool is LancaParentPoolStorageSetters, LancaParentPoolCommon
                 s_loansInUse -
                 s_withdrawAmountLocked >
             s_liquidityCap;
+    }
+
+    /* ADMIN FUNCTIONS */
+
+    function setConceroContractSender(
+        uint64 chainSelector,
+        address contractAddress,
+        bool isAllowed
+    ) external payable onlyOwner {
+        require(
+            contractAddress != ZERO_ADDRESS,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
+        );
+        s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
     }
 
     /* INTERNAL FUNCTIONS */
