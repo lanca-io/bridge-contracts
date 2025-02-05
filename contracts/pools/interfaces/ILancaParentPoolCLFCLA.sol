@@ -44,10 +44,6 @@ interface ILancaParentPoolCLFCLA {
 
     /* ERRORS */
 
-    /// @notice Error emitted when a withdrawal has already been triggered
-    /// @param id The ID of the withdrawal
-    error WithdrawalAlreadyTriggered(bytes32 id);
-
     /// @notice Error emitted when a withdrawal request does not exist
     /// @param id The ID of the withdrawal request
     error WithdrawalRequestDoesntExist(bytes32 id);

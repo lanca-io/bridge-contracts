@@ -1,26 +1,23 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
-import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
-import {LancaOwnable} from "../common/LancaOwnable.sol";
-import {ZERO_ADDRESS} from "../common/Constants.sol";
-import {LibErrors} from "../common/libraries/LibErrors.sol";
-import {LancaPoolStorageSetters} from "./storages/LancaPoolStorageSetters.sol";
+import {LancaParentPoolStorage} from "../storages/LancaParentPoolStorage.sol";
+import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
+import {LancaOwnable} from "../../common/LancaOwnable.sol";
+import {ZERO_ADDRESS} from "../../common/Constants.sol";
+import {LibErrors} from "../../common/libraries/LibErrors.sol";
 
 abstract contract LancaParentPoolStorageSetters is
     LancaParentPoolStorage,
     LancaOwnable,
-    ILancaParentPool,
-    LancaPoolStorageSetters
+    ILancaParentPool
 {
-    constructor(address owner) LancaOwnable(owner) {}
+    constructor(
+        address owner,
+        address usdc,
+        address lancaBridge
+    ) LancaParentPoolStorage(usdc, lancaBridge) LancaOwnable(owner) {}
 
-    /**
-     * @notice Function to set the Ethers JS code for Chainlink Functions
-     * @param ethersHashSum the JsCode
-     * @dev this functions was used inside of ConceroFunctions
-     */
     function setEthersHashSum(bytes32 ethersHashSum) external payable onlyOwner {
         s_ethersHashSum = ethersHashSum;
     }
