@@ -70,6 +70,10 @@ contract LancaParentPoolCLFCLA is
     //     return _sendRequest(args);
     // }
 
+    function sendMessage(bytes memory message) external returns (bytes32) {
+        
+    }
+
     /**
      * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
      */
