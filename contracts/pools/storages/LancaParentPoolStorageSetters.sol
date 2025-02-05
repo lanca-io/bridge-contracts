@@ -12,11 +12,7 @@ abstract contract LancaParentPoolStorageSetters is
     LancaOwnable,
     ILancaParentPool
 {
-    constructor(
-        address owner,
-        address usdc,
-        address lancaBridge
-    ) LancaParentPoolStorage(usdc, lancaBridge) LancaOwnable(owner) {}
+    constructor(address owner) LancaOwnable(owner) {}
 
     function setEthersHashSum(bytes32 ethersHashSum) external payable onlyOwner {
         s_ethersHashSum = ethersHashSum;
@@ -24,27 +20,6 @@ abstract contract LancaParentPoolStorageSetters is
 
     function setGetBalanceJsCodeHashSum(bytes32 hashSum) external payable onlyOwner {
         s_getChildPoolsLiquidityJsCodeHashSum = hashSum;
-    }
-
-    /**
-     * @notice function to manage the Cross-chains Concero contracts
-     * @param chainSelector chain identifications
-     * @param contractAddress address of the Cross-chains Concero contracts
-     * @param isAllowed bool to allow or disallow the contract
-     * @dev only owner can call it
-     * @dev it's payable to save some gas.
-     * @dev this functions is used in ConceroPool.sol
-     */
-    function setConceroContractSender(
-        uint64 chainSelector,
-        address contractAddress,
-        bool isAllowed
-    ) external payable onlyOwner {
-        require(
-            contractAddress != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
     }
 
     /**

@@ -2,11 +2,8 @@
 pragma solidity 0.8.28;
 
 import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
-import {LancaPoolCommon} from "../LancaPoolCommon.sol";
 
-abstract contract LancaParentPoolStorage is LancaPoolCommon {
-    constructor(address usdc, address lancaBridge) LancaPoolCommon(usdc, lancaBridge) {}
-
+abstract contract LancaParentPoolStorage {
     /* STATE VARIABLES */
 
     uint256 public s_liquidityCap;
