@@ -81,7 +81,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         );
         assertEq(totalPendingSettlementAmount, amount - bridgeFee);
 
-        // @dev check lancaBridge contract balance
+        // @dev check lancaBridge contract balance after performing the bridge
         assertEq(
             IERC20(bridgeToken).balanceOf(address(s_lancaBridge)),
             amount - (conceroMessageFee)
