@@ -56,7 +56,7 @@ contract LancaBridge is
 
     /* EXTERNAL FUNCTIONS */
 
-    function bridge(BridgeReq calldata bridgeReq) external {
+    function bridge(BridgeReq calldata bridgeReq) external returns (bytes32) {
         _validateBridgeReq(bridgeReq);
         uint256 fee = getFee(
             bridgeReq.dstChainSelector,
@@ -119,6 +119,8 @@ contract LancaBridge is
             bridgeReq.receiver,
             bridgeReq.dstChainSelector
         );
+
+        return conceroMessageId;
     }
 
     function getFee(
@@ -151,8 +153,8 @@ contract LancaBridge is
         // @dev fee calculation logic based on fee token address and dst chain gas limit will be added in closest future
         uint256 ccipFee = _getCCIPFee(dstChainSelector, amount);
         uint256 lancaFee = _getLancaFee(amount);
-        uint256 messengerFee = IConceroRouter(getConceroRouter()).getFee(dstChainSelector);
-        return (ccipFee, lancaFee, messengerFee);
+        uint256 conceroMessageFee = IConceroRouter(getConceroRouter()).getFee(dstChainSelector);
+        return (ccipFee, lancaFee, conceroMessageFee);
     }
 
     /* ADMIN FUNCTIONS */

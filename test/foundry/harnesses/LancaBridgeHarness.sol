@@ -11,4 +11,8 @@ contract LancaBridgeHarness is LancaBridge {
         address lancaPool,
         uint64 chainSelector
     ) LancaBridge(conceroRouter, ccipRouter, usdc, link, lancaPool, chainSelector) {}
+
+    function exposed_getMaxDstChainGasLimit() public pure returns (uint24) {
+        return MAX_DST_CHAIN_GAS_LIMIT;
+    }
 }

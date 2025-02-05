@@ -56,5 +56,5 @@ interface ILancaBridge {
     event FailedExecutionLayerTxSettled(bytes32 indexed id);
 
     /* FUNCTIONS */
-    function bridge(BridgeReq calldata bridgeReq) external;
+    function bridge(BridgeReq calldata bridgeReq) external returns (bytes32);
 }

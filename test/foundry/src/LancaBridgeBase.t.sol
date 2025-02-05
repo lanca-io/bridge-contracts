@@ -26,4 +26,20 @@ contract LancaBridgeTestBase is Test {
 
         deal(s_usdc, s_deployLancaBridgeHarnessScript.getDeployer(), 10_000 * USDC_DECIMALS);
     }
+
+    /* INTERNAL FUNCTIONS */
+
+    function _getBaseLancaBridgeReq() internal returns (ILancaBridge.BridgeReq memory) {
+        return
+            ILancaBridge.BridgeReq({
+                amount: 100 * USDC_DECIMALS,
+                token: s_usdc,
+                feeToken: s_usdc,
+                receiver: makeAddr("receiver"),
+                fallbackReceiver: makeAddr("receiver"),
+                dstChainSelector: s_chainSelectorArb,
+                dstChainGasLimit: 1_000_000,
+                message: new bytes(0)
+            });
+    }
 }
