@@ -12,11 +12,24 @@ contract LancaBridgeHarness is LancaBridge {
         uint64 chainSelector
     ) LancaBridge(conceroRouter, ccipRouter, usdc, link, lancaPool, chainSelector) {}
 
+    /* SETTERS */
+    function exposed_setIsBridgeProcessed(bytes32 messageId) public {
+        s_isBridgeProcessed[messageId] = true;
+    }
+
     function exposed_getMaxDstChainGasLimit() public pure returns (uint24) {
         return MAX_DST_CHAIN_GAS_LIMIT;
     }
 
     function exposed_getBatchedTxThreshold() public pure returns (uint256) {
         return BATCHED_TX_THRESHOLD;
+    }
+
+    function exposed_getLancaPool() public view returns (address) {
+        return address(i_lancaPool);
+    }
+
+    function exposed_isBridgeProcessed(bytes32 messageId) public view returns (bool) {
+        return s_isBridgeProcessed[messageId];
     }
 }

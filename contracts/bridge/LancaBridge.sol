@@ -16,8 +16,6 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
 
-import {console} from "forge-std/src/console.sol";
-
 contract LancaBridge is
     LancaBridgeStorage,
     CCIPReceiver,
@@ -340,8 +338,6 @@ contract LancaBridge is
             (LancaBridgeMessageVersion, bytes)
         );
 
-        console.logUint(uint256(lancaBridgeMessageVersion));
-
         if (lancaBridgeMessageVersion == LancaBridgeMessageVersion.V1) {
             _handleLancaBridgeMessageV1(conceroMessage, data);
         } else {
@@ -382,13 +378,9 @@ contract LancaBridge is
     /* CCIP CLIENT FUNCTIONS */
 
     function _ccipReceive(LibCcipClient.Any2EVMMessage memory ccipMessage) internal override {
-        // @dev TODO: rewrite as in _conceroReceive()
         require(
-            s_isCcipMessageSenderAllowed[abi.decode(ccipMessage.sender, (address))],
-            UnauthorizedCcipMessageSender()
-        );
-        require(
-            s_isCcipMessageSrcChainAllowed[ccipMessage.sourceChainSelector],
+            s_lancaBridgeContractsByChain[ccipMessage.sourceChainSelector] ==
+                abi.decode(ccipMessage.sender, (address)),
             UnauthorizedCcipMessageSender()
         );
 
@@ -433,7 +425,7 @@ contract LancaBridge is
         }
 
         if (rebalancedAmount > 0) {
-            IERC20(i_usdc).safeTransfer(msg.sender, rebalancedAmount);
+            IERC20(i_usdc).safeTransfer(address(i_lancaPool), rebalancedAmount);
             i_lancaPool.completeRebalancing(ccipMessageId, rebalancedAmount);
         }
     }
