@@ -26,12 +26,14 @@ contract DeployLancaParentPoolHarnessScript is DeployLancaParentPoolScriptBase {
         });
 
         DeployLancaBridgeHarnessScript deployLancaBridge = new DeployLancaBridgeHarnessScript();
+        vm.allowCheatcodes(address(deployLancaBridge));
+
         LibLanca.Addr memory addr = LibLanca.Addr({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
             parentPoolProxy: makeAddr("parent pool proxy"),
             owner: getDeployer(),
-            lancaParentPoolCLFCLA: new LancaParentPoolCLFCLAMock(),
+            lancaParentPoolCLFCLA: address(new LancaParentPoolCLFCLAMock()),
             lancaBridge: makeAddr("lancaBridge")
         });
 
