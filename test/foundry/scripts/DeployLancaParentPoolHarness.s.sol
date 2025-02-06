@@ -2,11 +2,11 @@
 pragma solidity 0.8.28;
 
 import {DeployLancaParentPoolScriptBase} from "./DeployLancaParentPoolBase.s.sol";
-import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
+import {LancaParentPoolMock} from "../mocks/LancaParentPoolMock.sol";
 import {LibLanca} from "contracts/common/libraries/LibLanca.sol";
 import {DeployLancaBridgeHarnessScript} from "../scripts/DeployLancaBridgeHarness.s.sol";
 
-contract DeployLancaParentPoolHarness is DeployLancaParentPoolScriptBase {
+contract DeployLancaParentPoolHarnessScript is DeployLancaParentPoolScriptBase {
     function _deployLancaParentPool() internal override {
         vm.startPrank(getDeployer());
 
@@ -21,20 +21,30 @@ contract DeployLancaParentPoolHarness is DeployLancaParentPoolScriptBase {
         LibLanca.Token memory token = LibLanca.Token({
             link: getLinkAddress(),
             usdc: getUsdcAddress(),
-            lpToken: getLpTokenAddress()
+            lpToken: makeAddr("lpToken")
         });
 
         DeployLancaBridgeHarnessScript deployLancaBridge = new DeployLancaBridgeHarnessScript();
-        deployLancaBridge.LibLanca.Addr memory addr = LibLanca.Addr({
+        LibLanca.Addr memory addr = LibLanca.Addr({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
-            parentPoolProxy: getParentPoolProxy(),
+            parentPoolProxy: makeAddr("parent pool proxy"),
             owner: getDeployer(),
             lancaParentPoolCLFCLA: makeAddr("lancaParentPoolCLFCLA"),
-            lancaBridge: getLancaBridge()
+            lancaBridge: makeAddr("lancaBridge")
         });
 
-        s_lancaParentPool = address(new LancaParentPool(token, addr, clf));
+        address[3] memory messengers = [
+            makeAddr("messenger 0"),
+            makeAddr("messenger 1"),
+            makeAddr("messenger 2")
+        ];
+
+        LibLanca.Hash memory hash = LibLanca.Hash({
+            collectLiquidityJs: bytes32(0),
+            distributeLiquidityJs: bytes32(0)
+        });
+        s_lancaParentPool = address(new LancaParentPoolMock(token, addr, clf, hash, messengers));
 
         vm.stopPrank();
     }
