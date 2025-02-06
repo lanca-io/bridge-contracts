@@ -7,28 +7,31 @@ import {PauseDummy} from "contracts/common/PauseDummy.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 import {DeployHelper} from "../utils/DeployHelper.sol";
+import {Cheats} from "../scripts/DeployLancaBridgeBase.s.sol";
 
 abstract contract DeployLancaParentPoolScriptBase is DeployHelper {
     /// @notice contract addresses
     TransparentUpgradeableProxy internal s_lancaParentPoolProxy;
     address internal s_lancaParentPool;
+    Cheats internal s_cheats;
 
     /// @notice helper variables
     address internal s_proxyDeployer = vm.envAddress("PROXY_DEPLOYER");
     address internal s_deployer = vm.envAddress("DEPLOYER_ADDRESS");
 
-    function run() external returns (address) {
+    function run() public returns (address) {
+        s_cheats = new Cheats();
         _deployFullLancaParentPool();
         return address(s_lancaParentPoolProxy);
     }
-    function run(uint256 forkId) external returns (address) {
+    function run(uint256 forkId) public returns (address) {
         vm.selectFork(forkId);
         return run();
     }
 
     /* SETTERS */
 
-    function setProxyImplementation(address implementation) external {
+    function setProxyImplementation(address implementation) public {
         vm.prank(s_proxyDeployer);
         ITransparentUpgradeableProxy(address(s_lancaParentPoolProxy)).upgradeToAndCall(
             implementation,
@@ -48,6 +51,24 @@ abstract contract DeployLancaParentPoolScriptBase is DeployHelper {
 
     function getProxyDeployer() public view returns (address) {
         return s_proxyDeployer;
+    }
+
+    function getDonHostedSecretsSlotId() public pure returns (uint8) {
+        return uint8(0);
+    }
+
+    function getLpTokenAddress() public pure returns (address) {}
+
+    function getDonHostedSecretsVersion() public pure returns (uint64) {
+        return uint64(0);
+    }
+
+    function getCLfDonId() public pure returns (bytes32) {
+        return bytes32(0);
+    }
+
+    function getCLfDonVersion() public pure returns (uint64) {
+        return uint64(0);
     }
 
     /* INTERNAL FUNCTIONS  */
@@ -70,14 +91,14 @@ abstract contract DeployLancaParentPoolScriptBase is DeployHelper {
 
     function _deployAndSetImplementation() internal {
         _deployLancaParentPool();
-
-        deal(getLinkAddress(), address(s_lancaParentPoolProxy), 1000e18);
+        //vm.allowCheatcodes(address(s_lancaParentPoolProxy));
+        //s_cheats.exposed_deal(getLinkAddress(), address(s_lancaParentPoolProxy), 1000e18);
 
         setProxyImplementation(address(s_lancaParentPool));
     }
 
     function _fundClfSubscription(uint256 amount) internal {
-        deal(getLinkAddress(), getDeployer(), amount);
+        //s_cheats.exposed_deal(getLinkAddress(), getDeployer(), amount);
         vm.prank(getDeployer());
 
         LinkTokenInterface(getLinkAddress()).transferAndCall(
