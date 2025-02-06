@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LibLanca} from "../../contracts/common/libraries/LibLanca.sol";
+import {LibLanca} from "contracts/common/libraries/LibLanca.sol";
+import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
 
 contract LancaParentPoolMock is LancaParentPool {
     constructor(
