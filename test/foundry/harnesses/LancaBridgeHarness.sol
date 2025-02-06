@@ -15,4 +15,8 @@ contract LancaBridgeHarness is LancaBridge {
     function exposed_getMaxDstChainGasLimit() public pure returns (uint24) {
         return MAX_DST_CHAIN_GAS_LIMIT;
     }
+
+    function exposed_getBatchedTxThreshold() public pure returns (uint256) {
+        return BATCHED_TX_THRESHOLD;
+    }
 }

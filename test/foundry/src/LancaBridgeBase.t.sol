@@ -12,11 +12,11 @@ contract LancaBridgeTestBase is Test {
     DeployLancaBridgeHarnessScript internal s_deployLancaBridgeHarnessScript;
     LancaBridgeHarness internal s_lancaBridge;
     address internal s_usdc = vm.envAddress("USDC_BASE");
-    uint64 internal s_chainSelectorArb = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
+    uint64 internal s_chainSelectorArb = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_POLYGON"));
     address internal s_lancaBridgeArb = makeAddr("arb lanca bridge");
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("RPC_URL_BASE"));
+        vm.createSelectFork(vm.envString("RPC_URL_BASE"), 26000933);
 
         s_deployLancaBridgeHarnessScript = new DeployLancaBridgeHarnessScript();
         s_lancaBridge = LancaBridgeHarness(s_deployLancaBridgeHarnessScript.run());

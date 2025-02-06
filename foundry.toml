@@ -1,9 +1,10 @@
 [profile.default]
 solc = "0.8.28"
-src = "contracts"
+src = "./contracts/"
 out = "foundry-artifacts"
 cache_path = "cache/foundry"
 test = "test/foundry"
 
-libs = ["node_modules", "./contracts/"]
-allow_paths = ["node_modules", "./contracts/"]
+libs = ["node_modules", "./src/contracts/"]
+allow_paths = ["node_modules", "./src/contracts/"]
+

@@ -80,6 +80,9 @@ abstract contract DeployLancaBridgeScriptBase is DeployHelper {
     function _deployAndSetImplementation() internal {
         _deployLancaBridge();
 
+        Cheats cheats = new Cheats();
+        cheats.exposed_deal(getLinkAddress(), address(s_lancaBridgeProxy), 1000e18);
+
         setProxyImplementation(address(s_lancaBridge));
     }
 
