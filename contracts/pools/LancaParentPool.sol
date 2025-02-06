@@ -17,6 +17,7 @@ import {ICcip} from "../common/interfaces/ICcip.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 
@@ -31,34 +32,6 @@ contract LancaParentPool is
     using FunctionsRequest for FunctionsRequest.Request;
 
     /* TYPES */
-
-    struct Clf {
-        address router;
-        uint64 subId;
-        bytes32 donId;
-        uint8 donHostedSecretsSlotId;
-        uint64 donHostedSecretsVersion;
-    }
-
-    struct Token {
-        address link;
-        address usdc;
-        address lpToken;
-    }
-
-    struct Addr {
-        address ccipRouter;
-        address automationForwarder;
-        address parentPoolProxy;
-        address owner;
-        address lancaParentPoolCLFCLA;
-        address lancaBridge;
-    }
-
-    struct Hash {
-        bytes32 collectLiquidityJs;
-        bytes32 distributeLiquidityJs;
-    }
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -80,10 +53,10 @@ contract LancaParentPool is
     uint64 internal immutable i_donHostedSecretsVersion;
 
     constructor(
-        Token memory token,
-        Addr memory addr,
-        Clf memory clf,
-        Hash memory hash,
+        LibLanca.Token memory token,
+        LibLanca.Addr memory addr,
+        LibLanca.Clf memory clf,
+        LibLanca.Hash memory hash,
         address[3] memory messengers
     )
         LancaPoolCommon(token.usdc, addr.lancaBridge)
