@@ -8,6 +8,8 @@ import {ILancaBridge} from "contracts/bridge/interfaces/ILancaBridge.sol";
 import {ILancaBridgeStorage} from "contracts/bridge/interfaces/ILancaBridgeStorage.sol";
 import {LancaBridgeTestBase} from "./LancaBridgeBase.t.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {LancaBridgeClientMock} from "../mocks/LancaBridgeClientMock.sol";
+import {IConceroClient} from "concero/contracts/ConceroClient/interfaces/IConceroClient.sol";
 
 contract LancaBridgeTest is LancaBridgeTestBase {
     function setUp() public virtual override {
@@ -144,9 +146,38 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         assertEq(IERC20(bridgeReq.token).balanceOf(address(s_lancaBridge)), ccipFee + lancaFee);
     }
 
+    function test_conceroReceive() public {
+        address lancaBridgeSender = makeAddr("lanca bridge sender");
+        address lancaBridgeReceiver = address(new LancaBridgeClientMock(address(s_lancaBridge)));
+        uint24 gasLimit = 1_000_000;
+        uint256 amount = 530 * USDC_DECIMALS;
+        bytes memory lancaBridgeMessageData = new bytes(300);
+
+        bytes memory lancaBridgeMessage = abi.encode(
+            ILancaBridge.LancaBridgeMessageVersion.V1,
+            lancaBridgeSender,
+            lancaBridgeReceiver,
+            gasLimit,
+            amount,
+            lancaBridgeMessageData
+        );
+
+        IConceroClient.Message memory conceroMessage = IConceroClient.Message({
+            id: keccak256("concero message id"),
+            srcChainSelector: s_chainSelectorArb,
+            sender: s_lancaBridgeArb,
+            data: lancaBridgeMessage
+        });
+
+        vm.prank(s_lancaBridge.getConceroRouter());
+        s_lancaBridge.conceroReceive(conceroMessage);
+    }
+
     /* REVERTS */
 
-    function test_bridgeInvalidBridgeToken_revert(address bridgeToken) public {
+    function testFuzz_bridgeInvalidBridgeToken_revert() public {
+        address bridgeToken = makeAddr("wrong bridge token");
+
         vm.assume(bridgeToken != s_usdc);
 
         address sender = makeAddr("sender");
@@ -160,8 +191,8 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         vm.stopPrank();
     }
 
-    function test_bridgeInvalidFeeToken_revert(address feeToken) public {
-        vm.assume(feeToken != s_usdc);
+    function test_bridgeInvalidFeeToken_revert() public {
+        address feeToken = makeAddr("wrong fee token");
         address sender = makeAddr("sender");
 
         ILancaBridge.BridgeReq memory bridgeReq = _getBaseLancaBridgeReq();

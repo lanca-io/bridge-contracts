@@ -7,12 +7,7 @@ import {PauseDummy} from "contracts/common/PauseDummy.sol";
 import {Test} from "forge-std/src/Test.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
-
-contract Cheats is Test {
-    function exposed_deal(address token, address to, uint256 amount) public {
-        deal(token, to, amount);
-    }
-}
+import {TestHarness} from "../harnesses/TestHarness.sol";
 
 abstract contract DeployLancaBridgeScriptBase is DeployHelper {
     // @notice contract addresses
@@ -80,14 +75,14 @@ abstract contract DeployLancaBridgeScriptBase is DeployHelper {
     function _deployAndSetImplementation() internal {
         _deployLancaBridge();
 
-        Cheats cheats = new Cheats();
+        TestHarness cheats = new TestHarness();
         cheats.exposed_deal(getLinkAddress(), address(s_lancaBridgeProxy), 1000e18);
 
         setProxyImplementation(address(s_lancaBridge));
     }
 
     function _fundClfSubscription(uint256 amount) internal {
-        Cheats cheats = new Cheats();
+        TestHarness cheats = new TestHarness();
         cheats.exposed_deal(getLinkAddress(), getDeployer(), amount);
         vm.prank(getDeployer());
 

@@ -33,11 +33,12 @@ interface ILancaBridge {
     error InvalidDstChainSelector();
     error InvalidFeeToken();
     error InvalidCcipToken();
+    error InvalidConceroMessageSender();
     error InvalidLancaBridgeMessageVersion();
-    error UnauthorizedConceroMessageSender();
-    error UnauthorizedConceroMessageSrcChain();
-    error UnauthorizedCcipMessageSender();
     error InvalidCcipTxType();
+    error BridgeAlreadyProcessed();
+    error UnauthorizedConceroMessageSender();
+    error UnauthorizedCcipMessageSender();
 
     /* EVENTS */
     event LancaBridgeSent(

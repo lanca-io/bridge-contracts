@@ -321,16 +321,12 @@ contract LancaBridge is
     /* CONCERO CLIENT FUNCTIONS */
 
     function _conceroReceive(Message calldata conceroMessage) internal override {
-        // @TODO: search if confirmed mapping needed on this step
         require(
-            s_isConceroMessageSenderAllowed[conceroMessage.sender],
+            s_lancaBridgeContractsByChain[conceroMessage.srcChainSelector] == conceroMessage.sender,
             UnauthorizedConceroMessageSender()
         );
 
-        require(
-            s_isConceroMessageSrcChainAllowed[conceroMessage.srcChainSelector],
-            UnauthorizedConceroMessageSrcChain()
-        );
+        _processBridge(conceroMessage.id);
 
         LancaBridgeMessageVersion lancaBridgeMessageVersion = LancaBridgeMessageVersion(
             uint8(conceroMessage.data[0])
@@ -363,9 +359,13 @@ contract LancaBridge is
                 data: data
             });
 
-        // @dev TODO: take loan from lanca pool instead transfer
-        IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);
+        i_lancaPool.takeLoan(i_usdc, amount, lancaBridgeReceiver);
         ILancaBridgeClient(lancaBridgeReceiver).lancaBridgeReceive{gas: gasLimit}(bridgeData);
+    }
+
+    function _processBridge(bytes32 id) internal {
+        require(!s_isBridgeProcessed[id], BridgeAlreadyProcessed());
+        s_isBridgeProcessed[id] = true;
     }
 
     /* CCIP CLIENT FUNCTIONS */
