@@ -5,6 +5,7 @@ import {DeployLancaBridgeHarnessScript} from "../scripts/DeployLancaBridgeHarnes
 import {LancaBridgeHarness} from "../harnesses/LancaBridgeHarness.sol";
 import {console} from "forge-std/src/console.sol";
 import {ILancaBridge} from "contracts/bridge/interfaces/ILancaBridge.sol";
+import {IConceroClient} from "concero/contracts/ConceroClient/interfaces/IConceroClient.sol";
 
 contract LancaBridgeTestBase is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -40,6 +41,16 @@ contract LancaBridgeTestBase is Test {
                 dstChainSelector: s_chainSelectorArb,
                 dstChainGasLimit: 1_000_000,
                 message: new bytes(0)
+            });
+    }
+
+    function _getBaseConceroMessage() internal returns (IConceroClient.Message memory) {
+        return
+            IConceroClient.Message({
+                id: keccak256("message id"),
+                srcChainSelector: s_chainSelectorArb,
+                sender: makeAddr("sender"),
+                data: new bytes(300)
             });
     }
 }

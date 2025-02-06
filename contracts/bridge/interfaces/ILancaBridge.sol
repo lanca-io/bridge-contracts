@@ -5,7 +5,8 @@ interface ILancaBridge {
     /* TYPES */
 
     enum LancaBridgeMessageVersion {
-        V1
+        V1,
+        V2
     }
 
     struct CcipSettlementTxs {
@@ -23,6 +24,20 @@ interface ILancaBridge {
         uint64 dstChainSelector;
         uint32 dstChainGasLimit;
         bytes message;
+    }
+
+    struct LancaBridgeMessageDataV1 {
+        address sender;
+        address receiver;
+        uint64 dstChainSelector;
+        uint24 dstChainGasLimit;
+        uint256 amount;
+        bytes data;
+    }
+
+    struct LancaBridgeMessageData {
+        LancaBridgeMessageVersion version;
+        bytes versionedData;
     }
 
     /* ERRORS */

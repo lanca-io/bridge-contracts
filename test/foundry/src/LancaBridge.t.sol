@@ -92,8 +92,8 @@ contract LancaBridgeTest is LancaBridgeTestBase {
 
     function testFuzz_bridgeTriggerBatch(uint256 amount) public {
         vm.assume(
-            amount > s_lancaBridge.exposed_getBatchedTxThreshold() &&
-                amount < 1_000_000_000_000 * USDC_DECIMALS
+            (amount > (s_lancaBridge.exposed_getBatchedTxThreshold() + 1 * USDC_DECIMALS)) &&
+                (amount < 1_000_000_000_000 * USDC_DECIMALS)
         );
 
         address sender = makeAddr("sender");
@@ -107,12 +107,6 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         vm.startPrank(sender);
 
         IERC20(bridgeReq.token).approve(address(s_lancaBridge), amount);
-        uint256 bridgeFee = s_lancaBridge.getFee(
-            bridgeReq.dstChainSelector,
-            bridgeReq.amount,
-            bridgeReq.feeToken,
-            bridgeReq.dstChainGasLimit
-        );
 
         (uint256 ccipFee, uint256 lancaFee, ) = s_lancaBridge.getBridgeFeeBreakdown(
             bridgeReq.dstChainSelector,
@@ -121,7 +115,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
             bridgeReq.dstChainGasLimit
         );
 
-        bytes32 bridgeId = s_lancaBridge.bridge(bridgeReq);
+        s_lancaBridge.bridge(bridgeReq);
         vm.stopPrank();
 
         uint256 senderBalanceAfter = IERC20(bridgeReq.token).balanceOf(sender);
@@ -155,11 +149,16 @@ contract LancaBridgeTest is LancaBridgeTestBase {
 
         bytes memory lancaBridgeMessage = abi.encode(
             ILancaBridge.LancaBridgeMessageVersion.V1,
-            lancaBridgeSender,
-            lancaBridgeReceiver,
-            gasLimit,
-            amount,
-            lancaBridgeMessageData
+            abi.encode(
+                ILancaBridge.LancaBridgeMessageDataV1({
+                    sender: lancaBridgeSender,
+                    receiver: lancaBridgeReceiver,
+                    dstChainSelector: s_chainSelectorArb,
+                    dstChainGasLimit: gasLimit,
+                    amount: amount,
+                    data: lancaBridgeMessageData
+                })
+            )
         );
 
         IConceroClient.Message memory conceroMessage = IConceroClient.Message({
@@ -228,5 +227,44 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         vm.expectRevert(ILancaBridge.InvalidDstChainGasLimit.selector);
         s_lancaBridge.bridge(bridgeReq);
         vm.stopPrank();
+    }
+
+    function test_conceroReceiveUnauthorizedConceroMessageSender_revert() public {
+        IConceroClient.Message memory conceroMessage = _getBaseConceroMessage();
+        conceroMessage.sender = makeAddr("unauthorized concero message sender");
+
+        vm.prank(s_lancaBridge.getConceroRouter());
+        vm.expectRevert(ILancaBridge.UnauthorizedConceroMessageSender.selector);
+        s_lancaBridge.conceroReceive(conceroMessage);
+    }
+
+    function test_conceroReceiveInvalidLancaBridgeMessageVersion_revert() public {
+        address lancaBridgeSender = makeAddr("lanca bridge sender");
+        address lancaBridgeReceiver = address(new LancaBridgeClientMock(address(s_lancaBridge)));
+        uint24 gasLimit = 1_000_000;
+        uint256 amount = 530 * USDC_DECIMALS;
+        bytes memory lancaBridgeMessageData = new bytes(300);
+
+        bytes memory lancaBridgeMessage = abi.encode(
+            ILancaBridge.LancaBridgeMessageVersion.V2,
+            abi.encode(
+                ILancaBridge.LancaBridgeMessageDataV1({
+                    sender: lancaBridgeSender,
+                    receiver: lancaBridgeReceiver,
+                    dstChainSelector: s_chainSelectorArb,
+                    dstChainGasLimit: gasLimit,
+                    amount: amount,
+                    data: lancaBridgeMessageData
+                })
+            )
+        );
+
+        IConceroClient.Message memory conceroMessage = _getBaseConceroMessage();
+        conceroMessage.sender = s_lancaBridgeArb;
+        conceroMessage.data = lancaBridgeMessage;
+
+        vm.prank(s_lancaBridge.getConceroRouter());
+        vm.expectRevert(ILancaBridge.InvalidLancaBridgeMessageVersion.selector);
+        s_lancaBridge.conceroReceive(conceroMessage);
     }
 }
