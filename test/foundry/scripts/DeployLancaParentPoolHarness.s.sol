@@ -5,6 +5,7 @@ import {DeployLancaParentPoolScriptBase} from "./DeployLancaParentPoolBase.s.sol
 import {LancaParentPoolMock} from "../mocks/LancaParentPoolMock.sol";
 import {LibLanca} from "contracts/common/libraries/LibLanca.sol";
 import {DeployLancaBridgeHarnessScript} from "../scripts/DeployLancaBridgeHarness.s.sol";
+import {LancaParentPoolCLFCLAMock} from "../mocks/LancaParentPoolCLFCLA.sol";
 
 contract DeployLancaParentPoolHarnessScript is DeployLancaParentPoolScriptBase {
     function _deployLancaParentPool() internal override {
@@ -30,7 +31,7 @@ contract DeployLancaParentPoolHarnessScript is DeployLancaParentPoolScriptBase {
             automationForwarder: makeAddr("automation forwarder"),
             parentPoolProxy: makeAddr("parent pool proxy"),
             owner: getDeployer(),
-            lancaParentPoolCLFCLA: makeAddr("lancaParentPoolCLFCLA"),
+            lancaParentPoolCLFCLA: new LancaParentPoolCLFCLAMock(),
             lancaBridge: makeAddr("lancaBridge")
         });
 
