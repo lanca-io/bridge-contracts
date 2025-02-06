@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import {Script} from "forge-std/src/Script.sol";
 import {ConceroRouterMock} from "../mocks/ConceroRouterMock.sol";
+import {CcipRouterMock} from "../mocks/CcipRouterMock.sol";
 
 contract DeployHelper is Script {
     function getClfRouter() public view returns (address) {
@@ -148,24 +149,26 @@ contract DeployHelper is Script {
         return vm.envAddress("USDC_BASE");
     }
 
-    function getCcipRouter() public view returns (address) {
-        uint256 chainId = block.chainid;
+    function getCcipRouter() public returns (address) {
+        //        uint256 chainId = block.chainid;
+        //
+        //        if (chainId == vm.envUint("BASE_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_BASE");
+        //        } else if (chainId == vm.envUint("ARBITRUM_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_ARBITRUM");
+        //        } else if (chainId == vm.envUint("POLYGON_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_POLYGON");
+        //        } else if (chainId == vm.envUint("AVALANCHE_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_AVALANCHE");
+        //        } else if (chainId == vm.envUint("OPTIMISM_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_OPTIMISM");
+        //        } else if (chainId == vm.envUint("ETHEREUM_CHAIN_ID")) {
+        //            return vm.envAddress("CL_CCIP_ROUTER_ETHEREUM");
+        //        }
+        //
+        //        return vm.envAddress("CL_CCIP_ROUTER_BASE");
 
-        if (chainId == vm.envUint("BASE_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_BASE");
-        } else if (chainId == vm.envUint("ARBITRUM_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_ARBITRUM");
-        } else if (chainId == vm.envUint("POLYGON_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_POLYGON");
-        } else if (chainId == vm.envUint("AVALANCHE_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_AVALANCHE");
-        } else if (chainId == vm.envUint("OPTIMISM_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_OPTIMISM");
-        } else if (chainId == vm.envUint("ETHEREUM_CHAIN_ID")) {
-            return vm.envAddress("CL_CCIP_ROUTER_ETHEREUM");
-        }
-
-        return vm.envAddress("CL_CCIP_ROUTER_BASE");
+        return address(new CcipRouterMock(getLinkAddress()));
     }
 
     function getConceroRouterMock() public returns (address) {
