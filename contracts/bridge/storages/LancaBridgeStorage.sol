@@ -35,4 +35,8 @@ abstract contract LancaBridgeStorage is ILancaBridgeStorage {
     ) external view returns (uint256) {
         return s_pendingSettlementTxAmountByDstChain[dstChainSelector];
     }
+
+    function getLancaBridgeContractByChain(uint64 chainSelector) external view returns (address) {
+        return s_lancaBridgeContractsByChain[chainSelector];
+    }
 }

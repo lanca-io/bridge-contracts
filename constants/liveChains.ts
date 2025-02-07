@@ -1,6 +1,6 @@
-import { CNetwork } from "../types/CNetwork";
-import { conceroNetworks } from "./conceroNetworks";
-import { ConceroChains } from "../types/chains";
+import { CNetwork } from "../types/CNetwork"
+import { conceroNetworks } from "./conceroNetworks"
+import { ConceroChains } from "../types/chains"
 
 export const conceroChains: ConceroChains = {
     testnet: {
@@ -24,12 +24,12 @@ export const conceroChains: ConceroChains = {
             conceroNetworks.optimism,
         ],
     },
-};
+}
 
 export const testnetChains: CNetwork[] = Array.from(
     new Set([...conceroChains.testnet.parentPool, ...conceroChains.testnet.childPool, ...conceroChains.testnet.infra]),
-);
+)
 
 export const mainnetChains: CNetwork[] = Array.from(
     new Set([...conceroChains.mainnet.parentPool, ...conceroChains.mainnet.childPool, ...conceroChains.mainnet.infra]),
-);
+)
