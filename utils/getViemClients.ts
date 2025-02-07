@@ -7,33 +7,33 @@ import { rpcUrls } from "../constants";
 import { CNetwork } from "../types/CNetwork";
 
 export function getClients(
-	viemChain: Chain,
-	url: string | undefined,
-	account?: PrivateKeyAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`),
+    viemChain: Chain,
+    url: string | undefined,
+    account?: PrivateKeyAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`),
 ): {
-	walletClient: WalletClient;
-	publicClient: PublicClient;
-	account: PrivateKeyAccount;
+    walletClient: WalletClient;
+    publicClient: PublicClient;
+    account: PrivateKeyAccount;
 } {
-	const publicClient = createPublicClient({ transport: http(url), chain: viemChain });
-	const walletClient = createWalletClient({ transport: http(url), chain: viemChain, account });
+    const publicClient = createPublicClient({ transport: http(url), chain: viemChain });
+    const walletClient = createWalletClient({ transport: http(url), chain: viemChain, account });
 
-	return { walletClient, publicClient, account };
+    return { walletClient, publicClient, account };
 }
 
 export function getFallbackClients(
-	chain: CNetwork,
-	account?: PrivateKeyAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`),
+    chain: CNetwork,
+    account?: PrivateKeyAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`),
 ): {
-	walletClient: WalletClient;
-	publicClient: PublicClient;
-	account: PrivateKeyAccount;
+    walletClient: WalletClient;
+    publicClient: PublicClient;
+    account: PrivateKeyAccount;
 } {
-	const { viemChain, name } = chain;
-	const transport = fallback(rpcUrls[name].map(url => http(url)));
+    const { viemChain, name } = chain;
+    const transport = fallback(rpcUrls[name].map(url => http(url)));
 
-	const publicClient = createPublicClient({ transport, chain: viemChain });
-	const walletClient = createWalletClient({ transport, chain: viemChain, account });
+    const publicClient = createPublicClient({ transport, chain: viemChain });
+    const walletClient = createWalletClient({ transport, chain: viemChain, account });
 
-	return { walletClient, publicClient, account };
+    return { walletClient, publicClient, account };
 }
