@@ -26,4 +26,8 @@ contract LancaParentPoolMock is LancaParentPool {
     function setWithdrawAmountLocked(uint256 newWithdrawAmountLocked) external {
         s_withdrawAmountLocked = newWithdrawAmountLocked;
     }
+
+    function getParentPoolCLFCLA() external view returns (address) {
+        return address(i_lancaParentPoolCLFCLA);
+    }
 }
