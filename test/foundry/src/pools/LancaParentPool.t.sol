@@ -34,6 +34,8 @@ contract LancaParentPoolTest is Test {
         );
     }
 
+    /* DEPOSIT TESTS */
+
     function test_lancaParentPoolStartDepositFailsWhenAmountToLow()
         external
         dealUsdcTo(depositor, LOW_DEPOSIT_AMOUNT)
@@ -97,5 +99,20 @@ contract LancaParentPoolTest is Test {
             entries[0].topics[0],
             keccak256("DepositInitiated(bytes32,address,uint256,uint256)")
         );
+
+        // @dev check that the deposit request was sent to the CLF
+        address lancaParentPoolCLFCLA = s_lancaParentPool.getParentPoolCLFCLA();
+
+        args[0] = abi.encodePacked(clfRequestId);
+        args[1] = bytes32(0);
+        args[2] = bytes32(0);
+        delegateCallArgs = abi.encodeWithSelector(
+            LancaParentPoolCLFCLAMock.fulfillRequest.selector,
+            args
+        );
+
+        LibLanca.safeDelegateCall(lancaParentPoolCLFCLA, delegateCallArgs);
     }
+
+    /* WITHDRAWAL TESTS */
 }
