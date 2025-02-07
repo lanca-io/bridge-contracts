@@ -1,4 +1,4 @@
-import deployLancaBridgeTask from "./bridge/deployLancaBridge.task";
-import upgradeProxyImplementation from "./transparentProxy/upgradeProxyImplementation.task";
+import deployLancaBridgeTask from "./bridge/deployLancaBridge.task"
+import upgradeProxyImplementation from "./transparentProxy/upgradeProxyImplementation.task"
 
-export { deployLancaBridgeTask, upgradeProxyImplementation };
+export { deployLancaBridgeTask, upgradeProxyImplementation }

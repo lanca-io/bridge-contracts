@@ -6,24 +6,24 @@ hardhat compile
   --no-typechain        Skip Typechain compilation
   --quiet               Makes the compilation process less verbose
  */
-import { execSync } from "child_process";
+import { execSync } from "child_process"
 
 interface HardhatCompileParams {
-    concurrency?: number;
-    force?: boolean;
-    noSizeContracts?: boolean;
-    noTypechain?: boolean;
-    quiet?: boolean;
+    concurrency?: number
+    force?: boolean
+    noSizeContracts?: boolean
+    noTypechain?: boolean
+    quiet?: boolean
 }
 
 export function compileContracts({ quiet = true, force = false }: HardhatCompileParams) {
-    const packageManager = process.env["PACKAGE_MANAGER"] || "yarn";
-    const command = `${packageManager} compile`;
-    const args = [];
+    const packageManager = process.env["PACKAGE_MANAGER"] || "yarn"
+    const command = `${packageManager} compile`
+    const args = []
     // if (concurrency) args.push(`--concurrency ${concurrency}`);
     // if (noSizeContracts) args.push("--no-size-contracts");
     // if (noTypechain) args.push("--no-typechain");
-    if (quiet) args.push("--quiet");
-    if (force) args.push("--force");
-    execSync(`${command} ${args.join(" ")}`, { stdio: "inherit" });
+    if (quiet) args.push("--quiet")
+    if (force) args.push("--force")
+    execSync(`${command} ${args.join(" ")}`, { stdio: "inherit" })
 }

@@ -1,5 +1,5 @@
 const { INFURA_API_KEY, DRPC_API_KEY, ALCHEMY_API_KEY, BLAST_API_KEY, CHAINSTACK_API_KEY, TENDERLY_API_KEY } =
-    process.env;
+    process.env
 
 export const rpc: Record<string, string> = {
     arbitrum: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
@@ -14,7 +14,7 @@ export const rpc: Record<string, string> = {
     optimismSepolia: `https://optimism-sepolia.infura.io/v3/${INFURA_API_KEY}`,
     polygon: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     polygonAmoy: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
-};
+}
 
 // Warning: ANKR endpoints are limited to 30 requests/sec and not suitable for production use
 
@@ -97,6 +97,6 @@ export const urls: Record<string, string[]> = {
     scrollSepolia: ["https://rpc.ankr.com/scroll_sepolia"],
     polygonZkEvm: [`https://polygon-zkevm-mainnet.blastapi.io/${BLAST_API_KEY}`],
     polygonZkEvmCardona: [`https://polygon-zkevm-cardona.blastapi.io/${BLAST_API_KEY}`],
-};
+}
 
-export default rpc;
+export default rpc
