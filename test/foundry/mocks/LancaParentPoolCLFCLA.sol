@@ -15,11 +15,7 @@ contract LancaParentPoolCLFCLAMock is LancaPoolCommonStorage, LancaParentPoolSto
         return keccak256(data);
     }
 
-    function fulfillRequest(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) internal  {
+    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal {
         ILancaParentPool.CLFRequestType requestType = s_clfRequestTypes[requestId];
 
         require(requestType != ILancaParentPool.CLFRequestType.empty, InvalidCLFRequestType());

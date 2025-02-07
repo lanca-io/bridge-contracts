@@ -120,7 +120,5 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.startWithdrawal(1 wei);
     }
 
-    function test_lancaParentPoolStartWithdrawalSucceeds() external {
-        
-    }
+    function test_lancaParentPoolStartWithdrawalSucceeds() external {}
 }
