@@ -1,3 +1,3 @@
-import { conceroNetworks } from "./conceroNetworks";
+import { conceroNetworks } from "./conceroNetworks"
 
-export { conceroNetworks };
+export { conceroNetworks }

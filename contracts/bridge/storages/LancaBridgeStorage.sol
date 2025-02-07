@@ -15,10 +15,6 @@ abstract contract LancaBridgeStorage is ILancaBridgeStorage {
     mapping(uint64 dstChainSelector => uint256 amount)
         internal s_pendingSettlementTxAmountByDstChain;
     mapping(uint64 dstChainSelector => uint256 lastCcipFeeInLink) internal s_lastCcipFeeInLink;
-    mapping(address sender => bool isAllowed) internal s_isConceroMessageSenderAllowed;
-    mapping(uint64 srcChainSelector => bool isAllowed) internal s_isConceroMessageSrcChainAllowed;
-    mapping(address sender => bool isAllowed) internal s_isCcipMessageSenderAllowed;
-    mapping(uint64 srcChainSelector => bool isAllowed) internal s_isCcipMessageSrcChainAllowed;
     mapping(bytes32 txId => bool isConfirmed) internal s_isBridgeProcessed;
 
     /* GETTERS */
@@ -40,11 +36,7 @@ abstract contract LancaBridgeStorage is ILancaBridgeStorage {
         return s_pendingSettlementTxAmountByDstChain[dstChainSelector];
     }
 
-    function isConceroMessageSenderAllowed(address sender) external view returns (bool) {
-        return s_isConceroMessageSenderAllowed[sender];
-    }
-
-    function isConceroMessageSrcChainAllowed(uint64 srcChainSelector) external view returns (bool) {
-        return s_isConceroMessageSrcChainAllowed[srcChainSelector];
+    function getLancaBridgeContractByChain(uint64 chainSelector) external view returns (address) {
+        return s_lancaBridgeContractsByChain[chainSelector];
     }
 }

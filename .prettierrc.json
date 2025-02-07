@@ -1,8 +1,9 @@
 {
     "arrowParens": "avoid",
     "printWidth": 120,
-    "tabWidth": 2,
+    "tabWidth": 4,
     "trailingComma": "all",
+    "semi": false,
     "plugins": ["prettier-plugin-solidity"],
     "overrides": [
         {
@@ -11,7 +12,6 @@
                 "parser": "solidity-parse",
                 "printWidth": 100,
                 "tabWidth": 4,
-                "useTabs": false,
                 "singleQuote": false,
                 "bracketSpacing": false
             }

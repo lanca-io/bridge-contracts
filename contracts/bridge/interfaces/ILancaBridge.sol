@@ -5,7 +5,8 @@ interface ILancaBridge {
     /* TYPES */
 
     enum LancaBridgeMessageVersion {
-        V1
+        V1,
+        V2
     }
 
     struct CcipSettlementTxs {
@@ -25,6 +26,20 @@ interface ILancaBridge {
         bytes message;
     }
 
+    struct LancaBridgeMessageDataV1 {
+        address sender;
+        address receiver;
+        uint64 dstChainSelector;
+        uint24 dstChainGasLimit;
+        uint256 amount;
+        bytes data;
+    }
+
+    struct LancaBridgeMessageData {
+        LancaBridgeMessageVersion version;
+        bytes versionedData;
+    }
+
     /* ERRORS */
     error InvalidBridgeToken();
     error InvalidReceiver();
@@ -33,11 +48,12 @@ interface ILancaBridge {
     error InvalidDstChainSelector();
     error InvalidFeeToken();
     error InvalidCcipToken();
+    error InvalidConceroMessageSender();
     error InvalidLancaBridgeMessageVersion();
-    error UnauthorizedConceroMessageSender();
-    error UnauthorizedConceroMessageSrcChain();
-    error UnauthorizedCcipMessageSender();
     error InvalidCcipTxType();
+    error BridgeAlreadyProcessed();
+    error UnauthorizedConceroMessageSender();
+    error UnauthorizedCcipMessageSender();
 
     /* EVENTS */
     event LancaBridgeSent(

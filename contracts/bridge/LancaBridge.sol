@@ -74,11 +74,16 @@ contract LancaBridge is
 
         bytes memory bridgeDataMessage = abi.encode(
             LancaBridgeMessageVersion.V1,
-            msg.sender,
-            bridgeReq.receiver,
-            bridgeReq.dstChainGasLimit,
-            bridgeReq.amount,
-            bridgeReq.message
+            abi.encode(
+                LancaBridgeMessageDataV1({
+                    sender: msg.sender,
+                    receiver: bridgeReq.receiver,
+                    dstChainSelector: bridgeReq.dstChainSelector,
+                    dstChainGasLimit: uint24(bridgeReq.dstChainGasLimit),
+                    amount: amountToSendAfterFee,
+                    data: bridgeReq.message
+                })
+            )
         );
 
         IConceroRouter.MessageRequest memory messageReq = IConceroRouter.MessageRequest({
@@ -101,9 +106,9 @@ contract LancaBridge is
         );
 
         if (
-            updatedBatchedTxAmount >= BATCHED_TX_THRESHOLD ||
-            s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
-            MAX_PENDING_SETTLEMENT_TXS_BY_LANE
+            (updatedBatchedTxAmount >= BATCHED_TX_THRESHOLD) ||
+            (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
+                MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
         ) {
             _sendBatchViaSettlement(
                 bridgeReq.token,
@@ -321,63 +326,61 @@ contract LancaBridge is
     /* CONCERO CLIENT FUNCTIONS */
 
     function _conceroReceive(Message calldata conceroMessage) internal override {
-        // @TODO: search if confirmed mapping needed on this step
         require(
-            s_isConceroMessageSenderAllowed[conceroMessage.sender],
+            s_lancaBridgeContractsByChain[conceroMessage.srcChainSelector] == conceroMessage.sender,
             UnauthorizedConceroMessageSender()
         );
 
-        require(
-            s_isConceroMessageSrcChainAllowed[conceroMessage.srcChainSelector],
-            UnauthorizedConceroMessageSrcChain()
-        );
+        _processBridge(conceroMessage.id);
 
-        LancaBridgeMessageVersion lancaBridgeMessageVersion = LancaBridgeMessageVersion(
-            uint8(conceroMessage.data[0])
+        (LancaBridgeMessageVersion lancaBridgeMessageVersion, bytes memory data) = abi.decode(
+            conceroMessage.data,
+            (LancaBridgeMessageVersion, bytes)
         );
 
         if (lancaBridgeMessageVersion == LancaBridgeMessageVersion.V1) {
-            _handleLancaBridgeMessageV1(conceroMessage);
+            _handleLancaBridgeMessageV1(conceroMessage, data);
         } else {
             revert InvalidLancaBridgeMessageVersion();
         }
     }
 
-    function _handleLancaBridgeMessageV1(Message calldata conceroMessage) internal {
-        (
-            ,
-            address sender,
-            address lancaBridgeReceiver,
-            uint24 gasLimit,
-            uint256 amount,
-            bytes memory data
-        ) = abi.decode(conceroMessage.data, (uint8, address, address, uint24, uint256, bytes));
+    function _handleLancaBridgeMessageV1(
+        Message calldata conceroMessage,
+        bytes memory lancaBridgeMessageData
+    ) internal {
+        LancaBridgeMessageDataV1 memory lancaMessageData = abi.decode(
+            lancaBridgeMessageData,
+            (LancaBridgeMessageDataV1)
+        );
 
         ILancaBridgeClient.LancaBridgeMessage memory bridgeData = ILancaBridgeClient
             .LancaBridgeMessage({
                 id: conceroMessage.id,
-                sender: sender,
+                sender: lancaMessageData.sender,
                 token: i_usdc,
-                amount: amount,
+                amount: lancaMessageData.amount,
                 srcChainSelector: conceroMessage.srcChainSelector,
-                data: data
+                data: lancaMessageData.data
             });
 
-        // @dev TODO: take loan from lanca pool instead transfer
-        IERC20(i_usdc).safeTransfer(lancaBridgeReceiver, amount);
-        ILancaBridgeClient(lancaBridgeReceiver).lancaBridgeReceive{gas: gasLimit}(bridgeData);
+        i_lancaPool.takeLoan(i_usdc, lancaMessageData.amount, lancaMessageData.receiver);
+        ILancaBridgeClient(lancaMessageData.receiver).lancaBridgeReceive{
+            gas: lancaMessageData.dstChainGasLimit
+        }(bridgeData);
+    }
+
+    function _processBridge(bytes32 id) internal {
+        require(!s_isBridgeProcessed[id], BridgeAlreadyProcessed());
+        s_isBridgeProcessed[id] = true;
     }
 
     /* CCIP CLIENT FUNCTIONS */
 
     function _ccipReceive(LibCcipClient.Any2EVMMessage memory ccipMessage) internal override {
-        // @dev mb pack it into one sload
         require(
-            s_isCcipMessageSenderAllowed[abi.decode(ccipMessage.sender, (address))],
-            UnauthorizedCcipMessageSender()
-        );
-        require(
-            s_isCcipMessageSrcChainAllowed[ccipMessage.sourceChainSelector],
+            s_lancaBridgeContractsByChain[ccipMessage.sourceChainSelector] ==
+                abi.decode(ccipMessage.sender, (address)),
             UnauthorizedCcipMessageSender()
         );
 
@@ -422,7 +425,7 @@ contract LancaBridge is
         }
 
         if (rebalancedAmount > 0) {
-            IERC20(i_usdc).safeTransfer(msg.sender, rebalancedAmount);
+            IERC20(i_usdc).safeTransfer(address(i_lancaPool), rebalancedAmount);
             i_lancaPool.completeRebalancing(ccipMessageId, rebalancedAmount);
         }
     }
