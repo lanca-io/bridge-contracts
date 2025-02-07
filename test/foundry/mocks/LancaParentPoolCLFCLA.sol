@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-contract LancaParentPoolCLFCLAMock {
+import {LancaPoolCommonStorage} from "contracts/pools/storages/LancaPoolCommonStorage.sol";
+import {LancaParentPoolStorage} from "contracts/pools/storages/LancaParentPoolStorage.sol";
+
+contract LancaParentPoolCLFCLAMock is LancaPoolCommonStorage, LancaParentPoolStorage {
     function sendCLFRequest(bytes memory data) external returns (bytes memory) {
         return keccak256(data);
     }
