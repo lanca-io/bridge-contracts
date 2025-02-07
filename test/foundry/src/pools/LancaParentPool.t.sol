@@ -115,4 +115,12 @@ contract LancaParentPoolTest is Test {
     }
 
     /* WITHDRAWAL TESTS */
+    function test_lancaParentPoolStartWithdrawalFailsWhenAmountToLow() external {
+        vm.expectRevert();
+        s_lancaParentPool.startWithdrawal(1 wei);
+    }
+
+    function test_lancaParentPoolStartWithdrawalSucceeds() external {
+        
+    }
 }

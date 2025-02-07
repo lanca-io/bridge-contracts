@@ -19,7 +19,7 @@ contract LancaParentPoolCLFCLAMock is LancaPoolCommonStorage, LancaParentPoolSto
         bytes32 requestId,
         bytes memory response,
         bytes memory err
-    ) internal override {
+    ) internal  {
         ILancaParentPool.CLFRequestType requestType = s_clfRequestTypes[requestId];
 
         require(requestType != ILancaParentPool.CLFRequestType.empty, InvalidCLFRequestType());
