@@ -1,54 +1,55 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {DeployLancaParentPoolScriptBase} from "./DeployLancaParentPoolBase.s.sol";
-import {LancaParentPoolMock} from "../mocks/LancaParentPoolMock.sol";
-import {LibLanca} from "contracts/common/libraries/LibLanca.sol";
 import {DeployLancaBridgeHarnessScript} from "../scripts/DeployLancaBridgeHarness.s.sol";
-import {LancaParentPoolCLFCLAMock} from "../mocks/LancaParentPoolCLFCLA.sol";
+import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
+import {LancaParentPoolCLFCLA} from "contracts/pools/LancaParentPoolCLFCLA.sol";
+import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
+import {DeployBase} from "./DeployBase.s.sol";
 
-contract DeployLancaParentPoolHarnessScript is DeployLancaParentPoolScriptBase {
-    function _deployLancaParentPool() internal override {
-        vm.startPrank(getDeployer());
-
-        LibLanca.Clf memory clf = LibLanca.Clf({
-            router: getClfRouter(),
-            subId: getCLfSubId(),
-            donId: getCLfDonId(),
-            donHostedSecretsSlotId: getDonHostedSecretsSlotId(),
-            donHostedSecretsVersion: getDonHostedSecretsVersion()
-        });
-
-        LibLanca.Token memory token = LibLanca.Token({
+contract DeployLancaParentPoolHarnessScript is DeployBase {
+    function _deployImplementation() internal override returns (address) {
+        LancaParentPool.TokenConfig memory tokenConfig = LancaParentPool.TokenConfig({
             link: getLinkAddress(),
             usdc: getUsdcAddress(),
             lpToken: makeAddr("lpToken")
         });
 
-        DeployLancaBridgeHarnessScript deployLancaBridge = new DeployLancaBridgeHarnessScript();
-        vm.allowCheatcodes(address(deployLancaBridge));
+        address[3] memory messengers = [getMessengers()[0], getMessengers()[1], getMessengers()[2]];
 
-        LibLanca.Addr memory addr = LibLanca.Addr({
+        vm.startPrank(getDeployer());
+        LancaParentPool.AddressConfig memory addressConfig = LancaParentPool.AddressConfig({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
             parentPoolProxy: makeAddr("parent pool proxy"),
             owner: getDeployer(),
-            lancaParentPoolCLFCLA: address(new LancaParentPoolCLFCLAMock()),
-            lancaBridge: makeAddr("lancaBridge")
+            lancaParentPoolCLFCLA: address(
+                new LancaParentPoolCLFCLA(
+                    tokenConfig.lpToken,
+                    tokenConfig.usdc,
+                    makeAddr("lancaBridge"),
+                    getClfRouter(),
+                    getCLfSubId(),
+                    getClfDonId(),
+                    getClfSecretsSlotId(),
+                    getClfSecretsVersion(),
+                    keccak256("distributeLiquidityJs")
+                )
+            ),
+            clfRouter: getClfRouter(),
+            lancaBridge: makeAddr("lancaBridge"),
+            messengers: messengers
         });
 
-        address[3] memory messengers = [
-            makeAddr("messenger 0"),
-            makeAddr("messenger 1"),
-            makeAddr("messenger 2")
-        ];
-
-        LibLanca.Hash memory hash = LibLanca.Hash({
-            collectLiquidityJs: bytes32(0),
+        LancaParentPool.HashConfig memory hashConfig = LancaParentPool.HashConfig({
             distributeLiquidityJs: bytes32(0)
         });
-        s_lancaParentPool = address(new LancaParentPoolMock(token, addr, clf, hash, messengers));
+        address lancaParentPool = address(
+            new LancaParentPoolHarness(tokenConfig, addressConfig, hashConfig)
+        );
 
         vm.stopPrank();
+
+        return lancaParentPool;
     }
 }

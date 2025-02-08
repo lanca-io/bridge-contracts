@@ -47,7 +47,7 @@ contract DeployHelper is Script {
         return uint64(res);
     }
 
-    function getDonId() public view returns (bytes32) {
+    function getClfDonId() public view returns (bytes32) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
@@ -150,8 +150,9 @@ contract DeployHelper is Script {
     }
 
     function getCcipRouter() public returns (address) {
+        // @dev commented cuz for some reason ccip router fails in fork tests
+
         //        uint256 chainId = block.chainid;
-        //
         //        if (chainId == vm.envUint("BASE_CHAIN_ID")) {
         //            return vm.envAddress("CL_CCIP_ROUTER_BASE");
         //        } else if (chainId == vm.envUint("ARBITRUM_CHAIN_ID")) {
@@ -165,7 +166,6 @@ contract DeployHelper is Script {
         //        } else if (chainId == vm.envUint("ETHEREUM_CHAIN_ID")) {
         //            return vm.envAddress("CL_CCIP_ROUTER_ETHEREUM");
         //        }
-        //
         //        return vm.envAddress("CL_CCIP_ROUTER_BASE");
 
         return address(new CcipRouterMock(getLinkAddress()));
@@ -198,5 +198,13 @@ contract DeployHelper is Script {
     function getClfEthersJsHash() public pure returns (bytes32) {
         // @dev doesn't matter for forge tests
         return bytes32(0);
+    }
+
+    function getMessengers() public view returns (address[] memory) {
+        address[] memory messengers = new address[](3);
+        messengers[0] = vm.envAddress("MESSENGER_0_ADDRESS");
+        messengers[1] = vm.envAddress("MESSENGER_1_ADDRESS");
+        messengers[2] = vm.envAddress("MESSENGER_2_ADDRESS");
+        return messengers;
     }
 }

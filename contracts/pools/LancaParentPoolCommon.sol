@@ -14,7 +14,7 @@ abstract contract LancaParentPoolCommon {
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
     uint256 internal constant WITHDRAWAL_COOLDOWN_SECONDS = 597_600;
 
-    LPToken public immutable i_lpToken;
+    LPToken internal immutable i_lpToken;
 
     constructor(address lpToken) {
         i_lpToken = LPToken(lpToken);

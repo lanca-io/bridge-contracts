@@ -1,19 +1,19 @@
 pragma solidity 0.8.28;
 
-import {DeployLancaBridgeScriptBase} from "./DeployLancaBridgeBase.s.sol";
 import {LancaBridgeHarness} from "../harnesses/LancaBridgeHarness.sol";
 import {TestHarness} from "../harnesses/TestHarness.sol";
 import {LancaPoolMock} from "../mocks/LancaPoolMock.sol";
 import {ConceroRouterMock} from "../mocks/ConceroRouterMock.sol";
+import {DeployBase} from "./DeployBase.s.sol";
 
-contract DeployLancaBridgeHarnessScript is DeployLancaBridgeScriptBase {
-    function _deployLancaBridge() internal override {
+contract DeployLancaBridgeHarnessScript is DeployBase {
+    function _deployImplementation() internal override returns (address) {
         address lancaPool = address(new LancaPoolMock());
         TestHarness cheats = new TestHarness();
         cheats.exposed_deal(getUsdcAddress(), lancaPool, 1_000_000e6);
 
         vm.startPrank(getDeployer());
-        s_lancaBridge = address(
+        address implementation = address(
             new LancaBridgeHarness(
                 address(new ConceroRouterMock()),
                 getCcipRouter(),
@@ -25,5 +25,7 @@ contract DeployLancaBridgeHarnessScript is DeployLancaBridgeScriptBase {
         );
 
         vm.stopPrank();
+
+        return implementation;
     }
 }

@@ -9,33 +9,6 @@ import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, US
 
 library LibLanca {
     using SafeERC20 for IERC20;
-    struct Clf {
-        address router;
-        uint64 subId;
-        bytes32 donId;
-        uint8 donHostedSecretsSlotId;
-        uint64 donHostedSecretsVersion;
-    }
-
-    struct Token {
-        address link;
-        address usdc;
-        address lpToken;
-    }
-
-    struct Addr {
-        address ccipRouter;
-        address automationForwarder;
-        address parentPoolProxy;
-        address owner;
-        address lancaParentPoolCLFCLA;
-        address lancaBridge;
-    }
-
-    struct Hash {
-        bytes32 collectLiquidityJs;
-        bytes32 distributeLiquidityJs;
-    }
 
     /* ERRORS */
     /// @dev Reverts when transfer data is invalid (e.g., zero amount or recipient address).

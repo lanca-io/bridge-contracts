@@ -31,7 +31,26 @@ contract LancaParentPool is
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
 
-    /* TYPES */
+    struct TokenConfig {
+        address link;
+        address usdc;
+        address lpToken;
+    }
+
+    struct AddressConfig {
+        address ccipRouter;
+        address automationForwarder;
+        address parentPoolProxy;
+        address owner;
+        address lancaParentPoolCLFCLA;
+        address lancaBridge;
+        address clfRouter;
+        address[3] messengers;
+    }
+
+    struct HashConfig {
+        bytes32 distributeLiquidityJs;
+    }
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
@@ -44,37 +63,24 @@ contract LancaParentPool is
     LinkTokenInterface private immutable i_linkToken;
     ILancaParentPoolCLFCLA internal immutable i_lancaParentPoolCLFCLA;
     address internal immutable i_clfRouter;
-    bytes32 internal immutable i_clfDonId;
-    uint64 internal immutable i_clfSubId;
     address internal immutable i_automationForwarder;
-    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
-    uint8 internal immutable i_donHostedSecretsSlotId;
-    uint64 internal immutable i_donHostedSecretsVersion;
 
     constructor(
-        LibLanca.Token memory token,
-        LibLanca.Addr memory addr,
-        LibLanca.Clf memory clf,
-        LibLanca.Hash memory hash,
-        address[3] memory messengers
+        TokenConfig memory tokenConfig,
+        AddressConfig memory addressConfig,
+        HashConfig memory hashConfig
     )
-        LancaPoolCommon(token.usdc, addr.lancaBridge)
-        LancaParentPoolStorageSetters(addr.owner)
-        LancaParentPoolCommon(token.lpToken)
-        CCIPReceiver(addr.ccipRouter)
+        LancaPoolCommon(tokenConfig.usdc, addressConfig.lancaBridge)
+        LancaParentPoolStorageSetters(addressConfig.owner)
+        LancaParentPoolCommon(tokenConfig.lpToken)
+        CCIPReceiver(addressConfig.ccipRouter)
     {
-        i_linkToken = LinkTokenInterface(token.link);
-        i_clfRouter = clf.router;
-        i_automationForwarder = addr.automationForwarder;
-        i_collectLiquidityJsCodeHashSum = hash.collectLiquidityJs;
-        i_distributeLiquidityJsCodeHashSum = hash.distributeLiquidityJs;
-        i_donHostedSecretsSlotId = clf.donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = clf.donHostedSecretsVersion;
-        i_clfDonId = clf.donId;
-        i_clfSubId = clf.subId;
-        i_lancaBridge = addr.lancaBridge;
-        i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addr.lancaParentPoolCLFCLA);
+        i_linkToken = LinkTokenInterface(tokenConfig.link);
+        i_lancaParentPoolCLFCLA = ILancaParentPoolCLFCLA(addressConfig.lancaParentPoolCLFCLA);
+        i_clfRouter = addressConfig.clfRouter;
+        i_automationForwarder = addressConfig.automationForwarder;
+        i_distributeLiquidityJsCodeHashSum = hashConfig.distributeLiquidityJs;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -245,7 +251,7 @@ contract LancaParentPool is
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
 
-        // partially initialise withdrawalRequest struct
+        // @dev partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = lpAddress;
         s_withdrawRequests[withdrawalId].lpAmountToBurn = lpAmount;
 
