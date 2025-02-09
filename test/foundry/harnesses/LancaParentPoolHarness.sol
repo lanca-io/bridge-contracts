@@ -12,4 +12,16 @@ contract LancaParentPoolHarness is LancaParentPool {
     function exposed_setWithdrawAmountLocked(uint256 newWithdrawAmountLocked) external {
         s_withdrawAmountLocked = newWithdrawAmountLocked;
     }
+
+    function exposed_setChildPoolsLiqSnapshotByDepositId(
+        bytes32 depositId,
+        uint256 liqSnapshot
+    ) external {
+        s_depositRequests[depositId].childPoolsLiquiditySnapshot = liqSnapshot;
+    }
+
+    /* GETTERS */
+    function exposed_getLpToken() external view returns (address) {
+        return address(i_lpToken);
+    }
 }

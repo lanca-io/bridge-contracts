@@ -6,11 +6,11 @@ import {ILancaParentPool} from "../interfaces/ILancaParentPool.sol";
 abstract contract LancaParentPoolStorage {
     /* STATE VARIABLES */
 
-    uint256 public s_liquidityCap;
+    uint256 internal s_liquidityCap;
 
-    uint256 public s_withdrawAmountLocked;
+    uint256 internal s_withdrawAmountLocked;
 
-    uint256 public s_depositsOnTheWayAmount;
+    uint256 internal s_depositsOnTheWayAmount;
 
     uint256 internal s_depositFeeAmount;
 
@@ -26,23 +26,23 @@ abstract contract LancaParentPoolStorage {
 
     ILancaParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 
-    bytes32[] public s_withdrawalRequestIds;
+    bytes32[] internal s_withdrawalRequestIds;
 
     /* MAPPINGS */
 
-    mapping(uint64 chainSelector => address pool) public s_childPools;
+    mapping(uint64 chainSelector => address pool) internal s_childPools;
 
-    mapping(bytes32 clfReqId => ILancaParentPool.CLFRequestType) public s_clfRequestTypes;
+    mapping(bytes32 clfReqId => ILancaParentPool.CLFRequestType) internal s_clfRequestTypes;
 
-    mapping(bytes32 clfReqId => ILancaParentPool.DepositRequest) public s_depositRequests;
+    mapping(bytes32 clfReqId => ILancaParentPool.DepositRequest) internal s_depositRequests;
 
-    mapping(address lpAddress => bytes32 withdrawalId) public s_withdrawalIdByLPAddress;
+    mapping(address lpAddress => bytes32 withdrawalId) internal s_withdrawalIdByLPAddress;
 
-    mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
+    mapping(bytes32 clfReqId => bytes32 withdrawalId) internal s_withdrawalIdByCLFRequestId;
 
-    mapping(bytes32 withdrawalId => ILancaParentPool.WithdrawRequest) public s_withdrawRequests;
+    mapping(bytes32 withdrawalId => ILancaParentPool.WithdrawRequest) internal s_withdrawRequests;
 
-    mapping(bytes32 withdrawalId => bool isTriggered) public s_withdrawTriggered;
+    mapping(bytes32 withdrawalId => bool isTriggered) internal s_withdrawTriggered;
 
     /* STORAGE GAP */
     /// @notice gap to reserve storage in the contract for future variable additions
@@ -76,5 +76,11 @@ abstract contract LancaParentPoolStorage {
         bytes32 clfReqId
     ) external view returns (ILancaParentPool.CLFRequestType) {
         return s_clfRequestTypes[clfReqId];
+    }
+
+    function getWithdrawalRequestById(
+        bytes32 withdrawalId
+    ) external view returns (ILancaParentPool.WithdrawRequest memory) {
+        return s_withdrawRequests[withdrawalId];
     }
 }
