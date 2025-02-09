@@ -1,1 +1,2 @@
-LancaBridgeTestGas:test_bridge_gas() (gas: 217488)
+LancaBridgeTestGas:test_bridge_gas() (gas: 219357)
+LancaParentPoolTestGas:test_startDeposit_gas() (gas: 414698)

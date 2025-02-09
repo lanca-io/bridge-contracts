@@ -96,11 +96,11 @@ interface ILancaParentPool is ILancaPool {
 
     error SenderNotAllowed(address sender);
     error WithdrawalRequestAlreadyExists();
-    error DepositAmountBelowMinimum(uint256 minAmount);
+    error DepositAmountBelowMinimum();
     error DepositRequestNotReady();
     error DepositsOnTheWayArrayFull();
     error WithdrawAmountBelowMinimum(uint256 minAmount);
-    error MaxDepositCapReached(uint256 maxCap);
+    error MaxDepositCapReached();
     error NotAllowedToCompleteDeposit();
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);
     error DepositDeadlinePassed();

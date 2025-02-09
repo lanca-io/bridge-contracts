@@ -33,7 +33,7 @@ test:
 	forge test $(args)
 
 gas_snapshot:
-	forge snapshot $(args) --match-path ./test/foundry/src/gas/*
+	forge snapshot --mp "./test/foundry/src/gas/*.gas.sol"
 
 coverage:
 	forge coverage --report lcov

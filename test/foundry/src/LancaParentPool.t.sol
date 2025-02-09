@@ -8,18 +8,17 @@ import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPo
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 
 contract LancaParentPoolTest is Test {
+    uint256 internal constant USDC_DECIMALS = 1e6;
+    uint256 internal constant DEPOSIT_AMOUNT = 100 * USDC_DECIMALS;
+    uint256 internal constant LOW_DEPOSIT_AMOUNT = 1 * USDC_DECIMALS;
+
     DeployLancaParentPoolHarnessScript internal s_deployLancaParentPoolHarnessScript;
     LancaParentPoolHarness internal s_lancaParentPool;
     address internal s_usdc = vm.envAddress("USDC_BASE");
     address internal s_depositor = makeAddr("depositor");
 
-    uint256 internal constant USDC_DECIMALS = 1e6;
-    uint256 internal constant DEPOSIT_AMOUNT = 100 * USDC_DECIMALS;
-    uint256 internal constant LOW_DEPOSIT_AMOUNT = 1 * USDC_DECIMALS;
-    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
-
     modifier dealUsdcTo(address to, uint256 amount) {
-        deal(s_usdc, to, amount);
+        _dealUsdcTo(to, amount);
         _;
     }
 
@@ -29,93 +28,66 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool = LancaParentPoolHarness(
             payable(s_deployLancaParentPoolHarnessScript.run(forkId))
         );
+        vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setPoolCap(60_000 * USDC_DECIMALS);
     }
 
-    /* DEPOSIT TESTS */
+    function testFuzz_startDeposit(uint256 depositAmount) public {
+        vm.assume(
+            depositAmount > s_lancaParentPool.getMinDepositAmount() &&
+                depositAmount < s_lancaParentPool.getLiquidityCap()
+        );
 
-    function test_lancaParentPoolStartDepositFailsWhenAmountToLow()
-        external
-        dealUsdcTo(s_depositor, LOW_DEPOSIT_AMOUNT)
-    {
+        _dealUsdcTo(s_depositor, depositAmount);
+
+        uint256 depositDeadline = block.timestamp + s_lancaParentPool.getDepositDeadlineSeconds();
+
+        vm.startPrank(s_depositor);
+        vm.expectEmit(false, false, false, true, address(s_lancaParentPool));
+        emit ILancaParentPool.DepositInitiated(
+            bytes32(0),
+            s_depositor,
+            depositAmount,
+            depositDeadline
+        );
+        bytes32 depositId = s_lancaParentPool.startDeposit(depositAmount);
+        vm.stopPrank();
+
+        ILancaParentPool.DepositRequest memory depositReq = s_lancaParentPool.getDepositRequestById(
+            depositId
+        );
+
+        // @dev check clf req type by id
+        vm.assertEq(
+            uint8(s_lancaParentPool.getClfReqTypeById(depositId)),
+            uint8(ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity)
+        );
+
+        // @dev check full deposit request structure
+        vm.assertEq(depositReq.lpAddress, s_depositor);
+        vm.assertEq(depositReq.usdcAmountToDeposit, depositAmount);
+        vm.assertEq(depositReq.deadline, depositDeadline);
+        vm.assertEq(depositReq.childPoolsLiquiditySnapshot, 0);
+    }
+
+    /* REVERTS */
+
+    function test_startDepositDepositAmountBelowMinimum_revert() external {
         vm.prank(s_depositor);
         vm.expectRevert(ILancaParentPool.DepositAmountBelowMinimum.selector);
         s_lancaParentPool.startDeposit(LOW_DEPOSIT_AMOUNT);
     }
 
-    function test_lancaParentPoolStartDepositFailsWhenMaxDepositCapReached()
-        external
-        dealUsdcTo(s_depositor, 100 * USDC_DECIMALS)
-    {
-        s_lancaParentPool.exposed_setWithdrawAmountLocked(LOW_DEPOSIT_AMOUNT);
-
+    function test_startDepositMaxDepositCapReached_revert() public {
         vm.prank(s_depositor);
+        uint256 liqCap = s_lancaParentPool.getLiquidityCap();
         vm.expectRevert(ILancaParentPool.MaxDepositCapReached.selector);
-        s_lancaParentPool.startDeposit(DEPOSIT_AMOUNT);
+        s_lancaParentPool.startDeposit(liqCap + 1);
     }
 
-    //    function test_lancaParentPoolStartDepositSucceeds()
-    //        external
-    //        dealUsdcTo(s_depositor, 100 * USDC_DECIMALS)
-    //    {
-    //        vm.prank(s_depositor);
-    //
-    //        bytes[] memory args = new bytes[](3);
-    //        args[0] = abi.encodePacked(bytes32(0));
-    //        args[1] = abi.encodePacked(bytes32(0));
-    //        args[2] = abi.encodePacked(
-    //            ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity
-    //        );
-    //        bytes memory delegateCallArgs = abi.encodeWithSelector(
-    //            LancaParentPoolCLFCLAMock.sendCLFRequest.selector,
-    //            args
-    //        );
-    //        bytes32 clfRequestId = bytes32(delegateCallArgs);
-    //
-    //        vm.recordLogs();
-    //
-    //        s_lancaParentPool.startDeposit(DEPOSIT_AMOUNT);
-    //
-    //        assertEq(
-    //            uint8(s_lancaParentPool.s_clfRequestTypes(clfRequestId)),
-    //            uint8(ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity)
-    //        );
-    //
-    //        (
-    //            address lpAddress,
-    //            uint256 usdcAmountToDeposit,
-    //            uint256 childPoolsLiquiditySnapshot,
-    //            uint256 deadline
-    //        ) = s_lancaParentPool.s_depositRequests(clfRequestId);
-    //
-    //        assertEq(lpAddress, s_depositor);
-    //        assertEq(usdcAmountToDeposit, DEPOSIT_AMOUNT);
-    //        assertEq(deadline, block.timestamp + DEPOSIT_DEADLINE_SECONDS);
-    //
-    //        Vm.Log[] memory entries = vm.getRecordedLogs();
-    //        assertEq(
-    //            entries[0].topics[0],
-    //            keccak256("DepositInitiated(bytes32,address,uint256,uint256)")
-    //        );
-    //
-    //        // @dev check that the deposit request was sent to the CLF
-    //        address lancaParentPoolCLFCLA = s_lancaParentPool.getParentPoolCLFCLA();
-    //
-    //        args[0] = abi.encodePacked(clfRequestId);
-    //        args[1] = bytes32(0);
-    //        args[2] = bytes32(0);
-    //        delegateCallArgs = abi.encodeWithSelector(
-    //            LancaParentPoolCLFCLAMock.fulfillRequest.selector,
-    //            args
-    //        );
-    //
-    //        LibLanca.safeDelegateCall(lancaParentPoolCLFCLA, delegateCallArgs);
-    //    }
+    /* HELPERS */
 
-    /* WITHDRAWAL TESTS */
-    function test_lancaParentPoolStartWithdrawalFailsWhenAmountToLow() external {
-        vm.expectRevert();
-        s_lancaParentPool.startWithdrawal(1 wei);
+    function _dealUsdcTo(address to, uint256 amount) internal {
+        deal(s_usdc, to, amount);
     }
-
-    function test_lancaParentPoolStartWithdrawalSucceeds() external {}
 }

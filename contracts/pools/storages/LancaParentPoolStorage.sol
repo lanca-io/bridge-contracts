@@ -18,9 +18,9 @@ abstract contract LancaParentPoolStorage {
 
     uint8 internal s_latestDepositOnTheWayIndex;
 
-    bytes32 internal s_getChildPoolsLiquidityJsCodeHashSum;
+    //    bytes32 internal s_getChildPoolsLiquidityJsCodeHashSum;
 
-    bytes32 internal s_ethersHashSum;
+    //    bytes32 internal s_ethersHashSum;
 
     /* ARRAYS */
 
@@ -64,5 +64,17 @@ abstract contract LancaParentPoolStorage {
 
     function getLiquidityCap() external view returns (uint256) {
         return s_liquidityCap;
+    }
+
+    function getDepositRequestById(
+        bytes32 clfReqId
+    ) external view returns (ILancaParentPool.DepositRequest memory) {
+        return s_depositRequests[clfReqId];
+    }
+
+    function getClfReqTypeById(
+        bytes32 clfReqId
+    ) external view returns (ILancaParentPool.CLFRequestType) {
+        return s_clfRequestTypes[clfReqId];
     }
 }

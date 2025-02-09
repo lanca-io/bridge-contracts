@@ -39,6 +39,7 @@ contract LancaParentPoolCLFCLA is
     uint8 internal immutable i_donHostedSecretsSlotId;
     uint64 internal immutable i_donHostedSecretsVersion;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
+    bytes32 internal immutable i_ethersHashSum;
 
     constructor(
         address lpToken,
@@ -49,13 +50,15 @@ contract LancaParentPoolCLFCLA is
         bytes32 clfDonId,
         uint8 donHostedSecretsSlotId,
         uint64 donHostedSecretsVersion,
-        bytes32 collectLiquidityJsCodeHashSum
+        bytes32 collectLiquidityJsCodeHashSum,
+        bytes32 ethersHashSum
     ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
         i_donHostedSecretsSlotId = donHostedSecretsSlotId;
         i_donHostedSecretsVersion = donHostedSecretsVersion;
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
+        i_ethersHashSum = ethersHashSum;
         i_usdc = IERC20(usdc);
     }
 
@@ -367,7 +370,7 @@ contract LancaParentPoolCLFCLA is
     ) internal returns (bytes32) {
         bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[1] = abi.encodePacked(i_ethersHashSum);
         args[2] = abi.encodePacked(
             ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
         );

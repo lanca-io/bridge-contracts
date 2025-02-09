@@ -40,7 +40,6 @@ contract LancaParentPool is
     struct AddressConfig {
         address ccipRouter;
         address automationForwarder;
-        address parentPoolProxy;
         address owner;
         address lancaParentPoolCLFCLA;
         address lancaBridge;
@@ -50,6 +49,8 @@ contract LancaParentPool is
 
     struct HashConfig {
         bytes32 distributeLiquidityJs;
+        bytes32 ethersJs;
+        bytes32 getChildPoolsLiquidityJsCodeHashSum;
     }
 
     /* CONSTANT VARIABLES */
@@ -65,6 +66,8 @@ contract LancaParentPool is
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
+    bytes32 internal immutable i_getChildPoolsLiquidityJsCodeHashSum;
+    bytes32 internal immutable i_ethersHashSum;
 
     constructor(
         TokenConfig memory tokenConfig,
@@ -81,6 +84,8 @@ contract LancaParentPool is
         i_clfRouter = addressConfig.clfRouter;
         i_automationForwarder = addressConfig.automationForwarder;
         i_distributeLiquidityJsCodeHashSum = hashConfig.distributeLiquidityJs;
+        i_getChildPoolsLiquidityJsCodeHashSum = hashConfig.getChildPoolsLiquidityJsCodeHashSum;
+        i_ethersHashSum = hashConfig.ethersJs;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -97,8 +102,8 @@ contract LancaParentPool is
      * @notice Allows a user to initiate the deposit. Currently supports USDC only.
      * @param usdcAmount amount to be deposited
      */
-    function startDeposit(uint256 usdcAmount) external {
-        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum(MIN_DEPOSIT));
+    function startDeposit(uint256 usdcAmount) external returns (bytes32) {
+        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum());
 
         uint256 liquidityCap = s_liquidityCap;
 
@@ -109,12 +114,12 @@ contract LancaParentPool is
                 s_loansInUse -
                 s_withdrawAmountLocked <=
                 liquidityCap,
-            MaxDepositCapReached(liquidityCap)
+            MaxDepositCapReached()
         );
 
         bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(i_ethersHashSum);
         args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
@@ -137,6 +142,8 @@ contract LancaParentPool is
         s_depositRequests[clfRequestId].deadline = deadline;
 
         emit DepositInitiated(clfRequestId, lpAddress, usdcAmount, deadline);
+
+        return clfRequestId;
     }
 
     /**
@@ -201,7 +208,7 @@ contract LancaParentPool is
 
             bytes[] memory args = new bytes[](7);
             args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
-            args[1] = abi.encodePacked(s_ethersHashSum);
+            args[1] = abi.encodePacked(i_ethersHashSum);
             args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
@@ -230,8 +237,8 @@ contract LancaParentPool is
         );
 
         bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[0] = abi.encodePacked(i_getChildPoolsLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(i_ethersHashSum);
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
@@ -455,6 +462,14 @@ contract LancaParentPool is
                 s_loansInUse -
                 s_withdrawAmountLocked >
             s_liquidityCap;
+    }
+
+    function getMinDepositAmount() external pure returns (uint256) {
+        return MIN_DEPOSIT;
+    }
+
+    function getDepositDeadlineSeconds() external pure returns (uint256) {
+        return DEPOSIT_DEADLINE_SECONDS;
     }
 
     /* ADMIN FUNCTIONS */
