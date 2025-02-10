@@ -239,6 +239,7 @@ contract LancaParentPoolTest is Test {
 
     function test_setPoolsInvalidAddress_revert() public {
         address poolAddress = makeAddr("pool");
+        uint64 chainSelector = 1;
         vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
 
         vm.expectRevert(
@@ -247,16 +248,24 @@ contract LancaParentPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, address(0), false);
+        s_lancaParentPool.setPools(chainSelector, address(0), false);
 
-        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
+        vm.stopPrank();
+    }
+
+    function test_setPoolsTheSamePool_revert() public {
+        address poolAddress = makeAddr("pool");
+        uint64 chainSelector = 1;
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+
+        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
         vm.expectRevert(
             abi.encodeWithSelector(
                 LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.zeroAddress
+                LibErrors.InvalidAddressType.sameAddress
             )
         );
-        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
+        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
 
         vm.stopPrank();
     }

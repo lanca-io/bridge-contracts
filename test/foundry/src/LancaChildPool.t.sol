@@ -18,11 +18,42 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool = LancaChildPoolHarness(
             payable(s_deployChildPoolHarnessScript.run(forkId))
         );
-        //vm.prank(s_deployChildPoolHarnessScript.getDeployer());
-        //s_lancaChildPool.setPoolCap(60_000 * USDC_DECIMALS);
     }
 
     /* REVERTS */
+    function test_setPoolsNotOwner_revert() public {
+        address pool = makeAddr("pool");
+        uint64 chainSelector = 1;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.notOwner
+            )
+        );
+        s_lancaChildPool.setPools(chainSelector, pool);
+    }
+
+    function test_setPoolsTheSamePool_revert() public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+
+        vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
+        s_lancaChildPool.setPools(chainSelector, pool);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.sameAddress
+            )
+        );
+        s_lancaChildPool.setPools(chainSelector, pool);
+
+        vm.stopPrank();
+    }
+
+    function test_setPoolsInvalidAddress_revert() public {}
+
     function test_removePoolsNotOwner_revert() public {
         uint64 chainSelector = 0;
         vm.expectRevert(
