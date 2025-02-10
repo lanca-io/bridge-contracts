@@ -27,4 +27,14 @@ contract LancaChildPoolHarness is LancaChildPool {
         address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
         return messengers;
     }
+
+    function exposed_getDistributeLiquidityRequestProcessed(
+        bytes32 distributeLiquidityRequestId
+    ) external view returns (bool) {
+        return s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId];
+    }
+
+    function exposed_getLinkToken() external view returns (address) {
+        return address(i_linkToken);
+    }
 }
