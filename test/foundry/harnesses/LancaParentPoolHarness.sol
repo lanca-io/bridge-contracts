@@ -24,4 +24,12 @@ contract LancaParentPoolHarness is LancaParentPool {
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
     }
+
+    function exposed_getPoolChainSelectors() external view returns (uint64[] memory) {
+        return s_poolChainSelectors;
+    }
+
+    function exposed_getChildPools(uint64 chainSelector) external view returns (address) {
+        return s_childPools[chainSelector];
+    }
 }
