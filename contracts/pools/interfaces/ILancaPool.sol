@@ -5,6 +5,7 @@ interface ILancaPool {
     /* ERRORS */
     error WithdrawalAlreadyTriggered();
     error DistributeLiquidityRequestAlreadyProceeded();
+    error InvalidCcipTxType();
 
     /* FUNCTIONS */
 

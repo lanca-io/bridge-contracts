@@ -63,14 +63,6 @@ interface ILancaParentPool is ILancaPool {
         uint256 amount
     );
 
-    event CCIPReceived(
-        bytes32 indexed ccipMessageId,
-        uint64 srcChainSelector,
-        address sender,
-        address token,
-        uint256 amount
-    );
-
     event CCIPSent(
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
@@ -99,7 +91,7 @@ interface ILancaParentPool is ILancaPool {
     error DepositAmountBelowMinimum();
     error DepositRequestNotReady();
     error DepositsOnTheWayArrayFull();
-    error WithdrawAmountBelowMinimum(uint256 minAmount);
+    error WithdrawAmountBelowMinimum();
     error MaxDepositCapReached();
     error NotAllowedToCompleteDeposit();
     error WithdrawRequestDoesntExist(bytes32 withdrawalId);

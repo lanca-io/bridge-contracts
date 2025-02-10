@@ -20,12 +20,14 @@ import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 import {LancaPoolCommon} from "./LancaPoolCommon.sol";
+import {ILancaPoolCcip} from "./interfaces/ILancaPoolCcip.sol";
 
 contract LancaParentPool is
     LancaPoolCommon,
     LancaParentPoolStorageSetters,
     LancaParentPoolCommon,
-    CCIPReceiver
+    CCIPReceiver,
+    ILancaPoolCcip
 {
     /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
@@ -194,12 +196,12 @@ contract LancaParentPool is
         bool isRebalancingNeeded
     ) external payable onlyOwner {
         require(
-            s_childPools[chainSelector] != pool && pool != ZERO_ADDRESS,
+            s_dstPoolByChainSelector[chainSelector] != pool && pool != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
 
         s_poolChainSelectors.push(chainSelector);
-        s_childPools[chainSelector] = pool;
+        s_dstPoolByChainSelector[chainSelector] = pool;
 
         if (isRebalancingNeeded) {
             bytes32 distributeLiquidityRequestId = keccak256(
@@ -229,8 +231,8 @@ contract LancaParentPool is
      * @param lpAmount the amount of LP tokens to be burnt
      */
     function startWithdrawal(uint256 lpAmount) external {
+        require(lpAmount >= 1 ether, WithdrawAmountBelowMinimum());
         address lpAddress = msg.sender;
-        require(lpAmount >= 1 ether, WithdrawAmountBelowMinimum(1 ether));
         require(
             s_withdrawalIdByLPAddress[lpAddress] == bytes32(0),
             WithdrawalRequestAlreadyExists()
@@ -294,7 +296,7 @@ contract LancaParentPool is
         bytes32 requestId
     ) external onlyMessenger {
         require(
-            s_childPools[chainSelector] != ZERO_ADDRESS,
+            s_dstPoolByChainSelector[chainSelector] != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         require(
@@ -317,10 +319,10 @@ contract LancaParentPool is
 
         for (uint256 i; i < poolChainSelectorsLen; ++i) {
             if (s_poolChainSelectors[i] == chainSelector) {
-                removedPool = s_childPools[chainSelector];
+                removedPool = s_dstPoolByChainSelector[chainSelector];
                 s_poolChainSelectors[i] = s_poolChainSelectors[poolChainSelectorsLast];
                 s_poolChainSelectors.pop();
-                delete s_childPools[chainSelector];
+                delete s_dstPoolByChainSelector[chainSelector];
             }
         }
     }
@@ -617,31 +619,7 @@ contract LancaParentPool is
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
-        if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            // @dev TODO: remove it. moved to lanca bridge
-            //            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
-            //                ccipTxData.data,
-            //                (ICcip.CcipSettlementTx[])
-            //            );
-            //            for (uint256 i; i < settlementTxs.length; ++i) {
-            //                bytes32 txId = settlementTxs[i].id;
-            //                uint256 txAmount = settlementTxs[i].amount;
-            //                /// @dev we dont have infra orchestrator
-            //                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
-            //                /// @dev change it
-            //                bool isTxConfirmed = true;
-            //
-            //                if (isTxConfirmed) {
-            //                    txAmount -= getDstTotalFeeInUsdc(txAmount);
-            //                    s_loansInUse -= txAmount;
-            //                } else {
-            //                    /// @dev we dont have infra orchestrator
-            //                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-            //                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
-            //                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
-            //                }
-            //            }
-        } else if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
+        if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
@@ -659,13 +637,14 @@ contract LancaParentPool is
 
             s_withdrawAmountLocked += ccipReceivedAmount;
 
-            /// @dev why this number is 10?
             if (request.remainingLiquidityFromChildPools < 10) {
                 _completeWithdrawal(withdrawalId);
             }
+        } else {
+            revert InvalidCcipTxType();
         }
 
-        // TODO: maybe we can use underlying ccipReceived event?
+        // @dev maybe we can use underlying ccipReceived event?
         emit CCIPReceived(
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector,
@@ -686,7 +665,7 @@ contract LancaParentPool is
             data: abi.encode(emptyBridgeTxArray)
         });
 
-        address recipient = s_childPools[chainSelector];
+        address recipient = s_dstPoolByChainSelector[chainSelector];
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             recipient,
             address(i_usdc),

@@ -6,6 +6,8 @@ abstract contract LancaPoolCommonStorage {
 
     uint64[] internal s_poolChainSelectors;
 
+    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
+
     mapping(uint64 chainSelector => mapping(address conceroContract => bool isAllowed))
         internal s_isSenderContractAllowed;
 

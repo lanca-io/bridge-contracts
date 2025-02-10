@@ -110,6 +110,12 @@ contract LancaParentPoolTest is Test {
 
         deal(s_lancaParentPool.exposed_getLpToken(), s_depositor, lpAmountToWithdraw);
 
+        uint256 depositorLpTokenBalanceBefore = IERC20(s_lancaParentPool.exposed_getLpToken())
+            .balanceOf(s_depositor);
+        uint256 poolLpTokenBalanceBefore = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(
+            address(s_lancaParentPool)
+        );
+
         vm.startPrank(s_depositor);
         IERC20(s_lancaParentPool.exposed_getLpToken()).approve(
             address(s_lancaParentPool),
@@ -121,6 +127,12 @@ contract LancaParentPoolTest is Test {
         ILancaParentPool.WithdrawRequest memory withdrawReq = s_lancaParentPool
             .getWithdrawalRequestById(s_lancaParentPool.getWithdrawalIdByLPAddress(s_depositor));
 
+        uint256 depositorLpTokenBalanceAfter = IERC20(s_lancaParentPool.exposed_getLpToken())
+            .balanceOf(s_depositor);
+        uint256 poolLpTokenBalanceAfter = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(
+            address(s_lancaParentPool)
+        );
+
         // @dev check full withdraw request structure
         vm.assertEq(withdrawReq.lpAddress, s_depositor);
         vm.assertEq(withdrawReq.lpAmountToBurn, lpAmountToWithdraw);
@@ -128,7 +140,21 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(withdrawReq.liquidityRequestedFromEachPool, 0);
         vm.assertEq(withdrawReq.remainingLiquidityFromChildPools, 0);
         vm.assertEq(withdrawReq.triggeredAtTimestamp, 0);
+
+        // @dev check lp token balances
+        vm.assertEq(
+            depositorLpTokenBalanceAfter,
+            depositorLpTokenBalanceBefore - lpAmountToWithdraw
+        );
+        vm.assertEq(poolLpTokenBalanceAfter, poolLpTokenBalanceBefore + lpAmountToWithdraw);
     }
+
+    //    function test_handleOracleFulfillment() public {
+    //        bytes32 clfReqId = keccak256("clfReqId");
+    //        bytes memory data;
+    //        bytes memory err;
+    //    }
+    //}
 
     function testFuzz_setPools(address pool, bool isRebalancingNeeded) public {
         vm.assume(pool != address(0));
@@ -143,7 +169,7 @@ contract LancaParentPoolTest is Test {
 
     /* START DEPOSIT */
 
-    function test_startDepositDepositAmountBelowMinimum_revert() external {
+    function test_startDepositDepositAmountBelowMinimum_revert() public {
         vm.prank(s_depositor);
         vm.expectRevert(ILancaParentPool.DepositAmountBelowMinimum.selector);
         s_lancaParentPool.startDeposit(LOW_DEPOSIT_AMOUNT);
@@ -154,6 +180,26 @@ contract LancaParentPoolTest is Test {
         uint256 liqCap = s_lancaParentPool.getLiquidityCap();
         vm.expectRevert(ILancaParentPool.MaxDepositCapReached.selector);
         s_lancaParentPool.startDeposit(liqCap + 1);
+    }
+
+    function test_startWithdrawalWithdrawAmountBelowMinimum_revert() public {
+        vm.prank(s_depositor);
+        vm.expectRevert(ILancaParentPool.WithdrawAmountBelowMinimum.selector);
+        s_lancaParentPool.startWithdrawal(0);
+    }
+
+    function test_startWithdrawalRequestAlreadyExists_revert() public {
+        uint256 lpAmountToWithdraw = 1000e18;
+        deal(s_lancaParentPool.exposed_getLpToken(), s_depositor, lpAmountToWithdraw);
+        vm.startPrank(s_depositor);
+        IERC20(s_lancaParentPool.exposed_getLpToken()).approve(
+            address(s_lancaParentPool),
+            lpAmountToWithdraw
+        );
+        s_lancaParentPool.startWithdrawal(lpAmountToWithdraw);
+        vm.expectRevert(ILancaParentPool.WithdrawalRequestAlreadyExists.selector);
+        s_lancaParentPool.startWithdrawal(lpAmountToWithdraw);
+        vm.stopPrank();
     }
 
     /* COMPLETE DEPOSIT */
