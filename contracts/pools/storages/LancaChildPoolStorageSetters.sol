@@ -20,7 +20,11 @@ abstract contract LancaChildPoolStorageSetters is LancaChildPoolStorage, LancaOw
 
     function setPools(uint64 chainSelector, address pool) external payable onlyOwner {
         require(
-            s_dstPoolByChainSelector[chainSelector] != pool && pool != ZERO_ADDRESS,
+            s_dstPoolByChainSelector[chainSelector] != pool,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
+        );
+        require(
+            pool != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
 

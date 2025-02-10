@@ -196,8 +196,13 @@ contract LancaParentPool is
         bool isRebalancingNeeded
     ) external payable onlyOwner {
         require(
-            s_dstPoolByChainSelector[chainSelector] != pool && pool != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
+            s_dstPoolByChainSelector[chainSelector] != pool,
+            Errors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
+        );
+
+        require(
+            pool != ZERO_ADDRESS,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress())
         );
 
         s_poolChainSelectors.push(chainSelector);
