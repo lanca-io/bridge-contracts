@@ -64,4 +64,3 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool.liquidatePool(bytes32(0));
     }
 }
-    
