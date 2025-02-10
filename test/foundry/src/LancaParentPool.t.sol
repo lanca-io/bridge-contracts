@@ -274,6 +274,7 @@ contract LancaParentPoolTest is Test {
 
     function test_setPoolsNotOwner_revert() public {
         address poolAddress = makeAddr("pool");
+        uint64 chainSelector = 1;
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -281,7 +282,7 @@ contract LancaParentPoolTest is Test {
                 LibErrors.UnauthorizedType.notOwner
             )
         );
-        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
+        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
     }
 
     /* HELPERS */

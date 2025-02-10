@@ -5,6 +5,7 @@ import {Test} from "forge-std/src/Test.sol";
 import {LancaChildPoolHarness} from "../harnesses/LancaChildPoolHarness.sol";
 import {DeployLancaChildPoolHarnessScript} from "../scripts/DeployLancaChildPoolHarness.s.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
+import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 
 contract LancaChildPoolTest is Test {
     DeployLancaChildPoolHarnessScript internal s_deployChildPoolHarnessScript;
@@ -29,6 +30,19 @@ contract LancaChildPoolTest is Test {
 
         vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
         vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors()[0], chainSelector);
+    }
+
+    function test_removePools() public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+
+        vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
+        s_lancaChildPool.setPools(chainSelector, pool);
+
+        s_lancaChildPool.removePools(chainSelector);
+
+        vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors().length, 0);
+        vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), ZERO_ADDRESS);
     }
 
     /* REVERTS */
@@ -79,7 +93,7 @@ contract LancaChildPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaChildPool.setPools(chainSelector, address(0));
+        s_lancaChildPool.setPools(chainSelector, ZERO_ADDRESS);
 
         vm.stopPrank();
     }
