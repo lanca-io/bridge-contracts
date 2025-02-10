@@ -15,8 +15,10 @@ contract DeployLancaChildPoolHarnessScript is DeployBase {
         address lancaBridge = makeAddr("lancaBridge");
         address owner = getDeployer();
 
+        address[3] memory messengers = [getMessengers()[0], getMessengers()[1], getMessengers()[2]];
+
         address lancaChildPool = address(
-            new LancaChildPoolHarness(link, owner, ccipRouter, usdc, lancaBridge)
+            new LancaChildPoolHarness(link, owner, ccipRouter, usdc, lancaBridge, messengers)
         );
 
         vm.stopPrank();

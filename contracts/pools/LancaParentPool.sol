@@ -76,7 +76,7 @@ contract LancaParentPool is
         AddressConfig memory addressConfig,
         HashConfig memory hashConfig
     )
-        LancaPoolCommon(tokenConfig.usdc, addressConfig.lancaBridge)
+        LancaPoolCommon(tokenConfig.usdc, addressConfig.lancaBridge, addressConfig.messengers)
         LancaParentPoolStorageSetters(addressConfig.owner)
         LancaParentPoolCommon(tokenConfig.lpToken)
         CCIPReceiver(addressConfig.ccipRouter)
@@ -197,12 +197,12 @@ contract LancaParentPool is
     ) external payable onlyOwner {
         require(
             s_dstPoolByChainSelector[chainSelector] != pool,
-            Errors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
         );
 
         require(
             pool != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress())
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
 
         s_poolChainSelectors.push(chainSelector);

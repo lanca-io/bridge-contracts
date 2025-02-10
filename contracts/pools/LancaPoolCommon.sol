@@ -31,7 +31,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
         _;
     }
 
-    constructor(address usdc, address lancaBridge, address[3] messengers) {
+    constructor(address usdc, address lancaBridge, address[3] memory messengers) {
         i_usdc = IERC20(usdc);
         i_lancaBridge = lancaBridge;
         i_messenger0 = messengers[0];

@@ -37,7 +37,7 @@ contract LancaChildPool is
         address ccipRouter,
         address usdc,
         address lancaBridge,
-        address[3] messengers
+        address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
         LancaPoolCommon(usdc, lancaBridge, messengers)

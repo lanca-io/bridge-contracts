@@ -9,6 +9,7 @@ contract LancaChildPoolHarness is LancaChildPool {
         address owner,
         address ccipRouter,
         address usdc,
-        address lancaBridge
-    ) LancaChildPool(link, owner, ccipRouter, usdc, lancaBridge) {}
+        address lancaBridge,
+        address[3] memory messengers
+    ) LancaChildPool(link, owner, ccipRouter, usdc, lancaBridge, messengers) {}
 }
