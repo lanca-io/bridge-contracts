@@ -34,6 +34,8 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.setPoolCap(60_000 * USDC_DECIMALS);
     }
 
+    /* FUZZING */
+
     function testFuzz_startDeposit(uint256 depositAmount) public {
         vm.assume(
             depositAmount > s_lancaParentPool.getMinDepositAmount() &&
@@ -141,9 +143,42 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.startDeposit(liqCap + 1);
     }
 
+    function test_completeDepositNotAllowedToCompleteDeposit_revert() public {
+        uint256 depositAmount = s_lancaParentPool.getMinDepositAmount() + 1;
+        bytes32 depositId = _startDeposit(depositAmount);
+        vm.expectRevert(ILancaParentPool.NotAllowedToCompleteDeposit.selector);
+        s_lancaParentPool.completeDeposit(depositId);
+    }
+
+    function test_completeDepositDepositDeadlinePassed_revert() public {
+        uint256 depositAmount = s_lancaParentPool.getMinDepositAmount() + 1;
+        bytes32 depositId = _startDeposit(depositAmount);
+
+        vm.warp(block.timestamp + s_lancaParentPool.getDepositDeadlineSeconds() + 1);
+
+        vm.prank(s_depositor);
+        vm.expectRevert(ILancaParentPool.DepositDeadlinePassed.selector);
+        s_lancaParentPool.completeDeposit(depositId);
+    }
+
+    function test_completeDepositDepositRequestNotReady_revert() public {
+        uint256 depositAmount = s_lancaParentPool.getMinDepositAmount() + 1;
+        bytes32 depositId = _startDeposit(depositAmount);
+
+        vm.prank(s_depositor);
+        vm.expectRevert(ILancaParentPool.DepositRequestNotReady.selector);
+        s_lancaParentPool.completeDeposit(depositId);
+    }
+
     /* HELPERS */
 
     function _dealUsdcTo(address to, uint256 amount) internal {
         deal(s_usdc, to, amount);
+    }
+
+    function _startDeposit(uint256 depositAmount) internal returns (bytes32) {
+        _dealUsdcTo(s_depositor, depositAmount);
+        vm.prank(s_depositor);
+        return s_lancaParentPool.startDeposit(depositAmount);
     }
 }
