@@ -19,6 +19,9 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     /* IMMUTABLE VARIABLES */
     IERC20 internal immutable i_usdc;
     address internal immutable i_lancaBridge;
+    address internal immutable i_messenger0;
+    address internal immutable i_messenger1;
+    address internal immutable i_messenger2;
 
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(
@@ -28,9 +31,12 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
         _;
     }
 
-    constructor(address usdc, address lancaBridge) {
+    constructor(address usdc, address lancaBridge, address[3] messengers) {
         i_usdc = IERC20(usdc);
         i_lancaBridge = lancaBridge;
+        i_messenger0 = messengers[0];
+        i_messenger1 = messengers[1];
+        i_messenger2 = messengers[2];
     }
 
     /* MODIFIERS */
@@ -86,6 +92,6 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
      */
     function _isMessenger(address messenger) internal view returns (bool) {
         // @dev TODO: move messengers and messengers related functions in pools to concero messaging
-        return false;
+        return messenger == i_messenger0 || messenger == i_messenger1 || messenger == i_messenger2;
     }
 }

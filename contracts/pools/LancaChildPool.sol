@@ -36,10 +36,11 @@ contract LancaChildPool is
         address owner,
         address ccipRouter,
         address usdc,
-        address lancaBridge
+        address lancaBridge,
+        address[3] messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaPoolCommon(usdc, lancaBridge)
+        LancaPoolCommon(usdc, lancaBridge, messengers)
         LancaChildPoolStorageSetters(owner)
     {
         i_linkToken = LinkTokenInterface(link);
