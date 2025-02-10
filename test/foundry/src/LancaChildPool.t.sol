@@ -53,9 +53,11 @@ contract LancaChildPoolTest is Test {
     }
 
     function test_setPoolsInvalidAddress_revert() public {
-        address poolAddress = address(0);
+        address poolAddress = makeAddr("pool");
         uint64 chainSelector = 2;
         vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
+
+        s_lancaChildPool.setPools(chainSelector, poolAddress);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -63,7 +65,7 @@ contract LancaChildPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaChildPool.setPools(chainSelector, poolAddress);
+        s_lancaChildPool.setPools(chainSelector, address(0));
 
         vm.stopPrank();
     }
