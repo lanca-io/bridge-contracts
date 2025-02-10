@@ -28,12 +28,10 @@ contract LancaChildPool is
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
-    address private immutable i_childProxy;
     LinkTokenInterface private immutable i_linkToken;
 
     /* CONSTRUCTOR */
     constructor(
-        address childProxy,
         address link,
         address owner,
         address ccipRouter,
