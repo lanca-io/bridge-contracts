@@ -12,4 +12,14 @@ contract LancaChildPoolHarness is LancaChildPool {
         address lancaBridge,
         address[3] memory messengers
     ) LancaChildPool(link, owner, ccipRouter, usdc, lancaBridge, messengers) {}
+
+    function exposed_getDstPoolByChainSelector(
+        uint64 chainSelector
+    ) external view returns (address) {
+        return s_dstPoolByChainSelector[chainSelector];
+    }
+
+    function exposed_getPoolChainSelectors() external view returns (uint64[] memory) {
+        return s_poolChainSelectors;
+    }
 }

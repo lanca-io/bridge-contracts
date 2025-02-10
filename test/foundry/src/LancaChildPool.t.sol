@@ -20,7 +20,23 @@ contract LancaChildPoolTest is Test {
         );
     }
 
+    
+
+    function test_setPools() public {
+        address pool = makeAddr("pool");
+        uint64 chainSelector = 1;
+
+        vm.prank(s_deployChildPoolHarnessScript.getDeployer());
+        s_lancaChildPool.setPools(chainSelector, pool);
+
+        vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
+        vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors()[0], chainSelector);
+    }
+
     /* REVERTS */
+
+    /* SET POOLS */
+
     function test_setPoolsNotOwner_revert() public {
         address pool = makeAddr("pool");
         uint64 chainSelector = 1;
