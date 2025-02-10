@@ -20,8 +20,6 @@ contract LancaChildPoolTest is Test {
         );
     }
 
-    
-
     function test_setPools() public {
         address pool = makeAddr("pool");
         uint64 chainSelector = 1;
