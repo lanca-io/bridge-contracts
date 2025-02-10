@@ -22,4 +22,9 @@ contract LancaChildPoolHarness is LancaChildPool {
     function exposed_getPoolChainSelectors() external view returns (uint64[] memory) {
         return s_poolChainSelectors;
     }
+
+    function exposed_getMessengers() external view returns (address[3] memory) {
+        address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
+        return messengers;
+    }
 }
