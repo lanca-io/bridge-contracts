@@ -27,8 +27,8 @@ contract LancaChildPoolTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.notOwner
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
             )
         );
         s_lancaChildPool.setPools(chainSelector, pool);
@@ -52,14 +52,28 @@ contract LancaChildPoolTest is Test {
         vm.stopPrank();
     }
 
-    function test_setPoolsInvalidAddress_revert() public {}
+    function test_setPoolsInvalidAddress_revert() public {
+        address poolAddress = address(0);
+        uint64 chainSelector = 2;
+        vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaChildPool.setPools(chainSelector, poolAddress);
+
+        vm.stopPrank();
+    }
 
     function test_removePoolsNotOwner_revert() public {
         uint64 chainSelector = 0;
         vm.expectRevert(
             abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.notOwner
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
             )
         );
         s_lancaChildPool.removePools(chainSelector);
@@ -68,8 +82,8 @@ contract LancaChildPoolTest is Test {
     function test_distributeLiquidityNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.notMessenger
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notMessenger
             )
         );
         s_lancaChildPool.distributeLiquidity(0, 0, bytes32(0));
@@ -78,8 +92,8 @@ contract LancaChildPoolTest is Test {
     function test_ccipSendToPoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.notMessenger
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notMessenger
             )
         );
         s_lancaChildPool.ccipSendToPool(0, 0, bytes32(0));
@@ -88,8 +102,8 @@ contract LancaChildPoolTest is Test {
     function test_liquidatePoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.notMessenger
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notMessenger
             )
         );
         s_lancaChildPool.liquidatePool(bytes32(0));

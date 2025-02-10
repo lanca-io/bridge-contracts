@@ -4,16 +4,18 @@ pragma solidity 0.8.28;
 library LibErrors {
     enum InvalidAddressType {
         zeroAddress,
-        notMessenger,
         unsupportedCcipToken,
-        notOwner,
         notUsdcToken,
-        unauthorized,
         sameAddress
     }
 
     enum UnauthorizedType {
-        notLancaBridge
+        notLancaBridge,
+        notMessenger,
+        notOwner,
+        notAutomationForwarder,
+        notLpProvider,
+        notAllowedSender
     }
 
     /// @dev Reverts when the address is invalid.

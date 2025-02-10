@@ -26,7 +26,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(
             s_isSenderContractAllowed[chainSelector][sender],
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized)
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notAllowedSender)
         );
         _;
     }
@@ -46,7 +46,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     modifier onlyMessenger() {
         require(
             _isMessenger(msg.sender),
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notMessenger)
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notMessenger)
         );
         _;
     }

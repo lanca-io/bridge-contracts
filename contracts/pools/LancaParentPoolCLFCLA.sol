@@ -81,7 +81,7 @@ contract LancaParentPoolCLFCLA is
 
         require(
             msg.sender == s_withdrawRequests[withdrawalId].lpAddress,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized)
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notLpProvider)
         );
 
         uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]

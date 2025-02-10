@@ -18,10 +18,7 @@ abstract contract LancaOwnable {
     }
 
     modifier onlyOwner() {
-        require(
-            msg.sender == i_owner,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notOwner)
-        );
+        require(msg.sender == i_owner, LibErrors.Unauthorized(LibErrors.UnauthorizedType.notOwner));
         _;
     }
 }

@@ -339,7 +339,7 @@ contract LancaParentPool is
     function performUpkeep(bytes calldata performData) external {
         require(
             msg.sender == i_automationForwarder,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unauthorized)
+            LibErrors.Unauthorized(LibErrors.UnauthorizedType.notAutomationForwarder)
         );
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
