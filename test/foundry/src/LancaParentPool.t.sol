@@ -10,6 +10,8 @@ import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
+import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
+import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -64,7 +66,7 @@ contract LancaParentPoolTest is Test {
         // @dev check clf req type by id
         vm.assertEq(
             uint8(s_lancaParentPool.getClfReqTypeById(depositId)),
-            uint8(ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity)
+            uint8(ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity)
         );
 
         // @dev check full deposit request structure
@@ -149,12 +151,85 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(poolLpTokenBalanceAfter, poolLpTokenBalanceBefore + lpAmountToWithdraw);
     }
 
-    //    function test_handleOracleFulfillment() public {
-    //        bytes32 clfReqId = keccak256("clfReqId");
-    //        bytes memory data;
-    //        bytes memory err;
-    //    }
-    //}
+    function test_handleOracleFulfillmentDepositGetChildPoolsLiqWithError() public {
+        bytes32 clfReqId = keccak256("clfReqId");
+        bytes memory response;
+        bytes memory err = abi.encode("error");
+
+        s_lancaParentPool.exposed_setClfReqTypeById(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
+        );
+
+        vm.startPrank(s_lancaParentPool.exposed_getClfRouter());
+        vm.expectEmit(false, false, false, true, address(s_lancaParentPool));
+        emit ILancaParentPoolCLFCLA.ClfRequestError(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity,
+            err
+        );
+        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
+        vm.stopPrank();
+
+        vm.assertEq(
+            uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
+            uint8(ILancaParentPool.ClfRequestType.empty)
+        );
+    }
+
+    function testFuzz_handleOracleFulfillmentWithdrawalGetChildPoolsLiqWithError(
+        uint256 amountToWithdraw
+    ) public {
+        vm.assume(amountToWithdraw > 1e18 && amountToWithdraw < 100_000_000_000e18);
+
+        bytes32 clfReqId = keccak256("clfReqId");
+        bytes memory response;
+        bytes memory err = abi.encode("error");
+        bytes32 withdrawalId = keccak256("withdrawalId");
+        address lpToken = s_lancaParentPool.exposed_getLpToken();
+
+        deal(lpToken, address(s_lancaParentPool), amountToWithdraw);
+        uint256 depositorBalanceBefore = IERC20(lpToken).balanceOf(s_depositor);
+
+        s_lancaParentPool.exposed_setClfReqTypeById(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
+        );
+        s_lancaParentPool.exposed_setWithdrawalIdByClfId(clfReqId, withdrawalId);
+        s_lancaParentPool.exposed_setWithdrawalReqById(
+            withdrawalId,
+            ILancaParentPool.WithdrawRequest({
+                lpAddress: s_depositor,
+                lpAmountToBurn: amountToWithdraw,
+                // @dev rest of the fields are not important for this test
+                amountToWithdraw: 0,
+                liquidityRequestedFromEachPool: 0,
+                remainingLiquidityFromChildPools: 0,
+                triggeredAtTimestamp: 0,
+                totalCrossChainLiquiditySnapshot: 0
+            })
+        );
+
+        vm.startPrank(s_lancaParentPool.exposed_getClfRouter());
+        vm.expectEmit(false, false, false, true, address(s_lancaParentPool));
+        emit ILancaParentPoolCLFCLA.ClfRequestError(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity,
+            err
+        );
+        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
+        vm.stopPrank();
+
+        vm.assertEq(
+            uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
+            uint8(ILancaParentPool.ClfRequestType.empty)
+        );
+        vm.assertEq(
+            IERC20(lpToken).balanceOf(s_depositor),
+            depositorBalanceBefore + amountToWithdraw
+        );
+        vm.assertEq(IERC20(lpToken).balanceOf(address(s_lancaParentPool)), 0);
+    }
 
     function testFuzz_setPools(
         uint64 chainSelector,

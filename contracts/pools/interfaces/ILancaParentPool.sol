@@ -11,7 +11,7 @@ interface ILancaParentPool is ILancaPool {
         removePool
     }
 
-    enum CLFRequestType {
+    enum ClfRequestType {
         empty,
         startDeposit_getChildPoolsLiquidity,
         startWithdrawal_getChildPoolsLiquidity,

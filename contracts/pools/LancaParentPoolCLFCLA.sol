@@ -185,7 +185,7 @@ contract LancaParentPoolCLFCLA is
         );
 
         s_clfRequestTypes[reqId] = ILancaParentPool
-            .CLFRequestType
+            .ClfRequestType
             .withdrawal_requestLiquidityCollection;
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
@@ -205,20 +205,20 @@ contract LancaParentPoolCLFCLA is
         bytes memory response,
         bytes memory err
     ) internal override {
-        ILancaParentPool.CLFRequestType requestType = s_clfRequestTypes[requestId];
+        ILancaParentPool.ClfRequestType requestType = s_clfRequestTypes[requestId];
 
-        require(requestType != ILancaParentPool.CLFRequestType.empty, InvalidCLFRequestType());
+        require(requestType != ILancaParentPool.ClfRequestType.empty, InvalidCLFRequestType());
 
         delete s_clfRequestTypes[requestId];
 
         if (err.length > 0) {
             if (
-                requestType == ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity
+                requestType == ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
             ) {
                 delete s_depositRequests[requestId];
             } else if (
                 requestType ==
-                ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
+                ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
                 address lpAddress = s_withdrawRequests[withdrawalId].lpAddress;
@@ -231,20 +231,20 @@ contract LancaParentPoolCLFCLA is
                 IERC20(i_lpToken).safeTransfer(lpAddress, lpAmountToBurn);
             }
 
-            emit CLFRequestError(requestId, requestType, err);
+            emit ClfRequestError(requestId, requestType, err);
         } else {
             if (
-                requestType == ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity
+                requestType == ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
             ) {
                 _handleStartDepositCLFFulfill(requestId, response);
             } else if (
                 requestType ==
-                ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
+                ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 _handleStartWithdrawalCLFFulfill(requestId, response);
                 delete s_withdrawalIdByCLFRequestId[requestId];
             } else if (
-                requestType == ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
+                requestType == ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
             ) {
                 _handleAutomationCLFFulfill(requestId);
             } else {
@@ -372,7 +372,7 @@ contract LancaParentPoolCLFCLA is
         args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(i_ethersHashSum);
         args[2] = abi.encodePacked(
-            ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
+            ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
         );
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[4] = abi.encodePacked(withdrawalId);

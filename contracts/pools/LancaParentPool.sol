@@ -122,7 +122,7 @@ contract LancaParentPool is
         bytes[] memory args = new bytes[](3);
         args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(i_ethersHashSum);
-        args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
+        args[2] = abi.encodePacked(ClfRequestType.startDeposit_getChildPoolsLiquidity);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -135,7 +135,7 @@ contract LancaParentPool is
         bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
-        s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
+        s_clfRequestTypes[clfRequestId] = ClfRequestType.startDeposit_getChildPoolsLiquidity;
 
         address lpAddress = msg.sender;
 
@@ -211,7 +211,7 @@ contract LancaParentPool is
             bytes[] memory args = new bytes[](7);
             args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
             args[1] = abi.encodePacked(i_ethersHashSum);
-            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+            args[2] = abi.encodePacked(ClfRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
@@ -258,7 +258,7 @@ contract LancaParentPool is
             abi.encodePacked(lpAddress, lpAmount, block.number, clfRequestId)
         );
 
-        s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
+        s_clfRequestTypes[clfRequestId] = ClfRequestType.startWithdrawal_getChildPoolsLiquidity;
 
         // @dev partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = lpAddress;
