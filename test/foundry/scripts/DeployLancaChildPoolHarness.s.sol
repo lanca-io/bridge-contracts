@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {DeployBase} from "./DeployBase.s.sol";
+import {LancaChildPoolHarness} from "../harnesses/LancaChildPoolHarness.sol";
 
 contract DeployLancaChildPoolHarnessScript is DeployBase {
     function _deployImplementation() internal override returns (address) {
