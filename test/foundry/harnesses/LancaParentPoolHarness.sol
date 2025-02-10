@@ -29,7 +29,9 @@ contract LancaParentPoolHarness is LancaParentPool {
         return s_poolChainSelectors;
     }
 
-    function exposed_getDstPoolByChainSelector(uint64 chainSelector) external view returns (address) {
+    function exposed_getDstPoolByChainSelector(
+        uint64 chainSelector
+    ) external view returns (address) {
         return s_dstPoolByChainSelector[chainSelector];
     }
 }

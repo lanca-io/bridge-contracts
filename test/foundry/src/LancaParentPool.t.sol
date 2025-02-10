@@ -156,13 +156,17 @@ contract LancaParentPoolTest is Test {
     //    }
     //}
 
-    function testFuzz_setPools(address pool, bool isRebalancingNeeded) public {
+    function testFuzz_setPools(
+        uint64 chainSelector,
+        address pool,
+        bool isRebalancingNeeded
+    ) public {
         vm.assume(pool != address(0));
         vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
-        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, pool, isRebalancingNeeded);
+        s_lancaParentPool.setPools(chainSelector, pool, isRebalancingNeeded);
 
-        vm.assertEq(s_lancaParentPool.exposed_getChildPools(CHAIN_SELECTOR_ARBITRUM), pool);
-        vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], CHAIN_SELECTOR_ARBITRUM);
+        vm.assertEq(s_lancaParentPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
+        vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], chainSelector);
     }
 
     /* REVERTS */
