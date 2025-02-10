@@ -12,6 +12,7 @@ import {LancaBridgeClientMock} from "../mocks/LancaBridgeClientMock.sol";
 import {IConceroClient} from "concero/contracts/ConceroClient/interfaces/IConceroClient.sol";
 import {ICcip} from "contracts/common/interfaces/ICcip.sol";
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
+import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 
 contract LancaBridgeTest is LancaBridgeTestBase {
     function setUp() public virtual override {
@@ -360,7 +361,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
 
     function test_bridgeInvalidReceiver_revert() public {
         address sender = makeAddr("sender");
-        address receiver = address(0);
+        address receiver = ZERO_ADDRESS;
 
         ILancaBridge.BridgeReq memory bridgeReq = _getBaseLancaBridgeReq();
         bridgeReq.receiver = receiver;

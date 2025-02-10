@@ -9,7 +9,7 @@ import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPo
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
-import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
+import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -100,7 +100,7 @@ contract LancaParentPoolTest is Test {
 
         vm.assertEq(depositReq.childPoolsLiquiditySnapshot, 0);
         vm.assertEq(depositReq.usdcAmountToDeposit, 0);
-        vm.assertEq(depositReq.lpAddress, address(0));
+        vm.assertEq(depositReq.lpAddress, ZERO_ADDRESS);
         vm.assertEq(depositReq.deadline, 0);
         vm.assertGe(IERC20(s_lancaParentPool.exposed_getLpToken()).totalSupply(), 0);
     }
@@ -161,7 +161,7 @@ contract LancaParentPoolTest is Test {
         address pool,
         bool isRebalancingNeeded
     ) public {
-        vm.assume(pool != address(0));
+        vm.assume(pool != ZERO_ADDRESS);
         vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
         s_lancaParentPool.setPools(chainSelector, pool, isRebalancingNeeded);
 
@@ -250,7 +250,7 @@ contract LancaParentPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaParentPool.setPools(chainSelector, address(0), false);
+        s_lancaParentPool.setPools(chainSelector, ZERO_ADDRESS, false);
 
         vm.stopPrank();
     }
