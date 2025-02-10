@@ -8,7 +8,8 @@ library LibErrors {
         unsupportedCcipToken,
         notOwner,
         notUsdcToken,
-        unauthorized
+        unauthorized,
+        sameAddress
     }
 
     enum UnauthorizedType {
