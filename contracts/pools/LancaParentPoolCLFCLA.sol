@@ -5,14 +5,14 @@ import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/Aut
 import {FunctionsClient as ClfClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
-import {LibErrors} from "../common/libraries/LibErrors.sol";
-import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
-import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
-import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
 import {ILancaPool} from "./interfaces/ILancaPool.sol";
+import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
+import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
+import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LancaParentPoolCLFCLA is
     LancaPoolCommonStorage,
@@ -400,7 +400,7 @@ contract LancaParentPoolCLFCLA is
             s_depositFeeAmount;
         uint256 totalCrossChainLiquidity = childPoolsBalance + parentPoolLiquidity;
 
-        //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
+        // @dev USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
         uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainLiquidity) *
             clpAmount) * PRECISION_HANDLER) / lpSupply) / PRECISION_HANDLER;
 

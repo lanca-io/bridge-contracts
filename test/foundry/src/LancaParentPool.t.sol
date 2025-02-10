@@ -151,6 +151,8 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(poolLpTokenBalanceAfter, poolLpTokenBalanceBefore + lpAmountToWithdraw);
     }
 
+    /* HANDLE ORACLE FULFILLMENT */
+
     function test_handleOracleFulfillmentDepositGetChildPoolsLiqWithError() public {
         bytes32 clfReqId = keccak256("clfReqId");
         bytes memory response;
@@ -230,6 +232,66 @@ contract LancaParentPoolTest is Test {
         );
         vm.assertEq(IERC20(lpToken).balanceOf(address(s_lancaParentPool)), 0);
     }
+
+    function test_handleOracleFulfillmentDepositGetChildPoolsLiqSuccess() public {
+        bytes32 clfReqId = keccak256("clfReqId");
+        uint256 amountUsdcToDeposit = 85_000 * USDC_DECIMALS;
+        bytes memory response = abi.encode(amountUsdcToDeposit);
+        bytes memory err;
+
+        s_lancaParentPool.exposed_setClfReqTypeById(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
+        );
+
+        vm.assertEq(
+            s_lancaParentPool.getDepositRequestById(clfReqId).childPoolsLiquiditySnapshot,
+            0
+        );
+
+        vm.prank(s_lancaParentPool.exposed_getClfRouter());
+        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
+
+        vm.assertEq(
+            s_lancaParentPool.getDepositRequestById(clfReqId).childPoolsLiquiditySnapshot,
+            amountUsdcToDeposit
+        );
+        vm.assertEq(
+            uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
+            uint8(ILancaParentPool.ClfRequestType.empty)
+        );
+    }
+
+    function test_handleOracleFulfillmentStartWithdrawalGetChildPoolsLiqSuccess() public {
+        bytes32 clfReqId = keccak256("clfReqId");
+        uint256 amountUsdcToWithdraw = 85_000 * USDC_DECIMALS;
+        bytes memory response = abi.encode(amountUsdcToWithdraw);
+        bytes memory err;
+
+        s_lancaParentPool.exposed_setClfReqTypeById(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
+        );
+
+        vm.assertEq(
+            s_lancaParentPool.getWithdrawalRequestById(clfReqId).totalCrossChainLiquiditySnapshot,
+            0
+        );
+
+        vm.prank(s_lancaParentPool.exposed_getClfRouter());
+        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
+
+        vm.assertEq(
+            s_lancaParentPool.getWithdrawalRequestById(clfReqId).totalCrossChainLiquiditySnapshot,
+            amountUsdcToWithdraw
+        );
+        vm.assertEq(
+            uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
+            uint8(ILancaParentPool.ClfRequestType.empty)
+        );
+    }
+
+    /* ADMIN FUNCTIONS */
 
     function testFuzz_setPools(
         uint64 chainSelector,
