@@ -13,8 +13,14 @@ import {LancaPoolCommon} from "./LancaPoolCommon.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaChildPoolStorageSetters} from "./storages/LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {ILancaPoolCcip} from "./interfaces/ILancaPoolCcip.sol";
 
-contract LancaChildPool is LancaChildPoolStorageSetters, CCIPReceiver, ILancaChildPool {
+contract LancaChildPool is
+    LancaChildPoolStorageSetters,
+    CCIPReceiver,
+    ILancaChildPool,
+    ILancaPoolCcip
+{
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
@@ -141,10 +147,6 @@ contract LancaChildPool is LancaChildPoolStorageSetters, CCIPReceiver, ILancaChi
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        ICcip.CcipSettleMessage memory ccipTxData = abi.decode(
-            any2EvmMessage.data,
-            (ICcip.CcipSettleMessage)
-        );
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
@@ -153,38 +155,13 @@ contract LancaChildPool is LancaChildPoolStorageSetters, CCIPReceiver, ILancaChi
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
-        if (ccipTxData.ccipTxType == ICcip.CcipTxType.batchedSettlement) {
-            //            ICcip.CcipSettlementTx[] memory settlementTxs = abi.decode(
-            //                ccipTxData.data,
-            //                (ICcip.CcipSettlementTx[])
-            //            );
-            //            for (uint256 i; i < settlementTxs.length; ++i) {
-            //                bytes32 txId = settlementTxs[i].id;
-            //                uint256 txAmount = settlementTxs[i].amount;
-            //
-            //                //bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
-            //                // @dev change it
-            //                bool isTxConfirmed = true;
-            //
-            //                if (isTxConfirmed) {
-            //                    txAmount -= getDstTotalFeeInUsdc(txAmount);
-            //                    s_loansInUse -= txAmount;
-            //                } else {
-            //                    // @dev we dont have infra orchestrator
-            //                    //IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-            //                    i_usdc.safeTransfer(settlementTxs[i].recipient, txAmount);
-            //                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
-            //                }
-            //            }
-        }
-
-        //        emit CCIPReceived(
-        //            any2EvmMessage.messageId,
-        //            any2EvmMessage.sourceChainSelector,
-        //            abi.decode(any2EvmMessage.sender, (address)),
-        //            ccipReceivedToken,
-        //            ccipReceivedAmount
-        //        );
+        emit CCIPReceived(
+            any2EvmMessage.messageId,
+            any2EvmMessage.sourceChainSelector,
+            abi.decode(any2EvmMessage.sender, (address)),
+            ccipReceivedToken,
+            ccipReceivedAmount
+        );
     }
 
     /**

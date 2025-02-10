@@ -5,7 +5,7 @@ import {LancaPoolCommon} from "../LancaPoolCommon.sol";
 
 abstract contract LancaChildPoolStorage is LancaPoolCommon {
     /// @notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
-    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
+    //    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
     // @notice Prevents CLF from triggering the same withdrawal request more than once
     mapping(bytes32 withdrawalId => bool isTriggered) internal s_isWithdrawalRequestTriggered;
 

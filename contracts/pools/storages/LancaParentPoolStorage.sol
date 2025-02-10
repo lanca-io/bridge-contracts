@@ -30,7 +30,7 @@ abstract contract LancaParentPoolStorage {
 
     /* MAPPINGS */
 
-    mapping(uint64 chainSelector => address pool) internal s_childPools;
+    //    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
 
     mapping(bytes32 clfReqId => ILancaParentPool.CLFRequestType) internal s_clfRequestTypes;
 
