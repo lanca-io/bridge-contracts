@@ -42,7 +42,6 @@ contract LancaChildPool is
         LancaPoolCommon(usdc, lancaBridge)
         LancaChildPoolStorageSetters(owner)
     {
-        i_childProxy = childProxy;
         i_linkToken = LinkTokenInterface(link);
     }
 
