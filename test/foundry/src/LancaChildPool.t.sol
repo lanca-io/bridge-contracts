@@ -42,7 +42,10 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool.removePools(chainSelector);
 
         vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors().length, 0);
-        vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), ZERO_ADDRESS);
+        vm.assertEq(
+            s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector),
+            ZERO_ADDRESS
+        );
     }
 
     /* REVERTS */
