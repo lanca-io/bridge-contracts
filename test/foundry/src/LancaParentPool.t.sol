@@ -8,6 +8,8 @@ import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol"
 import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPoolHarness.s.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
+import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -130,6 +132,8 @@ contract LancaParentPoolTest is Test {
 
     /* REVERTS */
 
+    /* START DEPOSIT */
+
     function test_startDepositDepositAmountBelowMinimum_revert() external {
         vm.prank(s_depositor);
         vm.expectRevert(ILancaParentPool.DepositAmountBelowMinimum.selector);
@@ -142,6 +146,8 @@ contract LancaParentPoolTest is Test {
         vm.expectRevert(ILancaParentPool.MaxDepositCapReached.selector);
         s_lancaParentPool.startDeposit(liqCap + 1);
     }
+
+    /* COMPLETE DEPOSIT */
 
     function test_completeDepositNotAllowedToCompleteDeposit_revert() public {
         uint256 depositAmount = s_lancaParentPool.getMinDepositAmount() + 1;
@@ -168,6 +174,42 @@ contract LancaParentPoolTest is Test {
         vm.prank(s_depositor);
         vm.expectRevert(ILancaParentPool.DepositRequestNotReady.selector);
         s_lancaParentPool.completeDeposit(depositId);
+    }
+
+    function test_setPoolsInvalidAddress_revert() public {
+        address poolAddress = makeAddr("pool");
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, address(0), false);
+
+        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
+
+        vm.stopPrank();
+    }
+
+    function test_setPoolsNotOwner_revert() public {
+        address poolAddress = makeAddr("pool");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.notOwner
+            )
+        );
+        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, poolAddress, false);
     }
 
     /* HELPERS */
