@@ -130,6 +130,15 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(withdrawReq.triggeredAtTimestamp, 0);
     }
 
+    function testFuzz_setPools(address pool, bool isRebalancingNeeded) public {
+        vm.assume(pool != address(0));
+        vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setPools(CHAIN_SELECTOR_ARBITRUM, pool, isRebalancingNeeded);
+
+        vm.assertEq(s_lancaParentPool.exposed_getChildPools(CHAIN_SELECTOR_ARBITRUM), pool);
+        vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], CHAIN_SELECTOR_ARBITRUM);
+    }
+
     /* REVERTS */
 
     /* START DEPOSIT */
@@ -175,6 +184,8 @@ contract LancaParentPoolTest is Test {
         vm.expectRevert(ILancaParentPool.DepositRequestNotReady.selector);
         s_lancaParentPool.completeDeposit(depositId);
     }
+
+    /* SET POOLS */
 
     function test_setPoolsInvalidAddress_revert() public {
         address poolAddress = makeAddr("pool");
