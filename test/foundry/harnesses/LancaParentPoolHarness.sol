@@ -8,8 +8,9 @@ contract LancaParentPoolHarness is LancaParentPool {
     constructor(
         TokenConfig memory tokenConfig,
         AddressConfig memory addressConfig,
-        HashConfig memory hashConfig
-    ) LancaParentPool(tokenConfig, addressConfig, hashConfig) {}
+        HashConfig memory hashConfig,
+        PoolConfig memory poolConfig
+    ) LancaParentPool(tokenConfig, addressConfig, hashConfig, poolConfig) {}
 
     function exposed_setWithdrawAmountLocked(uint256 newWithdrawAmountLocked) external {
         s_withdrawAmountLocked = newWithdrawAmountLocked;
