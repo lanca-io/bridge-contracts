@@ -38,6 +38,18 @@ contract LancaChildPoolHarness is LancaChildPool {
         return address(i_linkToken);
     }
 
+    function exposed_getUsdcToken() external view returns (address) {
+        return address(i_usdc);
+    }
+
+    function exposed_getLancaBridge() external view returns (address) {
+        return address(i_lancaBridge);
+    }
+
+    function exposed_getLoansInUse() external view returns (uint256) {
+        return s_loansInUse;
+    }
+
     function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
         s_dstPoolByChainSelector[chainSelector] = pool;
     }
