@@ -2,6 +2,8 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/src/Test.sol";
+import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
+//import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LancaChildPoolHarness} from "../harnesses/LancaChildPoolHarness.sol";
 import {DeployLancaChildPoolHarnessScript} from "../scripts/DeployLancaChildPoolHarness.s.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
@@ -9,6 +11,7 @@ import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaChildPool} from "contracts/pools/interfaces/ILancaChildPool.sol";
+import {ICcip} from "contracts/common/interfaces/ICcip.sol";
 
 contract LancaChildPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -119,6 +122,27 @@ contract LancaChildPoolTest is Test {
 
         vm.stopPrank();
         vm.assertEq(loansInUseAfter, loansInUseBefore + fees);
+    }
+
+    function test_ccipSend() public {
+        uint64 chainSelector = 1;
+        uint256 amount = 1 * USDC_DECIMALS;
+        address pool = makeAddr("pool");
+        ICcip.CcipSettleMessage memory ccipTxData = ICcip.CcipSettleMessage({
+            ccipTxType: ICcip.CcipTxType.liquidityRebalancing,
+            data: bytes("")
+        });
+        uint256 amountBefore = IERC20(s_usdc).balanceOf(address(s_lancaChildPool));
+        address ccipRouter = s_lancaChildPool.exposed_getCcipRouter();
+
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(chainSelector, pool);
+
+        vm.expectEmit(true, true, false, true, s_usdc);
+        emit IERC20.Transfer(address(s_lancaChildPool), ccipRouter, amount);
+        s_lancaChildPool.exposed_ccipSend(chainSelector, amount, ccipTxData);
+
+        vm.assertEq(IERC20(s_usdc).balanceOf(ccipRouter), amount);
+        vm.assertLt(IERC20(s_usdc).balanceOf(address(s_lancaChildPool)), amountBefore);
     }
 
     /* REVERTS */
@@ -350,5 +374,32 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.completeRebalancing(bytes32(0), 0);
+    }
+
+    function test_ccipReceiveFromPoolUnauthorized_revert() public {
+        bytes memory sender = abi.encode(makeAddr("sender"));
+        uint64 chainSelector = 1;
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
+        destTokenAmounts[0].token = s_usdc;
+        destTokenAmounts[0].amount = 1 * USDC_DECIMALS;
+
+        bytes memory data = abi.encode("data");
+        bytes32 messageId = keccak256("messageId");
+
+        Client.Any2EVMMessage memory ccip2AnyMessage = Client.Any2EVMMessage({
+            messageId: messageId,
+            sourceChainSelector: chainSelector,
+            sender: sender,
+            data: data,
+            destTokenAmounts: destTokenAmounts
+        });
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notAllowedSender
+            )
+        );
+        s_lancaChildPool.exposed_ccipReceive(ccip2AnyMessage);
     }
 }
