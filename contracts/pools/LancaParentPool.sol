@@ -294,6 +294,7 @@ contract LancaParentPool is
     function withdrawDepositFees() external payable onlyOwner {
         uint256 amountToSend = s_depositFeesSum;
         s_depositFeesSum = 0;
+        i_usdc.approve(i_owner, amountToSend);
         i_usdc.safeTransfer(i_owner, amountToSend);
     }
 
