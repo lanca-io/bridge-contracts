@@ -31,7 +31,6 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
                 new LancaParentPoolCLFCLA(
                     tokenConfig.lpToken,
                     tokenConfig.usdc,
-                    makeAddr("lancaBridge"),
                     getClfRouter(),
                     getCLfSubId(),
                     getClfDonId(),
