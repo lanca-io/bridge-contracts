@@ -208,6 +208,8 @@ contract LancaChildPoolTest is Test {
         vm.stopPrank();
     }
 
+    /* CCIP SEND TO POOL */
+
     function test_ccipSendToPoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -216,6 +218,31 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.ccipSendToPool(0, 0, bytes32(0));
+    }
+
+    function test_ccipSendToPoolInvalidAddress_revert() public {
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaChildPool.ccipSendToPool(0, 0, bytes32(0));
+    }
+
+    function test_ccipSendToPoolWithdrawalAlreadyTriggered_revert() public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+        bytes32 withdrawalRequestId = bytes32(0);
+        uint256 amountToSend = 1 * USDC_DECIMALS;
+
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(chainSelector, pool);
+        s_lancaChildPool.exposed_setIsWithdrawalRequestTriggered(withdrawalRequestId, true);
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaPool.WithdrawalAlreadyTriggered.selector);
+        s_lancaChildPool.ccipSendToPool(chainSelector, amountToSend, withdrawalRequestId);
     }
 
     function test_liquidatePoolNotMessenger_revert() public {

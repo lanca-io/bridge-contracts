@@ -37,4 +37,15 @@ contract LancaChildPoolHarness is LancaChildPool {
     function exposed_getLinkToken() external view returns (address) {
         return address(i_linkToken);
     }
+
+    function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
+        s_dstPoolByChainSelector[chainSelector] = pool;
+    }
+
+    function exposed_setIsWithdrawalRequestTriggered(
+        bytes32 withdrawalId,
+        bool isTriggered
+    ) external {
+        s_isWithdrawalRequestTriggered[withdrawalId] = isTriggered;
+    }
 }
