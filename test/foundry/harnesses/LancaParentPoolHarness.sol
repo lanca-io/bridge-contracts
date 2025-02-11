@@ -41,6 +41,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_withdrawRequests[withdrawalId] = withdrawalReq;
     }
 
+    function exposed_setDepositFeesSum(uint256 depositFeesSum) external {
+        s_depositFeesSum = depositFeesSum;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);

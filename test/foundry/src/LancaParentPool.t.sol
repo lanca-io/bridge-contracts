@@ -162,6 +162,26 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(poolLpTokenBalanceAfter, poolLpTokenBalanceBefore + lpAmountToWithdraw);
     }
 
+    function testFuzz_withdrawDepositFees(uint256 amount) public {
+        vm.assume(amount > 0 && amount < 100000 * USDC_DECIMALS);
+
+        s_lancaParentPool.exposed_setDepositFeesSum(amount);
+        address deployer = s_deployLancaParentPoolHarnessScript.getDeployer();
+        uint256 deployerBalanceBefore = IERC20(s_usdc).balanceOf(deployer);
+        uint256 lancaParentPoolBalanceBefore = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+
+        _dealUsdcTo(address(s_lancaParentPool), amount);
+
+        vm.prank(deployer);
+        s_lancaParentPool.withdrawDepositFees();
+
+        uint256 deployerBalanceAfter = IERC20(s_usdc).balanceOf(deployer);
+        uint256 lancaParentPoolBalanceAfter = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+
+        vm.assertEq(deployerBalanceAfter, deployerBalanceBefore + amount);
+        vm.assertEq(lancaParentPoolBalanceAfter, 0);
+    }
+
     /* HANDLE ORACLE FULFILLMENT */
 
     function test_handleOracleFulfillmentDepositGetChildPoolsLiqWithError() public {
@@ -431,6 +451,16 @@ contract LancaParentPoolTest is Test {
             )
         );
         s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+    }
+
+    function test_withdrawDepositFeesNotOwner_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
+            )
+        );
+        s_lancaParentPool.withdrawDepositFees();
     }
 
     /* HELPERS */
