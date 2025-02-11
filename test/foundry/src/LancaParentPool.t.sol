@@ -88,6 +88,7 @@ contract LancaParentPoolTest is Test {
         console.logUint(IERC20(s_usdc).balanceOf(s_depositor));
 
         uint256 depositFeesSumBefore = s_lancaParentPool.exposed_getDepositFeesSum();
+        uint256 depositorBalanceBefore = IERC20(s_usdc).balanceOf(s_depositor);
 
         vm.startPrank(s_depositor);
         bytes32 depositId = s_lancaParentPool.startDeposit(depositAmount);
@@ -102,11 +103,13 @@ contract LancaParentPoolTest is Test {
 
         uint256 depositFeesSumAfter = s_lancaParentPool.exposed_getDepositFeesSum();
         uint256 depositFeeAmount = s_lancaParentPool.exposed_getDepositFeeAmount();
+        uint256 depositorBalanceAfter = IERC20(s_usdc).balanceOf(s_depositor);
 
         ILancaParentPool.DepositRequest memory depositReq = s_lancaParentPool.getDepositRequestById(
             depositId
         );
 
+        vm.assertEq(depositorBalanceAfter, depositorBalanceBefore - depositAmount);
         vm.assertEq(depositFeesSumAfter, depositFeesSumBefore + depositFeeAmount);
         vm.assertEq(depositReq.childPoolsLiquiditySnapshot, 0);
         vm.assertEq(depositReq.usdcAmountToDeposit, 0);
