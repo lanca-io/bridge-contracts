@@ -119,7 +119,7 @@ contract LancaParentPool is
         require(
             usdcAmount +
                 i_usdc.balanceOf(address(this)) -
-                s_depositFeeAmount +
+                s_depositFeesSum +
                 s_loansInUse -
                 s_withdrawAmountLocked <=
                 liquidityCap,
@@ -182,7 +182,7 @@ contract LancaParentPool is
 
         _distributeLiquidityToChildPools(usdcAmountAfterFee, ICcip.CcipTxType.deposit);
 
-        s_depositFeeAmount += i_depositFeeAmount;
+        s_depositFeesSum += i_depositFeeAmount;
 
         emit DepositCompleted(depositRequestId, lpAddress, usdcAmount, lpTokensToMint);
 
@@ -292,8 +292,8 @@ contract LancaParentPool is
     }
 
     function withdrawDepositFees() external payable onlyOwner {
-        uint256 amountToSend = s_depositFeeAmount;
-        s_depositFeeAmount = 0;
+        uint256 amountToSend = s_depositFeesSum;
+        s_depositFeesSum = 0;
         i_usdc.safeTransfer(i_owner, amountToSend);
     }
 
@@ -472,7 +472,7 @@ contract LancaParentPool is
         return
             i_minDepositAmount +
                 i_usdc.balanceOf(address(this)) -
-                s_depositFeeAmount +
+                s_depositFeesSum +
                 s_loansInUse -
                 s_withdrawAmountLocked >
             s_liquidityCap;
@@ -516,7 +516,7 @@ contract LancaParentPool is
         uint256 parentPoolLiquidity = i_usdc.balanceOf(address(this)) +
             s_loansInUse +
             s_depositsOnTheWayAmount -
-            s_depositFeeAmount;
+            s_depositFeesSum;
         //TODO: add withdrawalsOnTheWay
 
         uint256 totalCrossChainLiquidity = childPoolsTotalBalance + parentPoolLiquidity;

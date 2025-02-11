@@ -59,4 +59,12 @@ contract LancaParentPoolHarness is LancaParentPool {
     function exposed_getClfRouter() public view returns (address) {
         return address(i_clfRouter);
     }
+
+    function exposed_getDepositFeesSum() public view returns (uint256) {
+        return s_depositFeesSum;
+    }
+
+    function exposed_getDepositFeeAmount() public view returns (uint256) {
+        return i_depositFeeAmount;
+    }
 }

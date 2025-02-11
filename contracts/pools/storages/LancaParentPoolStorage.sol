@@ -12,7 +12,7 @@ abstract contract LancaParentPoolStorage {
 
     uint256 internal s_depositsOnTheWayAmount;
 
-    uint256 internal s_depositFeeAmount;
+    uint256 internal s_depositFeesSum;
 
     uint256 internal s_withdrawalsOnTheWayAmount;
 

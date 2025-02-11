@@ -400,7 +400,7 @@ contract LancaParentPoolCLFCLA is
         uint256 parentPoolLiquidity = i_usdc.balanceOf(address(this)) +
             s_loansInUse +
             s_depositsOnTheWayAmount -
-            s_depositFeeAmount;
+            s_depositFeesSum;
         uint256 totalCrossChainLiquidity = childPoolsBalance + parentPoolLiquidity;
 
         // @dev USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
