@@ -178,7 +178,7 @@ contract LancaChildPoolTest is Test {
         vm.expectEmit(true, false, false, true);
         emit ILancaPoolCcip.CCIPReceived(messageId, sourceChainSelector, dstPool, s_usdc, amount);
 
-        (bool success, bytes memory res) = address(s_lancaChildPool).delegatecall(funcData);
+        (bool success, ) = address(s_lancaChildPool).delegatecall(funcData);
         vm.stopPrank();
 
         vm.assertEq(success, true);

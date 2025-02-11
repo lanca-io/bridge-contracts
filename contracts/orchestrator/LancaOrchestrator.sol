@@ -146,9 +146,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
             bridgeData.dstChainSelector
         ];
 
-        if (dstLancaContract == ZERO_ADDRESS) {
-            revert InvalidRecipient();
-        }
+        require(dstLancaContract != ZERO_ADDRESS, InvalidRecipient());
 
         bytes memory message = abi.encode(bridgeData.receiver, bridgeData.data);
 
