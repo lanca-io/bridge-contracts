@@ -23,11 +23,6 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
 
         uint256 withdrawalCooldownSeconds = 597_600;
 
-        LancaParentPool.PoolConfig memory poolConfig = LancaParentPool.PoolConfig({
-            minDepositAmount: 100 * USDC_DECIMALS,
-            depositFeeAmount: 3 * USDC_DECIMALS
-        });
-
         LancaParentPool.AddressConfig memory addressConfig = LancaParentPool.AddressConfig({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
