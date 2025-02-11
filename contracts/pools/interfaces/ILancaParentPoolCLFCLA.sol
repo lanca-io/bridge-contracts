@@ -20,9 +20,9 @@ interface ILancaParentPoolCLFCLA {
     /// @param requestId The id of the request sent.
     /// @param requestType The type of the request.
     /// @param err The error returned by the request.
-    event CLFRequestError(
+    event ClfRequestError(
         bytes32 indexed requestId,
-        ILancaParentPool.CLFRequestType requestType,
+        ILancaParentPool.ClfRequestType requestType,
         bytes err
     );
 

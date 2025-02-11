@@ -1,6 +1,13 @@
 import type { WaitForTransactionReceiptParameters } from "viem/actions/public/waitForTransactionReceipt"
 import { WriteContractParameters } from "viem"
 import { EnvPrefixes } from "../types/deploymentVariables"
+import { getEnvVar } from "../utils"
+
+export const poolMessengers: string[] = [
+    getEnvVar("POOL_MESSENGER_0_ADDRESS"),
+    getEnvVar("POOL_MESSENGER_0_ADDRESS"),
+    getEnvVar("POOL_MESSENGER_0_ADDRESS"),
+]
 
 export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
     timeout: 0,

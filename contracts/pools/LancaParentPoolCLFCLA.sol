@@ -5,14 +5,14 @@ import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/Aut
 import {FunctionsClient as ClfClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
 import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
-import {LibErrors} from "../common/libraries/LibErrors.sol";
-import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
-import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
-import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
 import {ILancaPool} from "./interfaces/ILancaPool.sol";
+import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
+import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
+import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LancaParentPoolCLFCLA is
     LancaPoolCommonStorage,
@@ -40,6 +40,7 @@ contract LancaParentPoolCLFCLA is
     uint64 internal immutable i_donHostedSecretsVersion;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
     bytes32 internal immutable i_ethersHashSum;
+    uint256 internal immutable i_withdrawalCooldownSeconds;
 
     constructor(
         address lpToken,
@@ -51,7 +52,8 @@ contract LancaParentPoolCLFCLA is
         uint8 donHostedSecretsSlotId,
         uint64 donHostedSecretsVersion,
         bytes32 collectLiquidityJsCodeHashSum,
-        bytes32 ethersHashSum
+        bytes32 ethersHashSum,
+        uint256 withdrawalCooldownSeconds
     ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
@@ -60,6 +62,7 @@ contract LancaParentPoolCLFCLA is
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
         i_ethersHashSum = ethersHashSum;
         i_usdc = IERC20(usdc);
+        i_withdrawalCooldownSeconds = withdrawalCooldownSeconds;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -185,7 +188,7 @@ contract LancaParentPoolCLFCLA is
         );
 
         s_clfRequestTypes[reqId] = ILancaParentPool
-            .CLFRequestType
+            .ClfRequestType
             .withdrawal_requestLiquidityCollection;
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
@@ -205,20 +208,20 @@ contract LancaParentPoolCLFCLA is
         bytes memory response,
         bytes memory err
     ) internal override {
-        ILancaParentPool.CLFRequestType requestType = s_clfRequestTypes[requestId];
+        ILancaParentPool.ClfRequestType requestType = s_clfRequestTypes[requestId];
 
-        require(requestType != ILancaParentPool.CLFRequestType.empty, InvalidCLFRequestType());
+        require(requestType != ILancaParentPool.ClfRequestType.empty, InvalidCLFRequestType());
 
         delete s_clfRequestTypes[requestId];
 
         if (err.length > 0) {
             if (
-                requestType == ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity
+                requestType == ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
             ) {
                 delete s_depositRequests[requestId];
             } else if (
                 requestType ==
-                ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
+                ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
                 address lpAddress = s_withdrawRequests[withdrawalId].lpAddress;
@@ -231,20 +234,20 @@ contract LancaParentPoolCLFCLA is
                 IERC20(i_lpToken).safeTransfer(lpAddress, lpAmountToBurn);
             }
 
-            emit CLFRequestError(requestId, requestType, err);
+            emit ClfRequestError(requestId, requestType, err);
         } else {
             if (
-                requestType == ILancaParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity
+                requestType == ILancaParentPool.ClfRequestType.startDeposit_getChildPoolsLiquidity
             ) {
                 _handleStartDepositCLFFulfill(requestId, response);
             } else if (
                 requestType ==
-                ILancaParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
+                ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 _handleStartWithdrawalCLFFulfill(requestId, response);
                 delete s_withdrawalIdByCLFRequestId[requestId];
             } else if (
-                requestType == ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
+                requestType == ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
             ) {
                 _handleAutomationCLFFulfill(requestId);
             } else {
@@ -372,7 +375,7 @@ contract LancaParentPoolCLFCLA is
         args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(i_ethersHashSum);
         args[2] = abi.encodePacked(
-            ILancaParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
+            ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
         );
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[4] = abi.encodePacked(withdrawalId);
@@ -400,7 +403,7 @@ contract LancaParentPoolCLFCLA is
             s_depositFeeAmount;
         uint256 totalCrossChainLiquidity = childPoolsBalance + parentPoolLiquidity;
 
-        //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
+        // @dev USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
         uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainLiquidity) *
             clpAmount) * PRECISION_HANDLER) / lpSupply) / PRECISION_HANDLER;
 
@@ -463,7 +466,7 @@ contract LancaParentPoolCLFCLA is
         withdrawalRequest.remainingLiquidityFromChildPools =
             amountToWithdrawWithUsdcDecimals -
             withdrawalPortionPerPool;
-        uint256 triggeredAtTimestamp = block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS;
+        uint256 triggeredAtTimestamp = block.timestamp + i_withdrawalCooldownSeconds;
         withdrawalRequest.triggeredAtTimestamp = triggeredAtTimestamp;
 
         s_withdrawalRequestIds.push(withdrawalId);

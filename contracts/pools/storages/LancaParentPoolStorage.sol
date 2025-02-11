@@ -32,7 +32,7 @@ abstract contract LancaParentPoolStorage {
 
     //    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
 
-    mapping(bytes32 clfReqId => ILancaParentPool.CLFRequestType) internal s_clfRequestTypes;
+    mapping(bytes32 clfReqId => ILancaParentPool.ClfRequestType) internal s_clfRequestTypes;
 
     mapping(bytes32 clfReqId => ILancaParentPool.DepositRequest) internal s_depositRequests;
 
@@ -74,7 +74,7 @@ abstract contract LancaParentPoolStorage {
 
     function getClfReqTypeById(
         bytes32 clfReqId
-    ) external view returns (ILancaParentPool.CLFRequestType) {
+    ) external view returns (ILancaParentPool.ClfRequestType) {
         return s_clfRequestTypes[clfReqId];
     }
 
