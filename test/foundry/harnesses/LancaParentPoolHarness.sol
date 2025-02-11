@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
+import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 
 contract LancaParentPoolHarness is LancaParentPool {
     constructor(
@@ -21,6 +22,24 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_depositRequests[depositId].childPoolsLiquiditySnapshot = liqSnapshot;
     }
 
+    function exposed_setClfReqTypeById(
+        bytes32 clfReqId,
+        ILancaParentPool.ClfRequestType clfReqType
+    ) external {
+        s_clfRequestTypes[clfReqId] = clfReqType;
+    }
+
+    function exposed_setWithdrawalIdByClfId(bytes32 clfReqId, bytes32 withdrawalId) external {
+        s_withdrawalIdByCLFRequestId[clfReqId] = withdrawalId;
+    }
+
+    function exposed_setWithdrawalReqById(
+        bytes32 withdrawalId,
+        ILancaParentPool.WithdrawRequest memory withdrawalReq
+    ) external {
+        s_withdrawRequests[withdrawalId] = withdrawalReq;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
@@ -34,5 +53,9 @@ contract LancaParentPoolHarness is LancaParentPool {
         uint64 chainSelector
     ) external view returns (address) {
         return s_dstPoolByChainSelector[chainSelector];
+    }
+
+    function exposed_getClfRouter() public view returns (address) {
+        return address(i_clfRouter);
     }
 }

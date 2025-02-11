@@ -12,7 +12,6 @@ abstract contract LancaParentPoolCommon {
     uint256 internal constant USDC_DECIMALS = 1e6;
     uint256 internal constant LP_TOKEN_DECIMALS = 1 ether;
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
-    uint256 internal constant WITHDRAWAL_COOLDOWN_SECONDS = 597_600;
 
     LPToken internal immutable i_lpToken;
 
