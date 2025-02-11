@@ -9,6 +9,8 @@ import {DeployBase} from "./DeployBase.s.sol";
 import {LPToken} from "contracts/pools/LPToken.sol";
 
 contract DeployLancaParentPoolHarnessScript is DeployBase {
+    uint256 internal constant USDC_DECIMALS = 1e6;
+
     function _deployImplementation() internal override returns (address) {
         vm.startPrank(getDeployer());
 
@@ -18,6 +20,14 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
             usdc: getUsdcAddress(),
             lpToken: address(new LPToken(getProxyDeployer(), getProxy()))
         });
+
+        uint256 withdrawalCooldownSeconds = 597_600;
+
+        LancaParentPool.PoolConfig memory poolConfig = LancaParentPool.PoolConfig({
+            minDepositAmount: 100 * USDC_DECIMALS,
+            depositFeeAmount: 3 * USDC_DECIMALS
+        });
+
         LancaParentPool.AddressConfig memory addressConfig = LancaParentPool.AddressConfig({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
@@ -36,7 +46,7 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
                     keccak256("distributeLiquidityJs"),
                     // @dev doesn't matter for forge tests
                     keccak256("ethersJs"),
-                    getWithdrawalCooldownSeconds()
+                    withdrawalCooldownSeconds
                 )
             ),
             clfRouter: getClfRouter(),

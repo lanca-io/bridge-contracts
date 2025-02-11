@@ -8,6 +8,7 @@ import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ILancaChildPool} from "contracts/pools/interfaces/ILancaChildPool.sol";
 
 contract LancaChildPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -15,7 +16,7 @@ contract LancaChildPoolTest is Test {
     DeployLancaChildPoolHarnessScript internal s_deployChildPoolHarnessScript;
     LancaChildPoolHarness internal s_lancaChildPool;
 
-    address internal s_usdc = vm.envAddress("USDC_BASE");
+    address internal s_usdc;
 
     function setUp() public {
         uint256 forkId = vm.createSelectFork(vm.envString("RPC_URL_BASE"), 26000933);
@@ -23,6 +24,7 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool = LancaChildPoolHarness(
             payable(s_deployChildPoolHarnessScript.run(forkId))
         );
+        s_usdc = s_lancaChildPool.exposed_getUsdcToken();
     }
 
     function test_setPools() public {
@@ -87,6 +89,18 @@ contract LancaChildPoolTest is Test {
         address ccipRouter = s_lancaChildPool.getRouter();
         uint256 allowance = IERC20(s_usdc).allowance(address(s_lancaChildPool), ccipRouter);
         vm.assertEq(allowance, amountToSend);
+    }
+
+    function test_takeLoan() public {
+        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
+        address receiver = makeAddr("receiver");
+        uint256 amount = 100 * USDC_DECIMALS;
+
+        vm.prank(s_lancaChildPool.exposed_getLancaBridge());
+        s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
+
+        vm.assertEq(IERC20(s_usdc).balanceOf(receiver), amount);
+        vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), amount);
     }
 
     /* REVERTS */
@@ -208,6 +222,8 @@ contract LancaChildPoolTest is Test {
         vm.stopPrank();
     }
 
+    /* CCIP SEND TO POOL */
+
     function test_ccipSendToPoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -218,6 +234,33 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool.ccipSendToPool(0, 0, bytes32(0));
     }
 
+    function test_ccipSendToPoolInvalidAddress_revert() public {
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaChildPool.ccipSendToPool(0, 0, bytes32(0));
+    }
+
+    function test_ccipSendToPoolWithdrawalAlreadyTriggered_revert() public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+        bytes32 withdrawalRequestId = bytes32(0);
+        uint256 amountToSend = 1 * USDC_DECIMALS;
+
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(chainSelector, pool);
+        s_lancaChildPool.exposed_setIsWithdrawalRequestTriggered(withdrawalRequestId, true);
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaPool.WithdrawalAlreadyTriggered.selector);
+        s_lancaChildPool.ccipSendToPool(chainSelector, amountToSend, withdrawalRequestId);
+    }
+
+    /* LIQUIDATE POOL */
+
     function test_liquidatePoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -226,5 +269,58 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.liquidatePool(bytes32(0));
+    }
+
+    function test_liquidatePoolDistributeLiquidityRequestAlreadyProceeded_revert() public {
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+        s_lancaChildPool.exposed_setDistributeLiquidityRequestProcessed(
+            distributeLiquidityRequestId,
+            true
+        );
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaPool.DistributeLiquidityRequestAlreadyProceeded.selector);
+        s_lancaChildPool.liquidatePool(distributeLiquidityRequestId);
+    }
+
+    function test_liquidatePoolNoPoolsToDistribute_revert() public {
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaChildPool.NoPoolsToDistribute.selector);
+        s_lancaChildPool.liquidatePool(distributeLiquidityRequestId);
+    }
+
+    /* TAKE LOAN */
+    function test_takeLoanUnauthorized_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notLancaBridge
+            )
+        );
+        s_lancaChildPool.takeLoan(s_usdc, 0, address(0));
+    }
+
+    function test_takeLoanInvalidAddress_revert() public {
+        vm.prank(s_lancaChildPool.exposed_getLancaBridge());
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaChildPool.takeLoan(s_usdc, 0, address(0));
+    }
+
+    function test_takeLoanNotUsdcToken_revert() public {
+        vm.prank(s_lancaChildPool.exposed_getLancaBridge());
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.notUsdcToken
+            )
+        );
+        s_lancaChildPool.takeLoan(makeAddr("usdt"), 0, makeAddr("receiver"));
     }
 }
