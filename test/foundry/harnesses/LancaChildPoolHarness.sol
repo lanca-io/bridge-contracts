@@ -60,6 +60,14 @@ contract LancaChildPoolHarness is LancaChildPool {
         s_dstPoolByChainSelector[chainSelector] = pool;
     }
 
+    function exposed_setIsSenderContractAllowed(
+        uint64 chainSelector,
+        address sender,
+        bool allowed
+    ) external {
+        s_isSenderContractAllowed[chainSelector][sender] = allowed;
+    }
+
     function exposed_setIsWithdrawalRequestTriggered(
         bytes32 withdrawalId,
         bool isTriggered

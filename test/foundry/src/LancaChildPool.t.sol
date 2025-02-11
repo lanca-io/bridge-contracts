@@ -149,7 +149,7 @@ contract LancaChildPoolTest is Test {
         vm.skip(true);
 
         bytes32 messageId = keccak256("messageId");
-        uint64 sourceChainSelector = 1;
+        uint64 sourceChainSelector = 3;
         address dstPool = makeAddr("dstPool");
 
         bytes memory data = abi.encode("data");
@@ -171,9 +171,9 @@ contract LancaChildPoolTest is Test {
             any2EvmMessage
         );
 
-        s_lancaChildPool.exposed_setDstPoolByChainSelector(sourceChainSelector, dstPool);
+        s_lancaChildPool.exposed_setIsSenderContractAllowed(sourceChainSelector, dstPool, true);
 
-        vm.startPrank(dstPool);
+        vm.prank(dstPool, address(s_lancaChildPool));
 
         vm.expectEmit(true, false, false, true);
         emit ILancaPoolCcip.CCIPReceived(messageId, sourceChainSelector, dstPool, s_usdc, amount);
@@ -466,7 +466,7 @@ contract LancaChildPoolTest is Test {
             any2EvmMessage
         );
 
-        s_lancaChildPool.exposed_setDstPoolByChainSelector(sourceChainSelector, dstPool);
+        s_lancaChildPool.exposed_setIsSenderContractAllowed(sourceChainSelector, dstPool, true);
 
         vm.startPrank(dstPool);
 
