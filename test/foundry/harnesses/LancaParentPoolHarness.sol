@@ -23,6 +23,17 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_depositRequests[depositId].childPoolsLiquiditySnapshot = liqSnapshot;
     }
 
+    function exposed_setDistributeLiquidityRequestProcessed(
+        bytes32 requestId,
+        bool processed
+    ) external {
+        s_distributeLiquidityRequestProcessed[requestId] = processed;
+    }
+
+    function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
+        s_dstPoolByChainSelector[chainSelector] = pool;
+    }
+
     function exposed_setClfReqTypeById(
         bytes32 clfReqId,
         ILancaParentPool.ClfRequestType clfReqType
@@ -70,5 +81,10 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_getDepositFeeAmount() public view returns (uint256) {
         return i_depositFeeAmount;
+    }
+
+    function exposed_getMessengers() public view returns (address[3] memory) {
+        address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
+        return messengers;
     }
 }

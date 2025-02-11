@@ -10,10 +10,10 @@ import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
-import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
+import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -453,6 +453,8 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.setPools(chainSelector, poolAddress, false);
     }
 
+    /* WITHDRAW DEPOSIT FEES */
+
     function test_withdrawDepositFeesNotOwner_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -461,6 +463,48 @@ contract LancaParentPoolTest is Test {
             )
         );
         s_lancaParentPool.withdrawDepositFees();
+    }
+
+    /* DISTRIBUTE LIQUIDITY */
+
+    function test_distributeLiquidityNotMessenger_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notMessenger
+            )
+        );
+        s_lancaParentPool.distributeLiquidity(0, 0, bytes32(0));
+    }
+
+    function test_distributeLiquidityInvalidAddress_revert() public {
+        address messenger = s_lancaParentPool.exposed_getMessengers()[0];
+        vm.prank(messenger);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaParentPool.distributeLiquidity(0, 0, bytes32(0));
+    }
+
+    function test_distributeLiquidityDistributeLiquidityRequestAlreadyProceeded_revert() public {
+        uint64 chainSelector = 0;
+        address pool = makeAddr("pool");
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+        uint256 amount = 0;
+
+        s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, pool);
+        address messenger = s_lancaParentPool.exposed_getMessengers()[0];
+        s_lancaParentPool.exposed_setDistributeLiquidityRequestProcessed(
+            distributeLiquidityRequestId,
+            true
+        );
+        vm.prank(messenger);
+
+        vm.expectRevert(ILancaPool.DistributeLiquidityRequestAlreadyProceeded.selector);
+        s_lancaParentPool.distributeLiquidity(chainSelector, amount, distributeLiquidityRequestId);
     }
 
     /* HELPERS */
