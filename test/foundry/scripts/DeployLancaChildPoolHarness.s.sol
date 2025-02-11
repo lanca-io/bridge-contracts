@@ -9,7 +9,7 @@ contract DeployLancaChildPoolHarnessScript is DeployBase {
     function _deployImplementation() internal override returns (address) {
         vm.startPrank(getDeployer());
 
-        address link = address(new ERC20Mock("LinkToken", "LinkToken", 18)); //getLinkAddress();
+        address link = getLinkAddress();
         address usdc = address(new ERC20Mock("USDC", "USDC", 6)); //getUsdcAddress()
         address ccipRouter = getCcipRouter();
         address clfRouter = getClfRouter();
