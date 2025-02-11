@@ -11,65 +11,63 @@ import { getHashSum } from "../utils/getHashSum"
 import { ClfJsCodeType, getClfJsCode } from "../utils/getClfJsCode"
 import { parseUnits } from "viem"
 
-const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
-    async function (hre: HardhatRuntimeEnvironment, constructorArgs = {}) {
-        const { deployer } = await hre.getNamedAccounts()
-        const { deploy } = hre.deployments
-        const { live } = hre.network
-        const name = hre.network.name as CNetworkNames
-        const isTestnet = conceroNetworks[name].type === "testnet"
-        const networkType = conceroNetworks[name].type
-        const { linkToken, ccipRouter, functionsRouter } = conceroNetworks[name]
+const deployParentPoolImplementation: (
+    hre: HardhatRuntimeEnvironment,
+    constructorArgs?: ConstructorArgs,
+) => Promise<void> = async function (hre: HardhatRuntimeEnvironment, constructorArgs = {}) {
+    const { deployer } = await hre.getNamedAccounts()
+    const { deploy } = hre.deployments
+    const { live } = hre.network
+    const name = hre.network.name as CNetworkNames
+    const isTestnet = conceroNetworks[name].type === "testnet"
+    const networkType = conceroNetworks[name].type
+    const { linkToken, ccipRouter, functionsRouter } = conceroNetworks[name]
 
-        const defaultArgs = {
-            tokenConfig: {
-                link: linkToken,
-                usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
-                lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
-            },
-            addressConfig: {
-                ccipRouter: ccipRouter,
-                automationForwarder: getEnvVar(`PARENT_POOL_AUTOMATION_FORWARDER_${networkEnvKeys[name]}`),
-                owner: deployer,
-                parentPoolCLFCLA: getEnvVar(`PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`),
-                lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
-                clfRouter: functionsRouter,
-                messengers: poolMessengers,
-            },
-            hashConfig: {
-                distributeLiquidityJs: getHashSum(await getClfJsCode(ClfJsCodeType.RedistributeLiq)),
-                ethersJs: getHashSum(await getClfJsCode(ClfJsCodeType.EthersV6)),
-                getChildPoolsLiquidityJsCodeHashSum: getHashSum(await getClfJsCode(ClfJsCodeType.GetChildPoolsLiq)),
-            },
-            poolConfig: {
-                minDepositAmount: isTestnet ? parseUnits("1", 6) : parseUnits("250", 6),
-                depositFeeAmount: isTestnet ? parseUnits("0", 6) : parseUnits("3", 6),
-            },
-        }
-
-        const args = { ...defaultArgs, ...constructorArgs }
-        const { maxFeePerGas, maxPriorityFeePerGas } = await getGasParameters(conceroNetworks[name])
-
-        log("Deploying...", `deployParentPool, ${deployer}`, name)
-
-        const deployParentPool = (await deploy("ParentPool", {
-            from: deployer,
-            args: [args.addressConfig, args.tokenConfig, args.hashConfig, args.poolConfig],
-            log: true,
-            autoMine: true,
-            maxFeePerGas,
-            maxPriorityFeePerGas,
-        })) as Deployment
-
-        if (live) {
-            log(`Deployed at: ${deployParentPool.address}`, "deployParentPool", name)
-            updateEnvVariable(
-                `PARENT_POOL_${networkEnvKeys[name]}`,
-                deployParentPool.address,
-                `deployments.${networkType}`,
-            )
-        }
+    const defaultArgs = {
+        tokenConfig: {
+            link: linkToken,
+            usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
+            lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
+        },
+        addressConfig: {
+            ccipRouter: ccipRouter,
+            automationForwarder: getEnvVar(`PARENT_POOL_AUTOMATION_FORWARDER_${networkEnvKeys[name]}`),
+            owner: deployer,
+            parentPoolCLFCLA: getEnvVar(`PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`),
+            lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
+            clfRouter: functionsRouter,
+            messengers: poolMessengers,
+        },
+        hashConfig: {
+            distributeLiquidityJs: getHashSum(await getClfJsCode(ClfJsCodeType.RedistributeLiq)),
+            ethersJs: getHashSum(await getClfJsCode(ClfJsCodeType.EthersV6)),
+            getChildPoolsLiquidityJsCodeHashSum: getHashSum(await getClfJsCode(ClfJsCodeType.GetChildPoolsLiq)),
+        },
+        poolConfig: {
+            minDepositAmount: isTestnet ? parseUnits("1", 6) : parseUnits("250", 6),
+            depositFeeAmount: isTestnet ? parseUnits("0", 6) : parseUnits("3", 6),
+        },
     }
 
-export default deployParentPool
-deployParentPool.tags = ["ParentPool"]
+    const args = { ...defaultArgs, ...constructorArgs }
+    const { maxFeePerGas, maxPriorityFeePerGas } = await getGasParameters(conceroNetworks[name])
+
+    log("Deploying...", `deployParentPool, ${deployer}`, name)
+
+    const deployParentPool = (await deploy("ParentPool", {
+        from: deployer,
+        args: [args.addressConfig, args.tokenConfig, args.hashConfig, args.poolConfig],
+        log: true,
+        autoMine: true,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+    })) as Deployment
+
+    if (live) {
+        log(`Deployed at: ${deployParentPool.address}`, "deployParentPool", name)
+        updateEnvVariable(`PARENT_POOL_${networkEnvKeys[name]}`, deployParentPool.address, `deployments.${networkType}`)
+    }
+}
+
+export default deployParentPoolImplementation
+deployParentPoolImplementation.tags = ["ParentPool"]

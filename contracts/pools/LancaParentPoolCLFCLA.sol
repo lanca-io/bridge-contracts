@@ -45,7 +45,6 @@ contract LancaParentPoolCLFCLA is
     constructor(
         address lpToken,
         address usdc,
-        address lancaBridge,
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,

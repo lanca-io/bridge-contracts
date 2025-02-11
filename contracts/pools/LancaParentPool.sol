@@ -197,7 +197,7 @@ contract LancaParentPool is
      * @dev it's payable to save some gas.
      * @dev this functions is used on ConceroPool.sol
      */
-    function setPools(
+    function setDstPool(
         uint64 chainSelector,
         address pool,
         bool isRebalancingNeeded
@@ -206,7 +206,6 @@ contract LancaParentPool is
             s_dstPoolByChainSelector[chainSelector] != pool,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
         );
-
         require(
             pool != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
@@ -487,18 +486,6 @@ contract LancaParentPool is
     }
 
     /* ADMIN FUNCTIONS */
-
-    function setConceroContractSender(
-        uint64 chainSelector,
-        address contractAddress,
-        bool isAllowed
-    ) external payable onlyOwner {
-        require(
-            contractAddress != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
-    }
 
     /* INTERNAL FUNCTIONS */
 

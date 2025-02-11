@@ -295,14 +295,14 @@ contract LancaParentPoolTest is Test {
 
     /* ADMIN FUNCTIONS */
 
-    function testFuzz_setPools(
+    function testFuzz_setDstPool(
         uint64 chainSelector,
         address pool,
         bool isRebalancingNeeded
     ) public {
         vm.assume(pool != ZERO_ADDRESS);
         vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
-        s_lancaParentPool.setPools(chainSelector, pool, isRebalancingNeeded);
+        s_lancaParentPool.setDstPool(chainSelector, pool, isRebalancingNeeded);
 
         vm.assertEq(s_lancaParentPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
         vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], chainSelector);
@@ -376,12 +376,12 @@ contract LancaParentPoolTest is Test {
 
     /* SET POOLS */
 
-    function test_setPoolsInvalidAddress_revert() public {
+    function test_setDstPoolInvalidAddress_revert() public {
         address poolAddress = makeAddr("pool");
         uint64 chainSelector = 2;
         vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
 
-        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+        s_lancaParentPool.setDstPool(chainSelector, poolAddress, false);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -389,29 +389,29 @@ contract LancaParentPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaParentPool.setPools(chainSelector, ZERO_ADDRESS, false);
+        s_lancaParentPool.setDstPool(chainSelector, ZERO_ADDRESS, false);
 
         vm.stopPrank();
     }
 
-    function test_setPoolsTheSamePool_revert() public {
+    function test_setDstPoolTheSamePool_revert() public {
         address poolAddress = makeAddr("pool");
         uint64 chainSelector = 1;
         vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
 
-        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+        s_lancaParentPool.setDstPool(chainSelector, poolAddress, false);
         vm.expectRevert(
             abi.encodeWithSelector(
                 LibErrors.InvalidAddress.selector,
                 LibErrors.InvalidAddressType.sameAddress
             )
         );
-        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+        s_lancaParentPool.setDstPool(chainSelector, poolAddress, false);
 
         vm.stopPrank();
     }
 
-    function test_setPoolsNotOwner_revert() public {
+    function test_setDstPoolNotOwner_revert() public {
         address poolAddress = makeAddr("pool");
         uint64 chainSelector = 1;
 
@@ -421,7 +421,7 @@ contract LancaParentPoolTest is Test {
                 LibErrors.UnauthorizedType.notOwner
             )
         );
-        s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+        s_lancaParentPool.setDstPool(chainSelector, poolAddress, false);
     }
 
     /* HELPERS */

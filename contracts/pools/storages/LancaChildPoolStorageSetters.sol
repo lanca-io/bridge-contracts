@@ -18,7 +18,7 @@ abstract contract LancaChildPoolStorageSetters is LancaChildPoolStorage, LancaOw
      * @dev it's payable to save some gas.
      */
 
-    function setPools(uint64 chainSelector, address pool) external payable onlyOwner {
+    function setDstPool(uint64 chainSelector, address pool) external payable onlyOwner {
         require(
             s_dstPoolByChainSelector[chainSelector] != pool,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.sameAddress)
@@ -30,17 +30,5 @@ abstract contract LancaChildPoolStorageSetters is LancaChildPoolStorage, LancaOw
 
         s_poolChainSelectors.push(chainSelector);
         s_dstPoolByChainSelector[chainSelector] = pool;
-    }
-
-    function setConceroContractSender(
-        uint64 chainSelector,
-        address contractAddress,
-        bool isAllowed
-    ) external payable onlyOwner {
-        require(
-            contractAddress != ZERO_ADDRESS,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
-        );
-        s_isSenderContractAllowed[chainSelector][contractAddress] = isAllowed;
     }
 }

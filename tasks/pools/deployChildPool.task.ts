@@ -9,9 +9,9 @@ import { verifyContractVariables } from "../verifyContractVariables.task"
 import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
 import deployTransparentProxy from "../../deploy/TransparentProxy"
 import { ProxyEnum } from "../../constants/deploymentVariables"
-import deployLancaBridgeImplementation from "../../deploy/LancaBridge"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
-import { setLancaBridgeVars } from "./setLancaBridgeVars"
+import deployChildPoolImplementation from "../../deploy/ChildPool"
+import { setChildPoolVars } from "./setChildPoolVars"
 
 interface DeployInfraParams {
     hre: any
@@ -22,30 +22,28 @@ interface DeployInfraParams {
     deployImplementation: boolean
     setVars: boolean
     uploadSecrets: boolean
-    slotId: number
 }
 
-async function deployConceroRouter(params: DeployInfraParams) {
+async function deployChildPool(params: DeployInfraParams) {
     const { hre, deployableChains, deployProxy, deployImplementation, setVars } = params
     const name = hre.network.name as CNetworkNames
-    const isTestnet = deployableChains[0].type === "testnet"
 
     if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.conceroRouterProxy)
-        await deployTransparentProxy(hre, ProxyEnum.conceroRouterProxy)
+        await deployProxyAdmin(hre, ProxyEnum.childPool)
+        await deployTransparentProxy(hre, ProxyEnum.childPool)
     }
 
     if (deployImplementation) {
-        await deployLancaBridgeImplementation(hre, params)
-        await upgradeProxyImplementation(hre, ProxyEnum.lancaBridge, false)
+        await deployChildPoolImplementation(hre)
+        await upgradeProxyImplementation(hre, ProxyEnum.childPool, false)
     }
 
     if (setVars) {
-        await setLancaBridgeVars()
+        await setChildPoolVars(deployableChains[0])
     }
 }
 
-task("deploy-lanca-bridge", "Deploy the Lanca Bridge")
+task("deploy-child-pool", "Deploy the Lanca child pool")
     .addFlag("deployproxy", "Deploy the proxy")
     .addFlag("deployimplementation", "Deploy the implementation")
     .addFlag("setvars", "Set the contract variables")
@@ -63,13 +61,13 @@ task("deploy-lanca-bridge", "Deploy the Lanca Bridge")
 
         let liveChains: CNetwork[] = []
         if (networkType == networkTypes.mainnet) {
-            liveChains = conceroChains.mainnet.infra
+            liveChains = conceroChains.mainnet.childPool
             await verifyContractVariables()
         } else {
-            liveChains = conceroChains.testnet.infra
+            liveChains = conceroChains.testnet.childPool
         }
 
-        await deployConceroRouter({
+        await deployChildPool({
             hre,
             deployableChains,
             liveChains,
@@ -77,8 +75,6 @@ task("deploy-lanca-bridge", "Deploy the Lanca Bridge")
             deployProxy: taskArgs.deployproxy,
             deployImplementation: taskArgs.deployimplementation,
             setVars: taskArgs.setvars,
-            uploadSecrets: taskArgs.uploadsecrets,
-            slotId: parseInt(taskArgs.slotid),
         })
     })
 

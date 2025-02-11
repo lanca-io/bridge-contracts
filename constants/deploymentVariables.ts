@@ -1,5 +1,5 @@
 import type { WaitForTransactionReceiptParameters } from "viem/actions/public/waitForTransactionReceipt"
-import { WriteContractParameters } from "viem"
+import { parseUnits, WriteContractParameters } from "viem"
 import { EnvPrefixes } from "../types/deploymentVariables"
 import { getEnvVar } from "../utils"
 
@@ -19,12 +19,20 @@ export const writeContractConfig: WriteContractParameters = {
 }
 
 export enum ProxyEnum {
-    conceroRouterProxy = "conceroRouterProxy",
+    lancaBridge = "lancaBridge",
+    parentPool = "parentPool",
+    childPool = "childPool",
+    orchestrator = "orchestrator",
 }
 
 export const envPrefixes: EnvPrefixes = {
-    conceroRouterProxy: "CONCERO_ROUTER_PROXY",
-    conceroRouterProxyAdmin: "CONCERO_ROUTER_PROXY_ADMIN",
+    parentPoolProxyAdmin: "PARENT_POOL_PROXY_ADMIN",
+    lancaBridge: "LANCA_BRIDGE",
+    parentPool: "PARENT_POOL",
+    childPoolProxyAdmin: "CHILD_POOL_PROXY_ADMIN",
+    childPool: "CHILD_POOL",
     create3Factory: "CREATE3_FACTORY",
     pause: "CONCERO_PAUSE",
 }
+
+export const parentPoolLiqCap = parseUnits("60000", 18)
