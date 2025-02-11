@@ -21,8 +21,6 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
             lpToken: address(new LPToken(getProxyDeployer(), getProxy()))
         });
 
-        uint256 withdrawalCooldownSeconds = 597_600;
-
         LancaParentPool.AddressConfig memory addressConfig = LancaParentPool.AddressConfig({
             ccipRouter: getCcipRouter(),
             automationForwarder: makeAddr("automation forwarder"),
@@ -40,7 +38,7 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
                     keccak256("distributeLiquidityJs"),
                     // @dev doesn't matter for forge tests
                     keccak256("ethersJs"),
-                    withdrawalCooldownSeconds
+                    getWithdrawalCooldownSeconds()
                 )
             ),
             clfRouter: getClfRouter(),
