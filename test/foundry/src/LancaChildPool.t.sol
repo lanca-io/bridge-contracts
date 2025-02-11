@@ -25,6 +25,7 @@ contract LancaChildPoolTest is Test {
             payable(s_deployChildPoolHarnessScript.run(forkId))
         );
         s_usdc = s_lancaChildPool.exposed_getUsdcToken();
+        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
     }
 
     function test_setPools() public {
@@ -65,7 +66,6 @@ contract LancaChildPoolTest is Test {
         vm.prank(s_deployChildPoolHarnessScript.getDeployer());
         s_lancaChildPool.setPools(chainSelector, pool);
 
-        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
         deal(s_usdc, messenger, 1000 * USDC_DECIMALS);
         deal(s_lancaChildPool.exposed_getLinkToken(), 1000 ether);
 
@@ -92,7 +92,6 @@ contract LancaChildPoolTest is Test {
     }
 
     function test_takeLoan() public {
-        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
         address receiver = makeAddr("receiver");
         uint256 amount = 100 * USDC_DECIMALS;
 
@@ -101,6 +100,25 @@ contract LancaChildPoolTest is Test {
 
         vm.assertEq(IERC20(s_usdc).balanceOf(receiver), amount);
         vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), amount);
+    }
+
+    function test_completeRebalancing() public {
+        uint256 amount = 10 * USDC_DECIMALS;
+        bytes32 id = bytes32(0);
+
+        vm.startPrank(s_lancaChildPool.exposed_getLancaBridge());
+
+        uint256 loansInUseBefore = s_lancaChildPool.exposed_getLoansInUse();
+
+        s_lancaChildPool.takeLoan(s_usdc, amount, makeAddr("receiver"));
+
+        s_lancaChildPool.completeRebalancing(id, amount);
+
+        uint256 fees = s_lancaChildPool.getDstTotalFeeInUsdc(amount);
+        uint256 loansInUseAfter = s_lancaChildPool.exposed_getLoansInUse();
+
+        vm.stopPrank();
+        vm.assertEq(loansInUseAfter, loansInUseBefore + fees);
     }
 
     /* REVERTS */
@@ -322,5 +340,15 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.takeLoan(makeAddr("usdt"), 0, makeAddr("receiver"));
+    }
+
+    function test_completeRebalancingUnauthorized_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notLancaBridge
+            )
+        );
+        s_lancaChildPool.completeRebalancing(bytes32(0), 0);
     }
 }
