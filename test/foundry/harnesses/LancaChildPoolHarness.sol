@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {LancaChildPool} from "contracts/pools/LancaChildPool.sol";
+import {ICcip} from "contracts/common/interfaces/ICcip.sol";
 
 contract LancaChildPoolHarness is LancaChildPool {
     constructor(
@@ -38,6 +40,10 @@ contract LancaChildPoolHarness is LancaChildPool {
         return address(i_linkToken);
     }
 
+    function exposed_getCcipRouter() external view returns (address) {
+        return address(i_ccipRouter);
+    }
+
     function exposed_getUsdcToken() external view returns (address) {
         return address(i_usdc);
     }
@@ -66,5 +72,17 @@ contract LancaChildPoolHarness is LancaChildPool {
         bool processed
     ) external {
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = processed;
+    }
+
+    function exposed_ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) external {
+        _ccipReceive(any2EvmMessage);
+    }
+
+    function exposed_ccipSend(
+        uint64 chainSelector,
+        uint256 amount,
+        ICcip.CcipSettleMessage memory ccipTxData
+    ) public {
+        _ccipSend(chainSelector, amount, ccipTxData);
     }
 }
