@@ -40,6 +40,7 @@ contract LancaParentPoolCLFCLA is
     uint64 internal immutable i_donHostedSecretsVersion;
     bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
     bytes32 internal immutable i_ethersHashSum;
+    uint256 internal immutable i_withdrawalCooldownSeconds;
 
     constructor(
         address lpToken,
@@ -51,7 +52,8 @@ contract LancaParentPoolCLFCLA is
         uint8 donHostedSecretsSlotId,
         uint64 donHostedSecretsVersion,
         bytes32 collectLiquidityJsCodeHashSum,
-        bytes32 ethersHashSum
+        bytes32 ethersHashSum,
+        uint256 withdrawalCooldownSeconds
     ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
@@ -60,6 +62,7 @@ contract LancaParentPoolCLFCLA is
         i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
         i_ethersHashSum = ethersHashSum;
         i_usdc = IERC20(usdc);
+        i_withdrawalCooldownSeconds = withdrawalCooldownSeconds;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -463,7 +466,7 @@ contract LancaParentPoolCLFCLA is
         withdrawalRequest.remainingLiquidityFromChildPools =
             amountToWithdrawWithUsdcDecimals -
             withdrawalPortionPerPool;
-        uint256 triggeredAtTimestamp = block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS;
+        uint256 triggeredAtTimestamp = block.timestamp + i_withdrawalCooldownSeconds;
         withdrawalRequest.triggeredAtTimestamp = triggeredAtTimestamp;
 
         s_withdrawalRequestIds.push(withdrawalId);

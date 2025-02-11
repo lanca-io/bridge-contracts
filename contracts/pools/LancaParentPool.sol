@@ -55,11 +55,13 @@ contract LancaParentPool is
         bytes32 getChildPoolsLiquidityJsCodeHashSum;
     }
 
+    struct PoolConfig {
+        uint256 minDepositAmount;
+        uint256 depositFeeAmount;
+    }
+
     /* CONSTANT VARIABLES */
-    //TODO: move testnet-mainnet-dependent variables to immutables
-    uint256 internal constant MIN_DEPOSIT = 250 * USDC_DECIMALS;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
-    uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
@@ -70,11 +72,14 @@ contract LancaParentPool is
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
     bytes32 internal immutable i_getChildPoolsLiquidityJsCodeHashSum;
     bytes32 internal immutable i_ethersHashSum;
+    uint256 internal immutable i_minDepositAmount;
+    uint256 internal immutable i_depositFeeAmount;
 
     constructor(
         TokenConfig memory tokenConfig,
         AddressConfig memory addressConfig,
-        HashConfig memory hashConfig
+        HashConfig memory hashConfig,
+        PoolConfig memory poolConfig
     )
         LancaPoolCommon(tokenConfig.usdc, addressConfig.lancaBridge)
         LancaParentPoolStorageSetters(addressConfig.owner)
@@ -88,6 +93,8 @@ contract LancaParentPool is
         i_distributeLiquidityJsCodeHashSum = hashConfig.distributeLiquidityJs;
         i_getChildPoolsLiquidityJsCodeHashSum = hashConfig.getChildPoolsLiquidityJsCodeHashSum;
         i_ethersHashSum = hashConfig.ethersJs;
+        i_minDepositAmount = poolConfig.minDepositAmount;
+        i_depositFeeAmount = poolConfig.depositFeeAmount;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -105,7 +112,7 @@ contract LancaParentPool is
      * @param usdcAmount amount to be deposited
      */
     function startDeposit(uint256 usdcAmount) external returns (bytes32) {
-        require(usdcAmount >= MIN_DEPOSIT, DepositAmountBelowMinimum());
+        require(usdcAmount >= i_minDepositAmount, DepositAmountBelowMinimum());
 
         uint256 liquidityCap = s_liquidityCap;
 
@@ -157,7 +164,7 @@ contract LancaParentPool is
         DepositRequest storage request = s_depositRequests[depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
-        uint256 usdcAmountAfterFee = usdcAmount - DEPOSIT_FEE_USDC;
+        uint256 usdcAmountAfterFee = usdcAmount - i_depositFeeAmount;
         uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
         require(msg.sender == lpAddress, NotAllowedToCompleteDeposit());
@@ -175,7 +182,7 @@ contract LancaParentPool is
 
         _distributeLiquidityToChildPools(usdcAmountAfterFee, ICcip.CcipTxType.deposit);
 
-        s_depositFeeAmount += DEPOSIT_FEE_USDC;
+        s_depositFeeAmount += i_depositFeeAmount;
 
         emit DepositCompleted(depositRequestId, lpAddress, usdcAmount, lpTokensToMint);
 
@@ -458,7 +465,7 @@ contract LancaParentPool is
      */
     function isFull() public view returns (bool) {
         return
-            MIN_DEPOSIT +
+            i_minDepositAmount +
                 i_usdc.balanceOf(address(this)) -
                 s_depositFeeAmount +
                 s_loansInUse -
@@ -466,8 +473,8 @@ contract LancaParentPool is
             s_liquidityCap;
     }
 
-    function getMinDepositAmount() external pure returns (uint256) {
-        return MIN_DEPOSIT;
+    function getMinDepositAmount() external view returns (uint256) {
+        return i_minDepositAmount;
     }
 
     function getDepositDeadlineSeconds() external pure returns (uint256) {

@@ -1,3 +1,4 @@
 import { getEnvVar } from "./getEnvVar"
+import { getFallbackClients } from "./getViemClients"
 
-export { getEnvVar }
+export { getEnvVar, getFallbackClients }
