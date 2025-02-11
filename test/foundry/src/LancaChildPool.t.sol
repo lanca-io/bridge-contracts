@@ -441,4 +441,42 @@ contract LancaChildPoolTest is Test {
         );
         s_lancaChildPool.exposed_ccipReceive(ccip2AnyMessage);
     }
+
+    function test_ccipReceiveNotUsdcToken_revert() public {
+        bytes32 messageId = keccak256("messageId");
+        uint64 sourceChainSelector = 1;
+        address dstPool = makeAddr("dstPool");
+
+        bytes memory data = abi.encode("data");
+        uint256 amount = 1 * USDC_DECIMALS;
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
+        destTokenAmounts[0].token = makeAddr("wrong token");
+        destTokenAmounts[0].amount = amount;
+
+        Client.Any2EVMMessage memory any2EvmMessage = Client.Any2EVMMessage({
+            messageId: messageId,
+            sourceChainSelector: sourceChainSelector,
+            sender: abi.encode(dstPool),
+            data: data,
+            destTokenAmounts: destTokenAmounts
+        });
+
+        bytes memory funcData = abi.encodeWithSelector(
+            bytes4(keccak256("_ccipReceive(Client.Any2EVMMessage)")),
+            any2EvmMessage
+        );
+
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(sourceChainSelector, dstPool);
+
+        vm.startPrank(dstPool);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.notUsdcToken
+            )
+        );
+        address(s_lancaChildPool).delegatecall(funcData);
+        vm.stopPrank();
+    }
 }
