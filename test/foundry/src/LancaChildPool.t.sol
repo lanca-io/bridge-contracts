@@ -8,6 +8,7 @@ import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ILancaChildPool} from "contracts/pools/interfaces/ILancaChildPool.sol";
 
 contract LancaChildPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -245,6 +246,8 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool.ccipSendToPool(chainSelector, amountToSend, withdrawalRequestId);
     }
 
+    /* LIQUIDATE POOL */
+
     function test_liquidatePoolNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -253,5 +256,25 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.liquidatePool(bytes32(0));
+    }
+
+    function test_liquidatePoolDistributeLiquidityRequestAlreadyProceeded_revert() public {
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+        s_lancaChildPool.exposed_setDistributeLiquidityRequestProcessed(
+            distributeLiquidityRequestId,
+            true
+        );
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaPool.DistributeLiquidityRequestAlreadyProceeded.selector);
+        s_lancaChildPool.liquidatePool(distributeLiquidityRequestId);
+    }
+
+    function test_liquidatePoolNoPoolsToDistribute_revert() public {
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+
+        vm.prank(s_lancaChildPool.exposed_getMessengers()[0]);
+        vm.expectRevert(ILancaChildPool.NoPoolsToDistribute.selector);
+        s_lancaChildPool.liquidatePool(distributeLiquidityRequestId);
     }
 }

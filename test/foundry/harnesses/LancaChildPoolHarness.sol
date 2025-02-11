@@ -48,4 +48,11 @@ contract LancaChildPoolHarness is LancaChildPool {
     ) external {
         s_isWithdrawalRequestTriggered[withdrawalId] = isTriggered;
     }
+
+    function exposed_setDistributeLiquidityRequestProcessed(
+        bytes32 distributeLiquidityRequestId,
+        bool processed
+    ) external {
+        s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = processed;
+    }
 }
