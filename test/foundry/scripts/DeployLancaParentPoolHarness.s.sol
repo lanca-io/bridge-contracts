@@ -35,7 +35,8 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
                     // @dev doesn't matter for forge tests
                     keccak256("distributeLiquidityJs"),
                     // @dev doesn't matter for forge tests
-                    keccak256("ethersJs")
+                    keccak256("ethersJs"),
+                    getWithdrawalCooldownSeconds()
                 )
             ),
             clfRouter: getClfRouter(),
@@ -48,9 +49,13 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
             ethersJs: bytes32(0),
             getChildPoolsLiquidityJsCodeHashSum: bytes32(0)
         });
+        LancaParentPool.PoolConfig memory poolConfig = LancaParentPool.PoolConfig({
+            minDepositAmount: getMinDepositAmount(),
+            depositFeeAmount: getDepositFeeAmount()
+        });
 
         address lancaParentPool = address(
-            new LancaParentPoolHarness(tokenConfig, addressConfig, hashConfig)
+            new LancaParentPoolHarness(tokenConfig, addressConfig, hashConfig, poolConfig)
         );
 
         vm.stopPrank();

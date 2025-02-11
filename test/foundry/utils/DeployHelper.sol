@@ -207,4 +207,55 @@ contract DeployHelper is Script {
         messengers[2] = vm.envAddress("MESSENGER_2_ADDRESS");
         return messengers;
     }
+
+    function getMinDepositAmount() public view returns (uint256) {
+        uint256 chainId = block.chainid;
+
+        if (
+            chainId == vm.envUint("BASE_CHAIN_ID") ||
+            chainId == vm.envUint("ARBITRUM_CHAIN_ID") ||
+            chainId == vm.envUint("POLYGON_CHAIN_ID") ||
+            chainId == vm.envUint("AVALANCHE_CHAIN_ID") ||
+            chainId == vm.envUint("OPTIMISM_CHAIN_ID") ||
+            chainId == vm.envUint("ETHEREUM_CHAIN_ID")
+        ) {
+            return 250e6;
+        }
+
+        return 1e6;
+    }
+
+    function getDepositFeeAmount() public view returns (uint256) {
+        uint256 chainId = block.chainid;
+
+        if (
+            chainId == vm.envUint("BASE_CHAIN_ID") ||
+            chainId == vm.envUint("ARBITRUM_CHAIN_ID") ||
+            chainId == vm.envUint("POLYGON_CHAIN_ID") ||
+            chainId == vm.envUint("AVALANCHE_CHAIN_ID") ||
+            chainId == vm.envUint("OPTIMISM_CHAIN_ID") ||
+            chainId == vm.envUint("ETHEREUM_CHAIN_ID")
+        ) {
+            return 3e6;
+        }
+
+        return 0;
+    }
+
+    function getWithdrawalCooldownSeconds() public view returns (uint256) {
+        uint256 chainId = block.chainid;
+
+        if (
+            chainId == vm.envUint("BASE_CHAIN_ID") ||
+            chainId == vm.envUint("ARBITRUM_CHAIN_ID") ||
+            chainId == vm.envUint("POLYGON_CHAIN_ID") ||
+            chainId == vm.envUint("AVALANCHE_CHAIN_ID") ||
+            chainId == vm.envUint("OPTIMISM_CHAIN_ID") ||
+            chainId == vm.envUint("ETHEREUM_CHAIN_ID")
+        ) {
+            return 7 days;
+        }
+
+        return 1 seconds;
+    }
 }

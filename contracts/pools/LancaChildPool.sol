@@ -24,11 +24,11 @@ contract LancaChildPool is
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
-    uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
-    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+    uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 300_000;
+    uint32 internal constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
-    LinkTokenInterface private immutable i_linkToken;
+    LinkTokenInterface internal immutable i_linkToken;
 
     /* CONSTRUCTOR */
     constructor(
