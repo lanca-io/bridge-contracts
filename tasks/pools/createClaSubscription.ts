@@ -11,7 +11,7 @@ import { EnvFileName } from "../../types/deploymentVariables"
 
 export interface UpkeepRegisterArgs {
     linkTokenAddress: Address
-    depositAmount: bigint
+    depositAmount: bigint | BigNumber
     upkeepName: string
     upkeepContractAddress: Address
     email: string
@@ -92,9 +92,12 @@ async function getAutomationForwarderById(keepersRegistrarAddress: Address, upke
         "function getUpkeep(uint256 id) external view returns (tuple(uint96 balance, address lastKeeper, uint64 executeGas, uint96 amountSpent, address admin, uint64 maxValidBlocknumber, address target, uint32 numUpkeeps, address forwarder))",
     ]
 
+    const [deployer] = await ethers.getSigners()
+
     const automationRegistryContract = await ethers.getContractAt(
         AutomationRegistryInterfaceAbi,
         keepersRegistrarAddress,
+        deployer,
     )
 
     const upkeepDetails = await automationRegistryContract.getUpkeep(upkeepId)
