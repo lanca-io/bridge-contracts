@@ -346,6 +346,27 @@ contract LancaParentPoolTest is Test {
         );
     }
 
+    function test_performUpkeep() public {
+        bytes memory data = abi.encode("withdrawalId");
+        bytes32 withdrawalId = bytes32(data);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalReq = ILancaParentPool.WithdrawRequest({
+            lpAddress: makeAddr("lpAddress"),
+            lpAmountToBurn: 0,
+            totalCrossChainLiquiditySnapshot: 0,
+            amountToWithdraw: 10 * USDC_DECIMALS,
+            liquidityRequestedFromEachPool: 1 * USDC_DECIMALS,
+            remainingLiquidityFromChildPools: 0,
+            triggeredAtTimestamp: block.timestamp
+        });
+
+        s_lancaParentPool.exposed_setWithdrawalReqById(withdrawalId, withdrawalReq);
+
+        address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
+        vm.prank(automationForwarder);
+        s_lancaParentPool.performUpkeep(data);
+    }
+
     /* ADMIN FUNCTIONS */
 
     function testFuzz_setPools(

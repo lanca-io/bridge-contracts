@@ -93,4 +93,8 @@ contract LancaParentPoolHarness is LancaParentPool {
     ) public view returns (bool) {
         return s_distributeLiquidityRequestProcessed[requestId];
     }
+
+    function exposed_getAutomationForwarder() public view returns (address) {
+        return i_automationForwarder;
+    }
 }
