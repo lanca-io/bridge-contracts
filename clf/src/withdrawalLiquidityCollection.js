@@ -3,12 +3,6 @@
         const [, , , chainId, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 
         const testnetChainsMap = {
-            ['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
-                urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
-                chainId: '0x14a34',
-                usdcAddress: '${USDC_BASE_SEPOLIA}',
-                poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
-            },
             ['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
                 urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
                 chainId: '0x66eee',
@@ -76,6 +70,7 @@
         const promises = [];
 
         for (const chainSelector in chainsMap) {
+            if (chainSelector === baseChainSelector) continue;
             const url = chainsMap[chainSelector].urls[Math.floor(Math.random() * chainsMap[chainSelector].urls.length)];
             const provider = new FunctionsJsonRpcProvider(url);
             const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);

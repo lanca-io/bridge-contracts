@@ -8,6 +8,8 @@ import deployLpTokenTask from "./pools/deployLpToken.task"
 import buildClfJsTask from "./clf/buildClfJs.task"
 import depositToPoolTask from "./pools/depositToPool.task"
 import simulateClfTask from "./clf/simulateClf.task"
+import withdrawFromPoolTask from "./pools/withdrawFromPool.task"
+import retryWithdrawFromPoolTask from "./pools/retryWithdrawFromPool.task"
 
 export {
     deployLancaBridgeTask,
@@ -20,4 +22,6 @@ export {
     buildClfJsTask,
     depositToPoolTask,
     simulateClfTask,
+    withdrawFromPoolTask,
+    retryWithdrawFromPoolTask,
 }
