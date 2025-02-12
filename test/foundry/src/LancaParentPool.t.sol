@@ -337,6 +337,31 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], chainSelector);
     }
 
+    function testFuzz_removePools(
+        uint64 chainSelector,
+        address pool,
+        bool isRebalancingNeeded
+    ) public {
+        vm.assume(pool != ZERO_ADDRESS);
+
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setPools(chainSelector, pool, isRebalancingNeeded);
+        uint256 poolChainSelectorsLenBefore = s_lancaParentPool
+            .exposed_getPoolChainSelectors()
+            .length;
+        s_lancaParentPool.removePools(chainSelector);
+        vm.stopPrank();
+
+        vm.assertEq(
+            s_lancaParentPool.exposed_getDstPoolByChainSelector(chainSelector),
+            ZERO_ADDRESS
+        );
+        vm.assertEq(
+            s_lancaParentPool.exposed_getPoolChainSelectors().length,
+            poolChainSelectorsLenBefore - 1
+        );
+    }
+
     /* REVERTS */
 
     /* START DEPOSIT */
@@ -353,6 +378,8 @@ contract LancaParentPoolTest is Test {
         vm.expectRevert(ILancaParentPool.MaxDepositCapReached.selector);
         s_lancaParentPool.startDeposit(liqCap + 1);
     }
+
+    /* START WITHDRAWAL */
 
     function test_startWithdrawalWithdrawAmountBelowMinimum_revert() public {
         vm.prank(s_depositor);
@@ -451,6 +478,18 @@ contract LancaParentPoolTest is Test {
             )
         );
         s_lancaParentPool.setPools(chainSelector, poolAddress, false);
+    }
+
+    /* REMOVE POOLS */
+    function test_removePoolsNotOwner_revert() public {
+        uint64 chainSelector = 1;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
+            )
+        );
+        s_lancaParentPool.removePools(chainSelector);
     }
 
     /* WITHDRAW DEPOSIT FEES */
