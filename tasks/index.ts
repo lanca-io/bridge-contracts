@@ -5,6 +5,7 @@ import deployChildPoolTask from "./pools/deployChildPool.task"
 import uploadClfSecrets from "./clf/uploadClfSecrets.task"
 import listClfSecretsTask from "./clf/listClfSecrets.task"
 import deployLpTokenTask from "./pools/deployLpToken.task"
+import buildClfJsTask from "./clf/buildClfJs.task"
 
 export {
     deployLancaBridgeTask,
@@ -14,4 +15,5 @@ export {
     uploadClfSecrets,
     listClfSecretsTask,
     deployLpTokenTask,
+    buildClfJsTask,
 }

@@ -70,8 +70,8 @@ contract LancaParentPool is
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
     bytes32 internal immutable i_distributeLiquidityJsCodeHashSum;
-    bytes32 internal immutable i_getChildPoolsLiquidityJsCodeHashSum;
-    bytes32 internal immutable i_ethersHashSum;
+    bytes32 internal immutable i_getChildPoolsLiquidityJsHash;
+    bytes32 internal immutable i_ethersJsHash;
     uint256 internal immutable i_minDepositAmount;
     uint256 internal immutable i_depositFeeAmount;
 
@@ -91,8 +91,8 @@ contract LancaParentPool is
         i_clfRouter = addressConfig.clfRouter;
         i_automationForwarder = addressConfig.automationForwarder;
         i_distributeLiquidityJsCodeHashSum = hashConfig.distributeLiquidityJs;
-        i_getChildPoolsLiquidityJsCodeHashSum = hashConfig.getChildPoolsLiquidityJsCodeHashSum;
-        i_ethersHashSum = hashConfig.ethersJs;
+        i_getChildPoolsLiquidityJsHash = hashConfig.getChildPoolsLiquidityJsCodeHashSum;
+        i_ethersJsHash = hashConfig.ethersJs;
         i_minDepositAmount = poolConfig.minDepositAmount;
         i_depositFeeAmount = poolConfig.depositFeeAmount;
     }
@@ -126,10 +126,11 @@ contract LancaParentPool is
             MaxDepositCapReached()
         );
 
-        bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(i_ethersHashSum);
+        bytes[] memory args = new bytes[](4);
+        args[0] = abi.encodePacked(i_getChildPoolsLiquidityJsHash);
+        args[1] = abi.encodePacked(i_ethersJsHash);
         args[2] = abi.encodePacked(ClfRequestType.startDeposit_getChildPoolsLiquidity);
+        args[3] = abi.encodePacked(block.chainid);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             ILancaParentPoolCLFCLA.sendCLFRequest.selector,
@@ -221,7 +222,7 @@ contract LancaParentPool is
 
             bytes[] memory args = new bytes[](7);
             args[0] = abi.encodePacked(i_distributeLiquidityJsCodeHashSum);
-            args[1] = abi.encodePacked(i_ethersHashSum);
+            args[1] = abi.encodePacked(i_ethersJsHash);
             args[2] = abi.encodePacked(ClfRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
@@ -249,9 +250,11 @@ contract LancaParentPool is
             WithdrawalRequestAlreadyExists()
         );
 
-        bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(i_getChildPoolsLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(i_ethersHashSum);
+        bytes[] memory args = new bytes[](4);
+        args[0] = abi.encodePacked(i_getChildPoolsLiquidityJsHash);
+        args[1] = abi.encodePacked(i_ethersJsHash);
+        args[2] = abi.encodePacked(ClfRequestType.startWithdrawal_getChildPoolsLiquidity);
+        args[3] = abi.encodePacked(block.chainid);
 
         IERC20(i_lpToken).safeTransferFrom(lpAddress, address(this), lpAmount);
 
