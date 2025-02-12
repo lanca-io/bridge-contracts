@@ -49,7 +49,7 @@
 
     const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
     const poolAbi = [
-        'function s_loansInUse() external view returns (uint256)',
+        'function getUsdcLoansInUse() external view returns (uint256)',
         'function getDepositsOnTheWay() external view returns (tuple(uint64, bytes32, uint256)[150] memory)',
     ];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -176,7 +176,7 @@
         const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
         const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
         promises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
-        promises.push(pool.s_loansInUse());
+        promises.push(pool.getUsdcLoansInUse());
     }
 
     promises.push(getBaseDepositsOneTheWayArray());

@@ -101,7 +101,7 @@ function buildClfJsTask(fileToBuild: string, quiet: boolean): void {
         process.exit(1)
     }
 }
-async function buildScript(all: boolean, file: string | undefined, quiet: boolean): Promise<void> {
+export async function buildScript(all: boolean, file: string | undefined, quiet: boolean): Promise<void> {
     if (all) {
         const paths = ["src", "src"]
 
