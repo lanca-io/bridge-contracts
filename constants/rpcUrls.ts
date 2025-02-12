@@ -1,10 +1,8 @@
-const { BLAST_API_KEY } = process.env
-
 export const rpcUrls: Record<string, string[]> = {
     ethereum: ["https://rpc.ankr.com/eth"],
     sepolia: ["https://rpc.ankr.com/eth_sepolia"],
     avalanche: ["https://rpc.ankr.com/avalanche"],
-    avalancheFuji: ["https://arbitrum-one-rpc.publicnode.com"],
+    avalancheFuji: ["https://avalanche-fuji-c-chain-rpc.publicnode.com"],
     arbitrum: ["https://rpc.ankr.com/arbitrum", "https://arbitrum-one-rpc.publicnode.com"],
     arbitrumSepolia: ["https://arbitrum-sepolia-rpc.publicnode.com"],
     optimism: ["https://optimism.llamarpc.com", "https://rpc.ankr.com/optimism"],
@@ -16,6 +14,4 @@ export const rpcUrls: Record<string, string[]> = {
     bsc: ["https://rpc.ankr.com/bsc"],
     scroll: ["https://rpc.ankr.com/scroll"],
     scrollSepolia: ["https://rpc.ankr.com/scroll_sepolia"],
-    polygonZkEvm: [`https://polygon-zkevm-mainnet.blastapi.io/${BLAST_API_KEY}`],
-    polygonZkEvmCardona: [`https://polygon-zkevm-cardona.blastapi.io/${BLAST_API_KEY}`],
 }
