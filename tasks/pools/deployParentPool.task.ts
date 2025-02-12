@@ -6,16 +6,15 @@ import { conceroNetworks } from "../../constants"
 import { networkTypes } from "../../constants/conceroNetworks"
 import { conceroChains } from "../../constants/liveChains"
 import { verifyContractVariables } from "../verifyContractVariables.task"
-import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
-import deployTransparentProxy from "../../deploy/TransparentProxy"
 import { parentPoolClfSecretsSlotId, ProxyEnum } from "../../constants/deploymentVariables"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
-import { getEnvAddress } from "../../utils/getEnvVar"
-import { addClfConsumer } from "../clf/addClfConsumer.task"
 import deployParentPoolImplementation from "../../deploy/ParentPool"
 import { setParentPoolVars } from "./setParentPoolVars"
 import { uploadClfSecrets } from "../clf/uploadClfSecrets.task"
 import deployParentPoolClfClfImplementation from "../../deploy/ParenPoolCLFCLA"
+import { registerCustomUpkeep } from "./registerCustomUpkeep"
+import { Address } from "viem"
+import { getEnvAddress } from "../../utils/getEnvVar"
 
 interface DeployInfraParams {
     hre: any
@@ -33,12 +32,20 @@ async function deployParentPool(params: DeployInfraParams) {
     const name = hre.network.name as CNetworkNames
 
     if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy)
-        await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy)
+        // await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy)
+        // await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy)
         const [proxyAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name)
-        const { functionsSubIds } = conceroNetworks[name]
-        await addClfConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0])
-        // await createClaSubscription()
+        // const { functionsSubIds } = conceroNetworks[name]
+        // await addClfConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0])
+        await registerCustomUpkeep(hre, {
+            linkTokenAddress: conceroNetworks[name].linkToken as Address,
+            depositAmount: 0n,
+            upkeepName: "parent-pool",
+            upkeepContractAddress: proxyAddress,
+            orcConfig: "0x",
+            source: 0,
+            data: "",
+        })
     }
 
     if (uploadSecrets) {

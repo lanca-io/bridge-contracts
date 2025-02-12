@@ -1,4 +1,3 @@
-import { ethers } from "hardhat"
 import { CNetworkNames } from "../../types/CNetwork"
 import { getEnvVar } from "../../utils"
 import { Address, Hex } from "viem"
@@ -27,7 +26,7 @@ export async function registerCustomUpkeep(
     args: UpkeepRegisterArgs,
     gasLimit: number = 500000,
 ) {
-    const [deployer] = await ethers.getSigners()
+    const [deployer] = await hre.ethers.getSigners()
     const chainName = hre.network.name as CNetworkNames
     const { linkToken, type } = conceroNetworks[chainName]
 
