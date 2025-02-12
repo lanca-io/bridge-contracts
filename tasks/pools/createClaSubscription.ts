@@ -2,7 +2,7 @@ import { ethers } from "hardhat"
 import { CNetworkNames } from "../../types/CNetwork"
 import { getEnvVar } from "../../utils"
 import { Address, Hex } from "viem"
-import log from "../../utils/log"
+import log, { err } from "../../utils/log"
 import { conceroNetworks } from "../../constants"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { BigNumber } from "ethers-v5"
@@ -18,7 +18,7 @@ export interface UpkeepRegisterArgs {
     // @dev 0x by default
     ocrConfig: Hex
     // @dev (0 = MANUAL)
-    source: number 
+    source: number
     data: string
 }
 
@@ -50,36 +50,39 @@ export async function registerCustomUpkeep(
     log("🛠  Registering Upkeep via Hardhat Chainlink plugin...", "registerCustomUpkeep", chainName)
 
     try {
-    } catch (error) {}
-    const { transactionHash, upkeepId } = await registrar.registerUpkeep(
-        keepersRegistrarAddress,
-        linkTokenAddress,
-        depositAmount,
-        upkeepName,
-        encryptedEmail,
-        upkeepContractAddress,
-        gasLimit,
-        adminAddress,
-        checkData,
-        ocrConfig,
-        source,
-        sender,
-    )
+        const { transactionHash, upkeepId } = await registrar.registerUpkeep(
+            keepersRegistrarAddress,
+            linkTokenAddress,
+            depositAmount,
+            upkeepName,
+            encryptedEmail,
+            upkeepContractAddress,
+            gasLimit,
+            adminAddress,
+            checkData,
+            ocrConfig,
+            source,
+            sender,
+        )
 
-    log(
-        `✅ Upkeep registered! Tx Hash: ${transactionHash}, Upkeep ID: ${upkeepId.toString()}`,
-        "registerCustomUpkeep",
-        chainName,
-    )
+        log(
+            `✅ Upkeep registered! Tx Hash: ${transactionHash}, Upkeep ID: ${upkeepId.toString()}`,
+            "registerCustomUpkeep",
+            chainName,
+        )
 
-    const automationForwarderAddress = await getAutomationForwarderById(keepersRegistrarAddress, upkeepId)
+        const automationForwarderAddress = await getAutomationForwarderById(keepersRegistrarAddress, upkeepId)
 
-    const envFileName = `deployments.${type}` as EnvFileName
+        const envFileName = `deployments.${type}` as EnvFileName
 
-    log(`🔄 Updating automationForwarder in ${envFileName}...`, "registerCustomUpkeep", chainName)
-    updateEnvVariable(`AUTOMATION_FORWARDER_${chainName}`, automationForwarderAddress, envFileName)
+        log(`🔄 Updating automationForwarder in ${envFileName}...`, "registerCustomUpkeep", chainName)
+        updateEnvVariable(`AUTOMATION_FORWARDER_${chainName}`, automationForwarderAddress, envFileName)
 
-    log(`✅ automationForwarder updated in .env.${envFileName}!`, "registerCustomUpkeep", chainName)
+        log(`✅ automationForwarder updated in .env.${envFileName}!`, "registerCustomUpkeep", chainName)
+    } catch (error) {
+        err(`❌ Error registering upkeep: ${error.message}`, "registerCustomUpkeep", chainName)
+        throw error
+    }
 }
 
 async function getAutomationForwarderById(keepersRegistrarAddress: Address, upkeepId: BigNumber): Promise<Address> {
