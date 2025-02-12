@@ -14,7 +14,6 @@ export enum ClfJsCodeType {
 
 async function fetchCode(url: string) {
     const response = await fetch(url)
-    console.log(await response.text())
 
     if (!response.ok) {
         throw new Error(`Failed to fetch code from ${url}: ${response.statusText}`)

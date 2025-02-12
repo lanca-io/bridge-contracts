@@ -7,27 +7,25 @@ import { ProxyEnum } from "../../constants/deploymentVariables"
 import { Address } from "viem"
 import log from "../../utils/log"
 
-export async function setDstPools(poolChainName: CNetworkNames) {
-    const isTestnet = conceroNetworks[poolChainName].type === "testnet"
+export async function setDstPools(currentChainPoolName: CNetworkNames) {
+    const isTestnet = conceroNetworks[currentChainPoolName].type === "testnet"
     const dstPoolChains = isTestnet ? testnetChains : mainnetChains
-    const cChain = conceroNetworks[poolChainName]
+    const cChain = conceroNetworks[currentChainPoolName]
     const { publicClient, walletClient } = getFallbackClients(cChain)
     const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaPoolCommon.sol/LancaPoolCommon.json")
+    const isParentPool = currentChainPoolName === "baseSepolia" || currentChainPoolName === "base"
     const [currentChainPoolAddress] = getEnvAddress(
-        poolChainName === "baseSepolia" || poolChainName === "base"
-            ? ProxyEnum.parentPoolProxy
-            : ProxyEnum.childPoolProxy,
-        poolChainName,
+        isParentPool ? ProxyEnum.parentPoolProxy : ProxyEnum.childPoolProxy,
+        currentChainPoolName,
     )
 
     for (const dstPoolChain of dstPoolChains) {
         const dstChainPoolName = dstPoolChain.name
-        if (poolChainName === dstChainPoolName) continue
+        if (currentChainPoolName === dstChainPoolName) continue
+        const isDstPoolParent = dstChainPoolName === "baseSepolia" || dstChainPoolName === "base"
 
         const [dstPoolProxy, dstPoolAlias] = getEnvAddress(
-            dstChainPoolName === "base" || dstChainPoolName === "baseSepolia"
-                ? ProxyEnum.parentPoolProxy
-                : ProxyEnum.childPoolProxy,
+            isDstPoolParent ? ProxyEnum.parentPoolProxy : ProxyEnum.childPoolProxy,
             dstPoolChain.name,
         )
 
@@ -38,19 +36,36 @@ export async function setDstPools(poolChainName: CNetworkNames) {
             args: [dstPoolChain.chainSelector],
         })) as Address
 
-        if (currentDstPool.toLowerCase() === dstPoolProxy.toLowerCase()) continue
+        if (currentDstPool.toLowerCase() === dstPoolProxy.toLowerCase()) {
+            const logMessage = `[Skip] ${currentChainPoolAddress}.dstPool${dstPoolAlias}. Already set`
+            log(logMessage, "setDstPools", currentChainPoolName)
+            continue
+        }
 
-        const { request: setDstPoolReq } = await publicClient.simulateContract({
-            address: currentChainPoolAddress,
-            abi: poolAbi,
-            functionName: "setDstPool",
-            args: [dstPoolChain.chainSelector, dstPoolProxy],
-        })
-        const setDstPoolHash = await walletClient.writeContract(setDstPoolReq)
-        const { cumulativeGasUsed: setDstPoolGasUsed } = await publicClient.waitForTransactionReceipt({
-            hash: setDstPoolHash,
-        })
-        const logMessage = `[Set] ${currentChainPoolAddress}.dstPool${dstPoolAlias}. Gas: ${setDstPoolGasUsed}`
-        log(logMessage, "setDstPools", poolChainName)
+        if (isParentPool) {
+            console.log("not implemented")
+        } else {
+            const { abi: childPoolAbi } = await import(
+                "../../artifacts/contracts/pools/LancaChildPool.sol/LancaChildPool.json"
+            )
+
+            const { request: setDstPoolReq } = await publicClient.simulateContract({
+                account: walletClient.account,
+                address: currentChainPoolAddress,
+                abi: childPoolAbi,
+                functionName: "setDstPool",
+                args: [dstPoolChain.chainSelector, dstPoolProxy],
+            })
+            const setDstPoolHash = await walletClient.writeContract(setDstPoolReq)
+            const { cumulativeGasUsed, status } = await publicClient.waitForTransactionReceipt({
+                hash: setDstPoolHash,
+            })
+
+            if (status !== "success")
+                throw new Error(`Failed to set dst pool ${dstPoolAlias} on ${currentChainPoolName}`)
+
+            const logMessage = `[Set] ${currentChainPoolAddress}.dstPool${dstPoolAlias}. Gas: ${cumulativeGasUsed}`
+            log(logMessage, "setDstPools", currentChainPoolName)
+        }
     }
 }

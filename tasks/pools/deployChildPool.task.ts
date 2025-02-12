@@ -12,6 +12,8 @@ import { ProxyEnum } from "../../constants/deploymentVariables"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
 import deployChildPoolImplementation from "../../deploy/ChildPool"
 import { setChildPoolVars } from "./setChildPoolVars"
+import { ContractFunctionExecutionError } from "viem"
+import { err } from "../../utils/log"
 
 interface DeployInfraParams {
     hre: any
@@ -25,27 +27,37 @@ interface DeployInfraParams {
 }
 
 async function deployChildPool(params: DeployInfraParams) {
-    const { hre, deployableChains, deployProxy, deployImplementation, setVars } = params
-    const name = hre.network.name as CNetworkNames
+    try {
+        const { hre, deployableChains, deployProxy, deployImplementation, setVars } = params
+        const name = hre.network.name as CNetworkNames
 
-    if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.childPoolProxy)
-        await deployTransparentProxy(hre, ProxyEnum.childPoolProxy)
-    }
+        if (deployProxy) {
+            await deployProxyAdmin(hre, ProxyEnum.childPoolProxy)
+            await deployTransparentProxy(hre, ProxyEnum.childPoolProxy)
+        }
 
-    if (deployImplementation) {
-        await deployChildPoolImplementation(hre)
-        await upgradeProxyImplementation(hre, ProxyEnum.childPoolProxy, false)
-    }
+        if (deployImplementation) {
+            await deployChildPoolImplementation(hre)
+            await upgradeProxyImplementation(hre, ProxyEnum.childPoolProxy, false)
+        }
 
-    if (setVars) {
-        await setChildPoolVars(deployableChains[0])
+        if (setVars) {
+            await setChildPoolVars(deployableChains[0].name)
+        }
+    } catch (error) {
+        console.log(error)
+
+        if (error instanceof ContractFunctionExecutionError) {
+            err(`Short message: ${error.shortMessage} \n Meta messages: ${error.metaMessages}`, "deployChildPool")
+        } else {
+            throw error
+        }
     }
 }
 
 task("deploy-child-pool", "Deploy the Lanca child pool")
-    .addFlag("deployproxy", "Deploy the proxy")
-    .addFlag("deployimplementation", "Deploy the implementation")
+    .addFlag("proxy", "Deploy the proxy")
+    .addFlag("implementation", "Deploy the implementation")
     .addFlag("setvars", "Set the contract variables")
     .setAction(async taskArgs => {
         compileContracts({ quiet: true })
@@ -72,8 +84,8 @@ task("deploy-child-pool", "Deploy the Lanca child pool")
             deployableChains,
             liveChains,
             networkType,
-            deployProxy: taskArgs.deployproxy,
-            deployImplementation: taskArgs.deployimplementation,
+            deployProxy: taskArgs.proxy,
+            deployImplementation: taskArgs.implementation,
             setVars: taskArgs.setvars,
         })
     })

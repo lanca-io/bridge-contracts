@@ -6,7 +6,7 @@ export const rpcUrls: Record<string, string[]> = {
     avalanche: ["https://rpc.ankr.com/avalanche"],
     avalancheFuji: ["https://arbitrum-one-rpc.publicnode.com"],
     arbitrum: ["https://rpc.ankr.com/arbitrum", "https://arbitrum-one-rpc.publicnode.com"],
-    arbitrumSepolia: ["https://rpc.ankr.com/arbitrum_sepolia"],
+    arbitrumSepolia: ["https://arbitrum-sepolia-rpc.publicnode.com"],
     optimism: ["https://optimism.llamarpc.com", "https://rpc.ankr.com/optimism"],
     optimismSepolia: ["https://rpc.ankr.com/optimism_sepolia"],
     polygon: ["https://rpc.ankr.com/polygon", "https://polygon-bor-rpc.publicnode.com"],

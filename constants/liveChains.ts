@@ -5,8 +5,15 @@ import { ConceroChains } from "../types/chains"
 export const conceroChains: ConceroChains = {
     testnet: {
         parentPool: [conceroNetworks.baseSepolia],
-        childPool: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji],
-        infra: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji, conceroNetworks.baseSepolia],
+        childPool: [
+            conceroNetworks.arbitrumSepolia,
+            // conceroNetworks.avalancheFuji
+        ],
+        infra: [
+            conceroNetworks.arbitrumSepolia,
+            // conceroNetworks.avalancheFuji,
+            conceroNetworks.baseSepolia,
+        ],
     },
     mainnet: {
         parentPool: [conceroNetworks.base],

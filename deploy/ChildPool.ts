@@ -32,12 +32,11 @@ const deployChildPoolImplementation: (
     const { linkToken, ccipRouter, type } = conceroNetworks[name]
 
     const defaultArgs = {
-        conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
-        childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
         linkToken: linkToken,
         ccipRouter: ccipRouter,
         usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
         owner: deployer,
+        lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
         poolMessengers,
     }
 
@@ -46,9 +45,9 @@ const deployChildPoolImplementation: (
 
     log("Deploying...", "deployChildPool", name)
 
-    const deployChildPool = (await deploy("ChildPool", {
+    const deployChildPool = (await deploy("LancaChildPool", {
         from: deployer,
-        args: [args.childProxyAddress, args.linkToken, args.owner, args.ccipRouter, args.usdc, args.poolMessengers],
+        args: [args.owner, args.usdc, args.linkToken, args.lancaBridge, args.ccipRouter, args.poolMessengers],
         log: true,
         autoMine: true,
         maxFeePerGas,
@@ -63,4 +62,4 @@ const deployChildPoolImplementation: (
 }
 
 export default deployChildPoolImplementation
-deployChildPoolImplementation.tags = ["ChildPool"]
+deployChildPoolImplementation.tags = ["LancaChildPool"]

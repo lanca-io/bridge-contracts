@@ -36,14 +36,14 @@ export async function upgradeProxyImplementation(hre: any, proxyType: ProxyEnum,
     const { walletClient, publicClient } = getFallbackClients(conceroNetworks[chainName], viemAccount)
 
     const [conceroProxy, conceroProxyAlias] = getEnvAddress(proxyType, chainName)
-    const [proxyAdmin, proxyAdminAlias] = getEnvAddress(proxyType, chainName)
+    const [proxyAdmin, proxyAdminAlias] = getEnvAddress(`${proxyType}Admin`, chainName)
     const [newImplementation, newImplementationAlias] = getEnvAddress(implementationKey, chainName)
     const [pauseDummy, pauseAlias] = getEnvAddress("pause", chainName)
 
     const implementation = shouldPause ? pauseDummy : newImplementation
     const implementationAlias = shouldPause ? pauseAlias : newImplementationAlias
 
-    const txHash = await walletClient.writeContract({
+    const { request } = await publicClient.simulateContract({
         address: proxyAdmin,
         abi: proxyAdminAbi,
         functionName: "upgradeAndCall",
@@ -53,7 +53,21 @@ export async function upgradeProxyImplementation(hre: any, proxyType: ProxyEnum,
         ...writeContractConfig,
     })
 
-    const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash })
+    const txHash = await walletClient.writeContract(request)
+
+    const { cumulativeGasUsed, status } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
+        hash: txHash,
+    })
+
+    if (status !== "success") {
+        err(
+            `Upgrade failed: ${conceroProxyAlias}.implementation -> ${implementationAlias}`,
+            "upgradeProxyImplementation",
+            chainName,
+        )
+        return
+    }
 
     log(
         `Upgraded via ${proxyAdminAlias}: ${conceroProxyAlias}.implementation -> ${implementationAlias}. Gas : ${formatGas(cumulativeGasUsed)}, hash: ${txHash}`,

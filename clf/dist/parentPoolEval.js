@@ -4,7 +4,7 @@ try {
     const u = m + 'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'
     const q =
         m +
-        'lanca/bridge-contracts/' +
+        'lanca-io/bridge-contracts/refs/heads/' +
         'master' +
         `/clf/dist/pool/${f === '0x03' ? 'withdrawalLiquidityCollection' : f === '0x04' ? 'redistributePoolsLiquidity' : 'getChildPoolsLiquidity'}.min.js`
     const [t, p] = await Promise.all([fetch(u), fetch(q)])

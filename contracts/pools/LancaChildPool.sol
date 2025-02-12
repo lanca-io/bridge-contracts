@@ -32,11 +32,11 @@ contract LancaChildPool is
 
     /* CONSTRUCTOR */
     constructor(
-        address link,
         address owner,
-        address ccipRouter,
         address usdc,
+        address link,
         address lancaBridge,
+        address ccipRouter,
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
