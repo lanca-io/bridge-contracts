@@ -13,7 +13,20 @@ async function setParentPoolCap(poolChainName: CNetworkNames) {
     const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaParentPool.sol/LancaParentPool.json")
     const [currentChainPoolAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, poolChainName)
 
+    const currentPoolCup = await publicClient.readContract({
+        address: currentChainPoolAddress,
+        abi: poolAbi,
+        functionName: "getLiquidityCap",
+    })
+
+    if (currentPoolCup === parentPoolLiqCap) {
+        const logMessage = `[Skip] ${currentChainPoolAddress}.setParentPoolCap. Already set`
+        log(logMessage, "setParentPoolCap", poolChainName)
+        return
+    }
+
     const { request: setCapReq } = await publicClient.simulateContract({
+        account: walletClient.account,
         address: currentChainPoolAddress,
         abi: poolAbi,
         functionName: "setPoolCap",
@@ -24,7 +37,7 @@ async function setParentPoolCap(poolChainName: CNetworkNames) {
         hash: setCapHash,
     })
 
-    const logMessage = `[Set] ${currentChainPoolAddress}.cap -> ${parentPoolLiqCap}. Gas: ${setCapGasUsed}`
+    const logMessage = `${currentChainPoolAddress}.cap -> ${parentPoolLiqCap}. Gas: ${setCapGasUsed}`
     log(logMessage, "setParentPoolCap", poolChainName)
 }
 

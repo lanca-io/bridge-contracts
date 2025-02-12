@@ -23,12 +23,10 @@ export async function setDstPools(currentChainPoolName: CNetworkNames) {
         const dstChainPoolName = dstPoolChain.name
         if (currentChainPoolName === dstChainPoolName) continue
         const isDstPoolParent = dstChainPoolName === "baseSepolia" || dstChainPoolName === "base"
-
         const [dstPoolProxy, dstPoolAlias] = getEnvAddress(
             isDstPoolParent ? ProxyEnum.parentPoolProxy : ProxyEnum.childPoolProxy,
             dstPoolChain.name,
         )
-
         const currentDstPool = (await publicClient.readContract({
             address: currentChainPoolAddress,
             abi: poolAbi,
@@ -43,7 +41,28 @@ export async function setDstPools(currentChainPoolName: CNetworkNames) {
         }
 
         if (isParentPool) {
-            console.log("not implemented")
+            const { abi: parentPoolAbi } = await import(
+                "../../artifacts/contracts/pools/LancaParentPool.sol/LancaParentPool.json"
+            )
+
+            const { request: setDstPoolReq } = await publicClient.simulateContract({
+                account: walletClient.account,
+                address: currentChainPoolAddress,
+                abi: parentPoolAbi,
+                functionName: "setDstPool",
+                args: [dstPoolChain.chainSelector, dstPoolProxy, false],
+            })
+
+            const setDstPoolHash = await walletClient.writeContract(setDstPoolReq)
+            const { cumulativeGasUsed, status } = await publicClient.waitForTransactionReceipt({
+                hash: setDstPoolHash,
+            })
+
+            if (status !== "success")
+                throw new Error(`Failed to set dst pool ${dstPoolAlias} on ${currentChainPoolName}`)
+
+            const logMessage = `[Set] ${currentChainPoolAddress}.dstPool${dstPoolAlias}. Gas: ${cumulativeGasUsed}`
+            log(logMessage, "setDstPools", currentChainPoolName)
         } else {
             const { abi: childPoolAbi } = await import(
                 "../../artifacts/contracts/pools/LancaChildPool.sol/LancaChildPool.json"
