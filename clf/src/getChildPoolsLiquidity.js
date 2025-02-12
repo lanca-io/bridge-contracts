@@ -1,5 +1,5 @@
 ;(async () => {
-    const [_, __, ___, chainId] = bytesArgs
+    const [, , , chainId] = bytesArgs
 
     const testnetChainsMap = {
         ['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
@@ -22,7 +22,8 @@
     const BASE_CHAIN_ID = 8453
     const BASE_SEPOLIA_CHAIN_ID = 84532
     const numericChainId = parseInt(chainId, 16)
-    let baseChainSelector, chainsMap
+    let baseChainSelector
+    let chainsMap
 
     if (numericChainId === BASE_SEPOLIA_CHAIN_ID) {
         baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}'

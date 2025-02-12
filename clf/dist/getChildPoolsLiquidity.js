@@ -1,5 +1,5 @@
 ;(async () => {
-    const [_, __, ___, chainId] = bytesArgs
+    const [, , , chainId] = bytesArgs
     const testnetChainsMap = {
         ['10344971235874465080']: {
             urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
@@ -19,7 +19,8 @@
     const BASE_CHAIN_ID = 8453
     const BASE_SEPOLIA_CHAIN_ID = 84532
     const numericChainId = parseInt(chainId, 16)
-    let baseChainSelector, chainsMap
+    let baseChainSelector
+    let chainsMap
     if (numericChainId === BASE_SEPOLIA_CHAIN_ID) {
         baseChainSelector = '10344971235874465080'
         chainsMap = testnetChainsMap
