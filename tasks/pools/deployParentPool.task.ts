@@ -38,6 +38,7 @@ async function deployParentPool(params: DeployInfraParams) {
         const [proxyAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name)
         const { functionsSubIds } = conceroNetworks[name]
         await addClfConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0])
+        await createClaSubscription()
     }
 
     if (uploadSecrets) {
