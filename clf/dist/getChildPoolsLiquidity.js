@@ -42,7 +42,6 @@
     } else {
         throw new Error('Unsupported chainId');
     }
-    console.log(chainsMap);
     const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
     const poolAbi = [
         'function getUsdcLoansInUse() external view returns (uint256)',
