@@ -570,6 +570,32 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.distributeLiquidity(chainSelector, amount, distributeLiquidityRequestId);
     }
 
+    /* PERFORM UPKEEP */
+
+    function test_performUpkeepNotAutomationForwarder_revert() public {
+        bytes memory data = abi.encode("performUpkeep()");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notAutomationForwarder
+            )
+        );
+        s_lancaParentPool.performUpkeep(data);
+    }
+
+    function test_handleOracleFulfillmentOnlyRouterCanFulfill_revert() public {
+        bytes32 requestId = keccak256("requestId");
+        bytes memory delegateCallResponse = abi.encode("delegateCallResponse");
+        bytes memory err = abi.encode("err");
+        address sender = makeAddr("sender");
+
+        vm.prank(sender);
+        vm.expectRevert(
+            abi.encodeWithSelector(ILancaParentPool.OnlyRouterCanFulfill.selector, sender)
+        );
+        s_lancaParentPool.handleOracleFulfillment(requestId, delegateCallResponse, err);
+    }
+
     /* HELPERS */
 
     function _dealUsdcTo(address to, uint256 amount) internal {
