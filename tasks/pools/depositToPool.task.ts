@@ -5,11 +5,13 @@ import { conceroNetworks } from "../../constants"
 import { CNetworkNames } from "../../types/CNetwork"
 import { conceroChains } from "../../constants/liveChains"
 import { getClients } from "../../utils/getViemClients"
-import { getEnvAddress } from "../../utils/getEnvVar"
+import { getEnvAddress, getEnvVar } from "../../utils/getEnvVar"
 import { ProxyEnum, viemReceiptConfig } from "../../constants/deploymentVariables"
 import { decodeEventLog, parseUnits } from "viem"
 import { sleep } from "@nomicfoundation/hardhat-verify/internal/utilities"
 import { handleError } from "../../utils/handleError"
+import { approve } from "../../utils/approve"
+import { networkEnvKeys } from "../../constants/conceroNetworks"
 
 async function depositToPoo(isTestnet: boolean) {
     const parentPoolChain = conceroChains[isTestnet ? "testnet" : "mainnet"].parentPool[0]
@@ -53,6 +55,14 @@ async function depositToPoo(isTestnet: boolean) {
     if (!depositId) throw new Error("Deposit initiated id not found")
 
     await sleep(30_000)
+
+    await approve(
+        getEnvVar(`USDC_${networkEnvKeys[parentPoolChain.name]}`),
+        parentPoolAddress,
+        depositAmountUsdc,
+        walletClient,
+        publicClient,
+    )
 
     const completeDepositReq = (
         await publicClient.simulateContract({
