@@ -7,6 +7,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { BigNumber } from "ethers-v5"
 import updateEnvVariable from "../../utils/updateEnvVariable"
 import { EnvFileName } from "../../types/deploymentVariables"
+import { ethers } from "hardhat"
 
 export interface UpkeepRegisterArgs {
     linkTokenAddress: Address
