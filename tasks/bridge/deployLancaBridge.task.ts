@@ -37,7 +37,7 @@ async function deployConceroRouter(params: DeployInfraParams) {
 
     if (deployImplementation) {
         await deployLancaBridgeImplementation(hre, params)
-        await upgradeProxyImplementation(hre, ProxyEnum.lancaBridge, false)
+        await upgradeProxyImplementation(hre, ProxyEnum.lancaBridgeProxy, false)
     }
 
     if (setVars) {

@@ -1,9 +1,11 @@
 import { readFileSync, writeFileSync } from "fs"
 import path from "path"
 import log from "./log"
-import { envPrefixes, networkEnvKeys } from "../constants"
+
 import { CNetworkNames } from "../types/CNetwork"
 import { EnvFileName, EnvPrefixes } from "../types/deploymentVariables"
+import { envPrefixes } from "../constants/deploymentVariables"
+import { networkEnvKeys } from "../constants/conceroNetworks"
 
 export function updateEnvVariable(key: string, newValue: string, envFileName: EnvFileName) {
     const filePath = path.join(__dirname, `../.env.${envFileName}`)

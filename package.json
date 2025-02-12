@@ -17,7 +17,7 @@
     "format:ts": "prettier --write ./**/*.ts",
     "format:sol": "prettier --write ./*.sol ./contracts/**/*.sol ./test/**/*.sol",
     "format": "yarn format:ts && yarn format:sol",
-    "clean:hardhat": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
+    "clean:hardhat": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments ./coverage_report",
     "clean:forge": "forge clean",
     "clean": "yarn run clean:hardhat && yarn run clean:forge",
     "prepare": "husky"

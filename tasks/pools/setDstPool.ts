@@ -14,7 +14,9 @@ export async function setDstPools(poolChainName: CNetworkNames) {
     const { publicClient, walletClient } = getFallbackClients(cChain)
     const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaPoolCommon.sol/LancaPoolCommon.json")
     const [currentChainPoolAddress] = getEnvAddress(
-        poolChainName === "baseSepolia" || poolChainName === "base" ? ProxyEnum.parentPool : ProxyEnum.childPool,
+        poolChainName === "baseSepolia" || poolChainName === "base"
+            ? ProxyEnum.parentPoolProxy
+            : ProxyEnum.childPoolProxy,
         poolChainName,
     )
 
@@ -24,8 +26,8 @@ export async function setDstPools(poolChainName: CNetworkNames) {
 
         const [dstPoolProxy, dstPoolAlias] = getEnvAddress(
             dstChainPoolName === "base" || dstChainPoolName === "baseSepolia"
-                ? ProxyEnum.parentPool
-                : ProxyEnum.childPool,
+                ? ProxyEnum.parentPoolProxy
+                : ProxyEnum.childPoolProxy,
             dstPoolChain.name,
         )
 

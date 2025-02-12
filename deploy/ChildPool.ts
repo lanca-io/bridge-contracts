@@ -7,6 +7,7 @@ import { getEnvVar } from "../utils"
 import { poolMessengers } from "../constants"
 import { getGasParameters } from "../utils/getGasPrice"
 import { CNetworkNames } from "../types/CNetwork"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 interface ConstructorArgs {
     conceroProxyAddress?: string
@@ -52,6 +53,7 @@ const deployChildPoolImplementation: (
         autoMine: true,
         maxFeePerGas,
         maxPriorityFeePerGas,
+        waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 
     if (live) {

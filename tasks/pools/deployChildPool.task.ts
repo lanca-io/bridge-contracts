@@ -29,13 +29,13 @@ async function deployChildPool(params: DeployInfraParams) {
     const name = hre.network.name as CNetworkNames
 
     if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.childPool)
-        await deployTransparentProxy(hre, ProxyEnum.childPool)
+        await deployProxyAdmin(hre, ProxyEnum.childPoolProxy)
+        await deployTransparentProxy(hre, ProxyEnum.childPoolProxy)
     }
 
     if (deployImplementation) {
         await deployChildPoolImplementation(hre)
-        await upgradeProxyImplementation(hre, ProxyEnum.childPool, false)
+        await upgradeProxyImplementation(hre, ProxyEnum.childPoolProxy, false)
     }
 
     if (setVars) {

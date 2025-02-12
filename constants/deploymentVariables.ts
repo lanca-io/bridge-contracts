@@ -19,20 +19,27 @@ export const writeContractConfig: WriteContractParameters = {
 }
 
 export enum ProxyEnum {
-    lancaBridge = "lancaBridge",
-    parentPool = "parentPool",
-    childPool = "childPool",
-    orchestrator = "orchestrator",
+    lancaBridgeProxy = "lancaBridgeProxy",
+    parentPoolProxy = "parentPoolProxy",
+    childPoolProxy = "childPoolProxy",
+    orchestratorProxy = "orchestratorProxy",
 }
 
 export const envPrefixes: EnvPrefixes = {
     parentPoolProxyAdmin: "PARENT_POOL_PROXY_ADMIN",
-    lancaBridge: "LANCA_BRIDGE",
-    parentPool: "PARENT_POOL",
+    lancaBridgeProxy: "LANCA_BRIDGE",
+    parentPoolProxy: "PARENT_POOL_PROXY",
     childPoolProxyAdmin: "CHILD_POOL_PROXY_ADMIN",
+    childPoolProxy: "CHILD_POOL_PROXY",
     childPool: "CHILD_POOL",
-    create3Factory: "CREATE3_FACTORY",
+    parentPool: "PARENT_POOL",
+    lpToken: "LPTOKEN",
+    orchestratorProxy: "ORCHESTRATOR_PROXY",
+    orchestrator: "ORCHESTRATOR",
     pause: "CONCERO_PAUSE",
 }
 
 export const parentPoolLiqCap = parseUnits("60000", 18)
+export const parentPoolClfSecretsSlotId = "1"
+export const PARENT_POOL_TESTNET_WITHDRAWAL_COOLDOWN_SECONDS = 60
+export const PARENT_POOL_MAINNET_WITHDRAWAL_COOLDOWN_SECONDS = 604_800

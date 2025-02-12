@@ -6,6 +6,7 @@ import { Deployment } from "hardhat-deploy/types"
 import { getGasParameters } from "../utils/getGasPrice"
 import { CNetworkNames } from "../types/CNetwork"
 import updateEnvVariable from "../utils/updateEnvVariable"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 interface ConstructorArgs {
     conceroProxyAddress?: string
@@ -52,6 +53,7 @@ const deployLancaBridgeImplementation: (
         autoMine: true,
         maxFeePerGas: maxFeePerGas.toString(),
         maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 
     if (live) {

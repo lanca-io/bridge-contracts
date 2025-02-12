@@ -4,6 +4,7 @@ import conceroNetworks, { networkEnvKeys } from "../constants/conceroNetworks"
 import updateEnvVariable from "../utils/updateEnvVariable"
 import log from "../utils/log"
 import { getEnvVar, getFallbackClients } from "../utils"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 interface ConstructorArgs {
     parentProxyAddress?: string
@@ -34,6 +35,7 @@ const deployLPToken: (hre: HardhatRuntimeEnvironment, constructorArgs?: Construc
             log: true,
             autoMine: true,
             gasPrice,
+            waitConfirmations: viemReceiptConfig.confirmations,
         })) as Deployment
 
         if (live) {

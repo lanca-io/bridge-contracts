@@ -9,6 +9,7 @@ const ENV_FILES = [
     ".env.deployments.mainnet",
     ".env.deployments.testnet",
     ".env.wallets",
+    ".env.addresses",
 ]
 
 /**

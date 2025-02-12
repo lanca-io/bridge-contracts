@@ -8,12 +8,14 @@ import { conceroChains } from "../../constants/liveChains"
 import { verifyContractVariables } from "../verifyContractVariables.task"
 import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
 import deployTransparentProxy from "../../deploy/TransparentProxy"
-import { ProxyEnum } from "../../constants/deploymentVariables"
+import { parentPoolClfSecretsSlotId, ProxyEnum } from "../../constants/deploymentVariables"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
 import { getEnvAddress } from "../../utils/getEnvVar"
 import { addClfConsumer } from "../clf/addClfConsumer.task"
 import deployParentPoolImplementation from "../../deploy/ParentPool"
 import { setParentPoolVars } from "./setParentPoolVars"
+import { uploadClfSecrets } from "../clf/uploadClfSecrets.task"
+import deployParentPoolClfClfImplementation from "../../deploy/ParenPoolCLFCLA"
 
 interface DeployInfraParams {
     hre: any
@@ -27,20 +29,25 @@ interface DeployInfraParams {
 }
 
 async function deployParentPool(params: DeployInfraParams) {
-    const { hre, deployableChains, deployProxy, deployImplementation, setVars } = params
+    const { hre, deployProxy, deployImplementation, setVars, uploadSecrets } = params
     const name = hre.network.name as CNetworkNames
 
     if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.conceroRouterProxy)
-        await deployTransparentProxy(hre, ProxyEnum.conceroRouterProxy)
+        await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy)
+        await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy)
         const [proxyAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name)
         const { functionsSubIds } = conceroNetworks[name]
         await addClfConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0])
     }
 
+    if (uploadSecrets) {
+        await uploadClfSecrets([conceroNetworks[name]], parentPoolClfSecretsSlotId)
+    }
+
     if (deployImplementation) {
+        await deployParentPoolClfClfImplementation(hre)
         await deployParentPoolImplementation(hre, params)
-        await upgradeProxyImplementation(hre, ProxyEnum.parentPool, false)
+        await upgradeProxyImplementation(hre, ProxyEnum.parentPoolProxy, false)
     }
 
     if (setVars) {
@@ -52,6 +59,7 @@ task("deploy-parent-pool", "Deploy the Lanca parent pool")
     .addFlag("deployproxy", "Deploy the proxy")
     .addFlag("deployimplementation", "Deploy the implementation")
     .addFlag("setvars", "Set the contract variables")
+    .addFlag("uploadsecrets", "Upload the secrets")
     .setAction(async taskArgs => {
         compileContracts({ quiet: true })
 

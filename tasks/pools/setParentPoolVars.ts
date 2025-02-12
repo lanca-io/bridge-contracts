@@ -11,7 +11,7 @@ async function setParentPoolCap(poolChainName: CNetworkNames) {
     const cChain = conceroNetworks[poolChainName]
     const { publicClient, walletClient } = getFallbackClients(cChain)
     const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaParentPool.sol/LancaParentPool.json")
-    const [currentChainPoolAddress] = getEnvAddress(ProxyEnum.parentPool, poolChainName)
+    const [currentChainPoolAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, poolChainName)
 
     const { request: setCapReq } = await publicClient.simulateContract({
         address: currentChainPoolAddress,

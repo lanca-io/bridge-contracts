@@ -36,10 +36,10 @@ contract LancaParentPoolCLFCLA is
     /* IMMUTABLE VARIABLES */
     bytes32 private immutable i_clfDonId;
     uint64 private immutable i_clfSubId;
-    uint8 internal immutable i_donHostedSecretsSlotId;
-    uint64 internal immutable i_donHostedSecretsVersion;
-    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
-    bytes32 internal immutable i_ethersHashSum;
+    uint8 internal immutable i_clfSecretsSlotId;
+    uint64 internal immutable i_clfSecretsVersion;
+    bytes32 internal immutable i_collectLiquidityJsCodeHash;
+    bytes32 internal immutable i_ethersJsHash;
     uint256 internal immutable i_withdrawalCooldownSeconds;
 
     constructor(
@@ -48,18 +48,18 @@ contract LancaParentPoolCLFCLA is
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,
-        uint8 donHostedSecretsSlotId,
-        uint64 donHostedSecretsVersion,
-        bytes32 collectLiquidityJsCodeHashSum,
-        bytes32 ethersHashSum,
+        uint8 clfSecretsSlotId,
+        uint64 clfSecretsVersion,
+        bytes32 collectLiquidityJsCodeHash,
+        bytes32 ethersJsHash,
         uint256 withdrawalCooldownSeconds
     ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
-        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = donHostedSecretsVersion;
-        i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
-        i_ethersHashSum = ethersHashSum;
+        i_clfSecretsSlotId = clfSecretsSlotId;
+        i_clfSecretsVersion = clfSecretsVersion;
+        i_collectLiquidityJsCodeHash = collectLiquidityJsCodeHash;
+        i_ethersJsHash = ethersJsHash;
         i_usdc = IERC20(usdc);
         i_withdrawalCooldownSeconds = withdrawalCooldownSeconds;
     }
@@ -341,7 +341,7 @@ contract LancaParentPoolCLFCLA is
     function _sendRequest(bytes[] memory args) internal returns (bytes32) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(JS_CODE);
-        req.addDONHostedSecrets(i_donHostedSecretsSlotId, i_donHostedSecretsVersion);
+        req.addDONHostedSecrets(i_clfSecretsSlotId, i_clfSecretsVersion);
         req.setBytesArgs(args);
 
         return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
@@ -371,8 +371,8 @@ contract LancaParentPoolCLFCLA is
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {
         bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(i_ethersHashSum);
+        args[0] = abi.encodePacked(i_collectLiquidityJsCodeHash);
+        args[1] = abi.encodePacked(i_ethersJsHash);
         args[2] = abi.encodePacked(
             ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
         );

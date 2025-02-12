@@ -10,6 +10,7 @@ import { CNetworkNames } from "../types/CNetwork"
 import { getHashSum } from "../utils/getHashSum"
 import { ClfJsCodeType, getClfJsCode } from "../utils/getClfJsCode"
 import { parseUnits } from "viem"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 const deployParentPoolImplementation: (
     hre: HardhatRuntimeEnvironment,
@@ -33,7 +34,7 @@ const deployParentPoolImplementation: (
             ccipRouter: ccipRouter,
             automationForwarder: getEnvVar(`PARENT_POOL_AUTOMATION_FORWARDER_${networkEnvKeys[name]}`),
             owner: deployer,
-            parentPoolCLFCLA: getEnvVar(`PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`),
+            lancaParentPoolCLFCLA: getEnvVar(`PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`),
             lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
             clfRouter: functionsRouter,
             messengers: poolMessengers,
@@ -54,13 +55,14 @@ const deployParentPoolImplementation: (
 
     log("Deploying...", `deployParentPool, ${deployer}`, name)
 
-    const deployParentPool = (await deploy("ParentPool", {
+    const deployParentPool = (await deploy("LancaParentPool", {
         from: deployer,
-        args: [args.addressConfig, args.tokenConfig, args.hashConfig, args.poolConfig],
+        args: [args.tokenConfig, args.addressConfig, args.hashConfig, args.poolConfig],
         log: true,
         autoMine: true,
         maxFeePerGas,
         maxPriorityFeePerGas,
+        waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 
     if (live) {
@@ -70,4 +72,4 @@ const deployParentPoolImplementation: (
 }
 
 export default deployParentPoolImplementation
-deployParentPoolImplementation.tags = ["ParentPool"]
+deployParentPoolImplementation.tags = ["LancaParentPool"]
