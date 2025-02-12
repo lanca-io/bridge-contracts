@@ -87,4 +87,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
         return messengers;
     }
+
+    function exposed_getDistributeLiquidityRequestProcessed(
+        bytes32 requestId
+    ) public view returns (bool) {
+        return s_distributeLiquidityRequestProcessed[requestId];
+    }
 }

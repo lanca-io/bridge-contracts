@@ -182,6 +182,30 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(lancaParentPoolBalanceAfter, 0);
     }
 
+    function testFuzz_distributeLiquidity(
+        uint64 chainSelector,
+        uint256 amountToSend,
+        bytes32 requestId
+    ) public {
+        vm.assume(amountToSend > 0 && amountToSend < 100000 * USDC_DECIMALS);
+
+        s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, makeAddr("pool"));
+        address messenger = s_lancaParentPool.exposed_getMessengers()[0];
+
+        _dealUsdcTo(address(s_lancaParentPool), amountToSend);
+
+        vm.startPrank(messenger);
+        IERC20(s_usdc).approve(address(s_lancaParentPool), amountToSend);
+        s_lancaParentPool.distributeLiquidity(chainSelector, amountToSend, requestId);
+
+        vm.stopPrank();
+
+        vm.assertEq(
+            s_lancaParentPool.exposed_getDistributeLiquidityRequestProcessed(requestId),
+            true
+        );
+    }
+
     /* HANDLE ORACLE FULFILLMENT */
 
     function test_handleOracleFulfillmentDepositGetChildPoolsLiqWithError() public {
