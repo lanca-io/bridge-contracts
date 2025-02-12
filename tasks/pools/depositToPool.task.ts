@@ -41,12 +41,12 @@ async function depositToPoo(isTestnet: boolean) {
     const depositId = startDepositTxLogs.find(log => {
         try {
             const decodedLog = decodeEventLog({ abi: parentPoolAbi, data: log.data, topics: log.topics })
-            console.log(decodedLog)
             if (decodedLog.eventName === "DepositInitiated") return true
+            return false
         } catch (e) {
             return false
         }
-    })?.requestId
+    }).topics[1]
 
     if (!depositId) throw new Error("Deposit initiated id not found")
 

@@ -19,7 +19,8 @@
       {
         "files": "./clf/**",
         "options": {
-          "singleQuote": true
+          "singleQuote": true,
+          "semi": true
         }
       }
     ]

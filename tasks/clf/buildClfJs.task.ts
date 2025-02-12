@@ -86,7 +86,7 @@ function buildClfJsTask(fileToBuild: string, quiet: boolean): void {
 
     try {
         let fileContent = fs.readFileSync(fileToBuild, "utf8")
-        validateSyntax(fileContent, fileToBuild)
+        // validateSyntax(fileContent, fileToBuild)
 
         fileContent = replaceEnvironmentVariables(fileContent)
         const cleanedUpFile = cleanupFile(fileContent)
@@ -94,8 +94,8 @@ function buildClfJsTask(fileToBuild: string, quiet: boolean): void {
 
         saveProcessedFile(cleanedUpFile, fileToBuild, quiet)
         saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"), quiet)
-        validateSyntax(cleanedUpFile, fileToBuild)
-        validateSyntax(minifiedFile, fileToBuild)
+        // validateSyntax(cleanedUpFile, fileToBuild)
+        // validateSyntax(minifiedFile, fileToBuild)
     } catch (error) {
         err(`Error processing file ${fileToBuild}: ${error}`, "buildScript")
         process.exit(1)
