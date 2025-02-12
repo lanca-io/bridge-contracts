@@ -8,6 +8,18 @@
             usdcAddress: '${USDC_BASE_SEPOLIA}',
             poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
         },
+        ['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
+            urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
+            chainId: '0x66eee',
+            usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+            poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+        },
+        ['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
+            urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+            chainId: '0xa869',
+            usdcAddress: '${USDC_FUJI}',
+            poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+        },
     };
 
     const mainnetChainsMap = {

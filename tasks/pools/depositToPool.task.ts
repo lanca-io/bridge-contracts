@@ -6,9 +6,10 @@ import { CNetworkNames } from "../../types/CNetwork"
 import { conceroChains } from "../../constants/liveChains"
 import { getClients } from "../../utils/getViemClients"
 import { getEnvAddress } from "../../utils/getEnvVar"
-import { ProxyEnum } from "../../constants/deploymentVariables"
+import { ProxyEnum, viemReceiptConfig } from "../../constants/deploymentVariables"
 import { decodeEventLog, parseUnits } from "viem"
 import { sleep } from "@nomicfoundation/hardhat-verify/internal/utilities"
+import { handleError } from "../../utils/handleError"
 
 async function depositToPoo(isTestnet: boolean) {
     const parentPoolChain = conceroChains[isTestnet ? "testnet" : "mainnet"].parentPool[0]
@@ -32,6 +33,7 @@ async function depositToPoo(isTestnet: boolean) {
     ).request
     const startDepositTxHash = await walletClient.writeContract(startDepositReq)
     const { status: startDepositTxStatus, logs: startDepositTxLogs } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: startDepositTxHash,
     })
     if (startDepositTxStatus !== "success") throw new Error("Start deposit failed")
@@ -63,8 +65,9 @@ async function depositToPoo(isTestnet: boolean) {
     ).request
 
     const completeDepositTxHash = await walletClient.writeContract(completeDepositReq)
-    const completeDepositTxStatus = (await publicClient.waitForTransactionReceipt({ hash: completeDepositTxHash }))
-        .status
+    const completeDepositTxStatus = (
+        await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: completeDepositTxHash })
+    ).status
 
     if (completeDepositTxStatus !== "success") throw new Error("Complete deposit failed")
 
@@ -72,12 +75,16 @@ async function depositToPoo(isTestnet: boolean) {
 }
 
 task("deposit-to-pool", "Deposit to the pool").setAction(async taskArgs => {
-    const hre: HardhatRuntimeEnvironment = require("hardhat")
-    compileContracts({ quiet: true })
-    const name = hre.network.name as CNetworkNames
-    const isTestnet = conceroNetworks[name].type === "testnet"
+    try {
+        const hre: HardhatRuntimeEnvironment = require("hardhat")
+        compileContracts({ quiet: true })
+        const name = hre.network.name as CNetworkNames
+        const isTestnet = conceroNetworks[name].type === "testnet"
 
-    await depositToPoo(isTestnet)
+        await depositToPoo(isTestnet)
+    } catch (error) {
+        handleError(error, "deposit-to-pool")
+    }
 })
 
 export default {}

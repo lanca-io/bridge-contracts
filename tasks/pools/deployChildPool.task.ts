@@ -45,8 +45,6 @@ async function deployChildPool(params: DeployInfraParams) {
             await setChildPoolVars(deployableChains[0].name)
         }
     } catch (error) {
-        console.log(error)
-
         if (error instanceof ContractFunctionExecutionError) {
             err(`Short message: ${error.shortMessage} \n Meta messages: ${error.metaMessages}`, "deployChildPool")
         } else {

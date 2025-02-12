@@ -6,7 +6,7 @@ try {
         m +
         'lanca-io/bridge-contracts/refs/heads/' +
         'master' +
-        `/clf/dist/pool/${f === '0x03' ? 'withdrawalLiquidityCollection' : f === '0x04' ? 'redistributePoolsLiquidity' : 'getChildPoolsLiquidity'}.min.js`;
+        `/clf/dist/${f === '0x03' ? 'withdrawalLiquidityCollection' : f === '0x04' ? 'redistributePoolsLiquidity' : 'getChildPoolsLiquidity'}.min.js`;
     const [t, p] = await Promise.all([fetch(u), fetch(q)]);
     const [e, c] = await Promise.all([t.text(), p.text()]);
     const g = async s => {
