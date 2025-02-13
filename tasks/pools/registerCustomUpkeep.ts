@@ -1,108 +1,147 @@
 import { CNetworkNames } from "../../types/CNetwork"
-import { getEnvVar } from "../../utils"
-import { Address, Hex } from "viem"
+import { Address, erc20Abi, Hex } from "viem"
 import log, { err } from "../../utils/log"
 import { conceroNetworks } from "../../constants"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { BigNumber } from "ethers-v5"
-import updateEnvVariable from "../../utils/updateEnvVariable"
+import { updateEnvAddress } from "../../utils/updateEnvVariable"
 import { EnvFileName } from "../../types/deploymentVariables"
-import { ethers } from "hardhat"
+import { getEnvAddress } from "../../utils/getEnvVar"
+import { getFallbackClients } from "../../utils"
+import { RegistrationParamsAbi as RegistrationParamsAbiFunc } from "../../abi/AutomationRegistryInterfaceAbi"
+import { Hash } from "viem"
 
-export interface UpkeepRegisterArgs {
-    linkTokenAddress: Address
-    depositAmount: bigint | BigNumber
-    upkeepName: string
-    upkeepContractAddress: Address
-    email: string
-    // @dev 0x by default
-    ocrConfig: Hex
-    // @dev (0 = MANUAL)
-    source: number
-    data: string
+
+// @dev 0 is Conditional upkeep, 1 is Log trigger upkeep
+export type TriggerType = 0 | 1
+
+export interface RegistrationParams {
+    upkeepContract: Address
+    amount: bigint
+    adminAddress: Address
+    gasLimit: number
+    triggerType: TriggerType
+    billingToken: Address
+    name: string
+    encryptedEmail: Hex
+    checkData: Hex
+    // @dev 0x for conditional upkeeps
+    triggerConfig: Hex
+    offchainConfig: Hex
 }
 
-export async function registerCustomUpkeep(
-    hre: HardhatRuntimeEnvironment,
-    args: UpkeepRegisterArgs,
-    gasLimit: number = 500000,
-) {
-    const [deployer] = await hre.ethers.getSigners()
-    const chainName = hre.network.name as CNetworkNames
-    const { linkToken, type } = conceroNetworks[chainName]
+export interface UpkeepInfo {
+    registryAddress: Address
+    upkeepId: string
+    registrationHash: Hash
+    name: string
+    target: Address
+    performGas: string
+    balance: string
+    checkData: Hex
+    admin: Address
+    maxValidBlockNumber: string
+    lastPerformBlockNumber: string
+    status: string
+    amountSpent: string
+    offchainConfig: Hex
+    minBalance: string
+    registrarAddress: Address
+    forwarderAddress: Address
+    proposedAdmin: Address | null
+    triggerType: string
+    triggerConfig: string
+    network: string
+    createdAt: string
+    billingToken: Address
+}
 
-    const keepersRegistrarAddress = getEnvVar(`AUTOMATION_REGISTRY_${chainName}`) as Address
+export async function registerCustomUpkeep(hre: HardhatRuntimeEnvironment, args: RegistrationParams) {
+    const { deployer } = await hre.getNamedAccounts()
+    const cName = hre.network.name as CNetworkNames
+    const cNetwork = conceroNetworks[cName]
+    const { publicClient, walletClient } = getFallbackClients(cNetwork)
+    const { linkToken, type } = cNetwork
+
+    const [keepersRegistrarAddress] = getEnvAddress("automationRegistrar", cName)
+
     const linkTokenAddress = linkToken as Address
 
-    log(`🔗 Keepers Registrar Address: ${keepersRegistrarAddress}`, "registerCustomUpkeep", chainName)
-    log(`🔗 LINK Token Address: ${linkTokenAddress}`, "registerCustomUpkeep", chainName)
+    log(`🔗 Keepers Registrar Address: ${keepersRegistrarAddress}`, "registerCustomUpkeep", cName)
+    log(`🔗 LINK Token Address: ${linkTokenAddress}`, "registerCustomUpkeep", cName)
 
-    const registrar = hre.chainlink.automationRegistrar
+    const { upkeepContract } = args
 
-    const { depositAmount, upkeepName, data, email, ocrConfig, source, upkeepContractAddress } = args
-    log(`🔗 Using Upkeep Contract: ${upkeepContractAddress}`, "registerCustomUpkeep", chainName)
+    log(`🔗 Using Upkeep Contract: ${upkeepContract}`, "registerCustomUpkeep", cName)
+    log("🛠  Registering Upkeep...", "registerCustomUpkeep", cName)
 
-    const encryptedEmail = ethers.encodeBytes32String(email)
-    const sender = deployer.address
-    const adminAddress = deployer.address
-    const checkData = ethers.toUtf8Bytes(data)
-
-    log("🛠  Registering Upkeep via Hardhat Chainlink plugin...", "registerCustomUpkeep", chainName)
+    args.adminAddress = deployer.toLowerCase() as Address
 
     try {
-        const { transactionHash, upkeepId } = await registrar.registerUpkeep(
-            keepersRegistrarAddress,
-            linkTokenAddress,
-            depositAmount,
-            upkeepName,
-            encryptedEmail,
-            upkeepContractAddress,
-            gasLimit,
-            adminAddress,
-            checkData,
-            ocrConfig,
-            source,
-            sender,
-        )
+        log(`🔗 Approving LINK tokens for Registrar...`, "registerCustomUpkeep", cName)
 
-        log(
-            `✅ Upkeep registered! Tx Hash: ${transactionHash}, Upkeep ID: ${upkeepId.toString()}`,
-            "registerCustomUpkeep",
-            chainName,
-        )
+        const { request: approveRequest } = await publicClient.simulateContract({
+            account: walletClient.account,
+            functionName: "approve",
+            args: [keepersRegistrarAddress, args.amount],
+            abi: erc20Abi,
+            address: linkTokenAddress,
+        })
 
-        const automationForwarderAddress = await getAutomationForwarderById(keepersRegistrarAddress, upkeepId)
+        const approveTxHash = await walletClient.writeContract(approveRequest)
+
+        log(`✅ Tokens approved! TxHash: ${approveTxHash}`, "registerCustomUpkeep", cName)
+
+        const { request } = await publicClient.simulateContract({
+            account: walletClient.account,
+            functionName: "registerUpkeep",
+            args: [args],
+            abi: RegistrationParamsAbiFunc,
+            address: keepersRegistrarAddress.toLocaleLowerCase() as Address,
+        })
+
+        const upkeepId = BigInt(await walletClient.writeContract(request)).toString()
+
+        log(`✅ Upkeep registered! Upkeep ID: ${upkeepId}`, "registerCustomUpkeep", cName)
+        log(`🔍 Fetching automationForwarder for Upkeep ID: ${upkeepId}...`, "registerCustomUpkeep", cName)
+
+        const { forwarderAddress } = await getUpkeepInfo(upkeepId, cName)
+
+        log(`✅ Found automationForwarder: ${forwarderAddress}`, "registerCustomUpkeep", cName)
 
         const envFileName = `deployments.${type}` as EnvFileName
 
-        log(`🔄 Updating automationForwarder in ${envFileName}...`, "registerCustomUpkeep", chainName)
-        updateEnvVariable(`AUTOMATION_FORWARDER_${chainName}`, automationForwarderAddress, envFileName)
+        log(`🔄 Updating automationForwarder in ${envFileName}...`, "registerCustomUpkeep", cName)
+        updateEnvAddress("automationForwarder", cName, forwarderAddress, envFileName)
 
-        log(`✅ automationForwarder updated in .env.${envFileName}!`, "registerCustomUpkeep", chainName)
+        log(`✅ automationForwarder updated in .env.${envFileName}!`, "registerCustomUpkeep", cName)
     } catch (error) {
-        err(`❌ Error registering upkeep: ${error.message}`, "registerCustomUpkeep", chainName)
+        err(`❌ Error registering upkeep: ${error.message}`, "registerCustomUpkeep", cName)
         throw error
     }
 }
 
-async function getAutomationForwarderById(keepersRegistrarAddress: Address, upkeepId: BigNumber): Promise<Address> {
-    console.log(`🔍 Fetching automationForwarder for Upkeep ID: ${upkeepId}...`)
+async function getUpkeepInfo(id: string, network: CNetworkNames): Promise<UpkeepInfo> {
+    const chainlinkNetworks: Record<CNetworkNames, string> = {
+        baseSepolia: "ethereum-testnet-sepolia-base-1",
+        avalancheFuji: "avalanche-testnet-fuji",
+        arbitrumSepolia: "ethereum-testnet-sepolia-arbitrum-1",
+        optimismSepolia: "ethereum-testnet-sepolia-optimism-1",
+        polygonAmoy: "polygon-testnet-amoy",
+        sepolia: "ethereum-testnet-sepolia",
+        localhost: "",
 
-    const AutomationRegistryInterfaceAbi = [
-        "function getUpkeep(uint256 id) external view returns (tuple(uint96 balance, address lastKeeper, uint64 executeGas, uint96 amountSpent, address admin, uint64 maxValidBlocknumber, address target, uint32 numUpkeeps, address forwarder))",
-    ]
+        avalanche: "avalanche-mainnet",
+        arbitrum: "ethereum-mainnet-arbitrum-1",
+        base: "ethereum-mainnet-base-1",
+        optimism: "ethereum-mainnet-optimism-1",
+        ethereum: "ethereum-mainnet",
+        polygon: "polygon-mainnet",
+        polygonZkEvm: "",
+    }
+    const chainLinkNetwork = chainlinkNetworks[network]
 
-    const [deployer] = await ethers.getSigners()
-
-    const automationRegistryContract = await ethers.getContractAt(
-        AutomationRegistryInterfaceAbi,
-        keepersRegistrarAddress,
-        deployer,
-    )
-
-    const upkeepDetails = await automationRegistryContract.getUpkeep(upkeepId)
-    const automationForwarder = upkeepDetails.forwarder
-
-    console.log(`✅ Found automationForwarder: ${automationForwarder}`)
-    return automationForwarder
+    const url = `https://automation.chain.link/api/query?query=AUTOMATION_UPKEEP_DETAILS_QUERY&variables={"network":"${chainLinkNetwork}","id":"${id}"}`
+    const data = await fetch(url)
+    const json = await data.json()
+    return json.data.allAutomationUpkeeps.nodes[0]
 }
