@@ -12,9 +12,9 @@ import deployParentPoolImplementation from "../../deploy/ParentPool"
 import { setParentPoolVars } from "./setParentPoolVars"
 import { uploadClfSecrets } from "../clf/uploadClfSecrets.task"
 import deployParentPoolClfClfImplementation from "../../deploy/ParenPoolCLFCLA"
-import { registerCustomUpkeep } from "./registerCustomUpkeep"
-import { Address } from "viem"
+import { registerCustomUpkeep, RegistrationParams } from "./registerCustomUpkeep"
 import { getEnvAddress } from "../../utils/getEnvVar"
+import { Address, parseEther } from "viem"
 
 interface DeployInfraParams {
     hre: any
@@ -30,6 +30,8 @@ interface DeployInfraParams {
 async function deployParentPool(params: DeployInfraParams) {
     const { hre, deployProxy, deployImplementation, setVars, uploadSecrets } = params
     const name = hre.network.name as CNetworkNames
+    const { linkToken } = conceroNetworks[name]
+    const { deployer } = hre.getNamedAccounts()
 
     if (deployProxy) {
         // await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy)
@@ -37,15 +39,22 @@ async function deployParentPool(params: DeployInfraParams) {
         const [proxyAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name)
         // const { functionsSubIds } = conceroNetworks[name]
         // await addClfConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0])
-        await registerCustomUpkeep(hre, {
-            linkTokenAddress: conceroNetworks[name].linkToken as Address,
-            depositAmount: 0n,
-            upkeepName: "parent-pool",
-            upkeepContractAddress: proxyAddress,
-            orcConfig: "0x",
-            source: 0,
-            data: "",
-        })
+
+        const args: RegistrationParams = {
+            upkeepContract: proxyAddress.toLowerCase() as Address,
+            amount: parseEther("0.1"),
+            adminAddress: deployer,
+            gasLimit: 500_000,
+            triggerType: 0,
+            billingToken: linkToken?.toLowerCase() as Address,
+            name: "parent-pool",
+            encryptedEmail: "0x",
+            checkData: "0x",
+            triggerConfig: "0x",
+            offchainConfig: "0x",
+        }
+
+        await registerCustomUpkeep(hre, args)
     }
 
     if (uploadSecrets) {
