@@ -37,6 +37,8 @@ export const envPrefixes: EnvPrefixes = {
     orchestratorProxy: "ORCHESTRATOR_PROXY",
     orchestrator: "ORCHESTRATOR",
     pause: "CONCERO_PAUSE",
+    automationForwarder: "AUTOMATION_FORWARDER",
+    automationRegistrar: "AUTOMATION_REGISTRAR",
 }
 
 export const parentPoolLiqCap = parseUnits("60000", 18)

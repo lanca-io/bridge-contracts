@@ -21,6 +21,8 @@ export type EnvPrefixes = ProxyEnvPrefixes & {
     infraMessenger0: string
     infraMessenger1: string
     infraMessenger2: string
+    automationForwarder: string
+    automationRegistrar: string
 }
 
 /**
