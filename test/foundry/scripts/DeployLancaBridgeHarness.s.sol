@@ -21,7 +21,7 @@ contract DeployLancaBridgeHarnessScript is DeployBase {
                 getLinkAddress(),
                 lancaPool,
                 getChainSelector(),
-                7 days
+                3_000e6
             )
         );
 

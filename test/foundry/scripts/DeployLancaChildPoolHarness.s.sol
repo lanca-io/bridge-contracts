@@ -12,7 +12,6 @@ contract DeployLancaChildPoolHarnessScript is DeployBase {
         address link = getLinkAddress();
         address usdc = address(new ERC20Mock("USDC", "USDC", 6)); //getUsdcAddress()
         address ccipRouter = getCcipRouter();
-        address clfRouter = getClfRouter();
         address lancaBridge = makeAddr("lancaBridge");
         address owner = getDeployer();
 

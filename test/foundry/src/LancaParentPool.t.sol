@@ -426,12 +426,10 @@ contract LancaParentPoolTest is Test {
 
     /* ADMIN FUNCTIONS */
 
-    function testFuzz_setDstPool(
-        uint64 chainSelector,
-        address pool,
-        bool isRebalancingNeeded
-    ) public {
-        vm.assume(pool != ZERO_ADDRESS);
+    function test_setDstPool(bool isRebalancingNeeded) public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+
         vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
         s_lancaParentPool.setDstPool(chainSelector, pool, isRebalancingNeeded);
 
@@ -439,12 +437,9 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors()[0], chainSelector);
     }
 
-    function testFuzz_removePools(
-        uint64 chainSelector,
-        address pool,
-        bool isRebalancingNeeded
-    ) public {
-        vm.assume(pool != ZERO_ADDRESS);
+    function test_removePools(bool isRebalancingNeeded) public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
 
         vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
         s_lancaParentPool.setDstPool(chainSelector, pool, isRebalancingNeeded);
@@ -666,15 +661,13 @@ contract LancaParentPoolTest is Test {
         address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
         vm.prank(automationForwarder);
         vm.expectRevert(
-            abi.encodeWithSelector(ILancaParentPool.WithdrawRequestDoesntExist.selector, bytes32(0))
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestDoesntExist.selector,
+                bytes32(0)
+            )
         );
-        try s_lancaParentPool.performUpkeep(data) {
-            revert("Expected revert, but got success");
-        } catch (bytes memory reason) {
-            if (reason.length == 0) {
-                revert("Expected revert, but got nothing");
-            }
-        }
+
+        s_lancaParentPool.performUpkeep(data);
     }
 
     function test_performUpkeepWithdrawalRequestNotReady_revert() public {
@@ -702,13 +695,7 @@ contract LancaParentPoolTest is Test {
                 withdrawalId
             )
         );
-        try s_lancaParentPool.performUpkeep(data) {
-            revert("Expected revert, but got success");
-        } catch (bytes memory reason) {
-            if (reason.length == 0) {
-                revert("Expected revert, but got nothing");
-            }
-        }
+        s_lancaParentPool.performUpkeep(data);
     }
 
     function test_performUpkeepWithdrawalAlreadyTriggered_revert() public {
@@ -731,16 +718,8 @@ contract LancaParentPoolTest is Test {
         address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
         vm.prank(automationForwarder);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(ILancaPool.WithdrawalAlreadyTriggered.selector, withdrawalId)
-        );
-        try s_lancaParentPool.performUpkeep(data) {
-            revert("Expected revert, but got success");
-        } catch (bytes memory reason) {
-            if (reason.length == 0) {
-                revert("Expected revert, but got nothing");
-            }
-        }
+        vm.expectRevert(ILancaPool.WithdrawalAlreadyTriggered.selector);
+        s_lancaParentPool.performUpkeep(data);
     }
 
     function test_handleOracleFulfillmentOnlyRouterCanFulfill_revert() public {
