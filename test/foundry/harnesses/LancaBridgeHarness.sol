@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
 import {LancaBridge} from "contracts/bridge/LancaBridge.sol";
@@ -15,6 +16,13 @@ contract LancaBridgeHarness is LancaBridge {
     /* SETTERS */
     function exposed_setIsBridgeProcessed(bytes32 messageId) public {
         s_isBridgeProcessed[messageId] = true;
+    }
+
+    function exposed_setLancaBridgeContractsByChain(
+        uint64 chainSelector,
+        address lancaBridgeContract
+    ) public {
+        s_lancaBridgeContractsByChain[chainSelector] = lancaBridgeContract;
     }
 
     function exposed_getMaxDstChainGasLimit() public pure returns (uint24) {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/src/Test.sol";
@@ -330,6 +331,8 @@ contract LancaBridgeTest is LancaBridgeTestBase {
 
     /* REVERTS */
 
+    /* BRIDGE */
+
     function testFuzz_bridgeInvalidBridgeToken_revert(address bridgeToken) public {
         vm.assume(bridgeToken != s_usdc);
 
@@ -344,8 +347,8 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         vm.stopPrank();
     }
 
-    function test_bridgeInvalidFeeToken_revert() public {
-        address feeToken = makeAddr("wrong fee token");
+    function testFuzz_bridgeInvalidFeeToken_revert(address feeToken) public {
+        vm.assume(feeToken != s_usdc);
         address sender = makeAddr("sender");
 
         ILancaBridge.BridgeReq memory bridgeReq = _getBaseLancaBridgeReq();
@@ -383,9 +386,35 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         vm.stopPrank();
     }
 
-    function test_conceroReceiveUnauthorizedConceroMessageSender_revert() public {
+    function test_bridgeInsufficientBridgeAmount_revert() public {
+        uint256 amount = 1;
+        ILancaBridge.BridgeReq memory bridgeReq = _getBaseLancaBridgeReq();
+        bridgeReq.amount = amount;
+
+        vm.expectRevert(ILancaBridge.InsufficientBridgeAmount.selector);
+        s_lancaBridge.bridge(bridgeReq);
+    }
+
+    function test_bridgeInvalidDstChainSelector_revert() public {
+        address sender = makeAddr("sender");
+        deal(s_usdc, sender, 100 * USDC_DECIMALS);
+        ILancaBridge.BridgeReq memory bridgeReq = _getBaseLancaBridgeReq();
+
+        s_lancaBridge.exposed_setLancaBridgeContractsByChain(s_chainSelectorArb, ZERO_ADDRESS);
+
+        vm.prank(sender);
+        IERC20(bridgeReq.token).approve(address(s_lancaBridge), bridgeReq.amount);
+
+        vm.prank(sender);
+        vm.expectRevert(ILancaBridge.InvalidDstChainSelector.selector);
+        s_lancaBridge.bridge(bridgeReq);
+    }
+
+    /* CONCERO RECEIVE */
+
+    function testFuzz_conceroReceiveUnauthorizedConceroMessageSender_revert(address sender) public {
         IConceroClient.Message memory conceroMessage = _getBaseConceroMessage();
-        conceroMessage.sender = makeAddr("unauthorized concero message sender");
+        conceroMessage.sender = sender;
 
         vm.prank(s_lancaBridge.getConceroRouter());
         vm.expectRevert(ILancaBridge.UnauthorizedConceroMessageSender.selector);
