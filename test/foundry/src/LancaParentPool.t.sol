@@ -16,6 +16,7 @@ import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
+import {LPToken} from "contracts/pools/LPToken.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -26,6 +27,7 @@ contract LancaParentPoolTest is Test {
     LancaParentPoolHarness internal s_lancaParentPool;
     address internal s_usdc = vm.envAddress("USDC_BASE");
     address internal s_depositor = makeAddr("depositor");
+    address internal proxy;
 
     modifier dealUsdcTo(address to, uint256 amount) {
         _dealUsdcTo(to, amount);
@@ -40,6 +42,8 @@ contract LancaParentPoolTest is Test {
         );
         vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
         s_lancaParentPool.setPoolCap(60_000 * USDC_DECIMALS);
+
+        proxy = s_deployLancaParentPoolHarnessScript.getProxy();
     }
 
     /* FUZZING */
@@ -323,6 +327,9 @@ contract LancaParentPoolTest is Test {
         uint256 amountUsdcToWithdraw = 85_000 * USDC_DECIMALS;
         bytes memory response = abi.encode(amountUsdcToWithdraw);
         bytes memory err;
+
+        /// @dev we shoud mint LPTokens here
+        /// @dev if not minted, the test will fail because of zero totalSupply()
 
         s_lancaParentPool.exposed_setClfReqTypeById(
             clfReqId,
