@@ -536,7 +536,8 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         s_lancaBridge.ccipReceive(ccipMessage);
     }
 
-    function test_ccipReceiveInvalidCcipToken_revert() public {
+    function testFuzz_ccipReceiveInvalidCcipToken_revert(address token) public {
+        vm.assume(token != s_usdc);
         ICcip.CcipSettleMessage memory ccipTxs = ICcip.CcipSettleMessage({
             ccipTxType: ICcip.CcipTxType.withdrawal,
             data: new bytes(0)
@@ -545,7 +546,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         LibCcipClient.EVMTokenAmount[] memory destTokenAmounts = new LibCcipClient.EVMTokenAmount[](
             1
         );
-        destTokenAmounts[0].token = makeAddr("wrong token");
+        destTokenAmounts[0].token = token;
 
         LibCcipClient.Any2EVMMessage memory ccipMessage = LibCcipClient.Any2EVMMessage({
             messageId: keccak256("ccip message id"),

@@ -25,6 +25,8 @@ contract LancaBridgeHarness is LancaBridge {
         s_lancaBridgeContractsByChain[chainSelector] = lancaBridgeContract;
     }
 
+    /* GETTERS */
+
     function exposed_getMaxDstChainGasLimit() public pure returns (uint24) {
         return MAX_DST_CHAIN_GAS_LIMIT;
     }
