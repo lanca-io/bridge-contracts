@@ -74,7 +74,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
         s_loansInUse += amount;
     }
 
-    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+    function completeRebalancing(bytes32 /*id*/, uint256 amount) external onlyLancaBridge {
         amount -= getDstTotalFeeInUsdc(amount);
         s_loansInUse -= amount;
     }

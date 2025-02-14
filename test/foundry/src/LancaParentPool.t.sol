@@ -170,7 +170,6 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.exposed_setDepositFeesSum(amount);
         address deployer = s_deployLancaParentPoolHarnessScript.getDeployer();
         uint256 deployerBalanceBefore = IERC20(s_usdc).balanceOf(deployer);
-        uint256 lancaParentPoolBalanceBefore = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
 
         _dealUsdcTo(address(s_lancaParentPool), amount);
 
@@ -396,7 +395,7 @@ contract LancaParentPoolTest is Test {
     function test_checkUpkeepReturnsFalse() public {
         bytes memory checkData = abi.encode("checkUpkeep");
         vm.prank(s_lancaParentPool.exposed_getAutomationForwarder(), ZERO_ADDRESS);
-        (bool isNeeded, bytes memory res) = s_lancaParentPool.checkUpkeep(checkData);
+        (bool isNeeded, ) = s_lancaParentPool.checkUpkeep(checkData);
         vm.assertEq(isNeeded, false);
     }
 
@@ -448,7 +447,7 @@ contract LancaParentPoolTest is Test {
         vm.assume(pool != ZERO_ADDRESS);
 
         vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
-        s_lancaParentPool.setPools(chainSelector, pool, isRebalancingNeeded);
+        s_lancaParentPool.setDstPool(chainSelector, pool, isRebalancingNeeded);
         uint256 poolChainSelectorsLenBefore = s_lancaParentPool
             .exposed_getPoolChainSelectors()
             .length;

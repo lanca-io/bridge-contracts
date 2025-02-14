@@ -171,7 +171,7 @@ contract LancaChildPoolTest is Test {
             any2EvmMessage
         );
 
-        s_lancaChildPool.exposed_setIsSenderContractAllowed(sourceChainSelector, dstPool, true);
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(sourceChainSelector, dstPool);
 
         vm.prank(dstPool, address(s_lancaChildPool));
 
@@ -466,7 +466,7 @@ contract LancaChildPoolTest is Test {
             any2EvmMessage
         );
 
-        s_lancaChildPool.exposed_setIsSenderContractAllowed(sourceChainSelector, dstPool, true);
+        s_lancaChildPool.exposed_setDstPoolByChainSelector(sourceChainSelector, dstPool);
 
         vm.startPrank(dstPool);
 
