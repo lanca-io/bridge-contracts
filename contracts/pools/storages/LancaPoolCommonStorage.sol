@@ -8,9 +8,6 @@ abstract contract LancaPoolCommonStorage {
 
     mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
 
-    mapping(uint64 chainSelector => mapping(address conceroContract => bool isAllowed))
-        internal s_isSenderContractAllowed;
-
     mapping(bytes32 => bool) internal s_distributeLiquidityRequestProcessed;
 
     /* STORAGE GAP */
@@ -18,7 +15,11 @@ abstract contract LancaPoolCommonStorage {
     uint256[50] private __gap;
 
     /* GETTERS */
-    function getUsdcLoansInUse() external view returns (uint256) {
+    function getUsdcLoansInUse() public view returns (uint256) {
         return s_loansInUse;
+    }
+
+    function getDstPoolByChainSelector(uint64 chainSelector) public view returns (address) {
+        return s_dstPoolByChainSelector[chainSelector];
     }
 }

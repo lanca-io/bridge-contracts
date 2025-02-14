@@ -31,36 +31,35 @@ contract LancaParentPoolCLFCLA is
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
     uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
-        "try{const [b,o,f]=bytesArgs;const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const q=m+'concero/contracts-v1/'+'release'+`/tasks/CLFScripts/dist/pool/${f==='0x02' ? 'withdrawalLiquidityCollection':f==='0x03' ? 'redistributePoolsLiquidity':'getChildPoolsLiquidity'}.min.js`;const [t,p]=await Promise.all([fetch(u),fetch(q)]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);if(r===b.toLowerCase()&& x===o.toLowerCase()){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
+        "try{const [b,o,f]=bytesArgs;const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const q=m+'lanca-io/bridge-contracts/refs/heads/'+'master'+`/clf/dist/${f==='0x03' ? 'withdrawalLiquidityCollection':f==='0x04' ? 'redistributePoolsLiquidity':'getChildPoolsLiquidity'}.min.js`;const [t,p]=await Promise.all([fetch(u),fetch(q)]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);if(r===b.toLowerCase()&& x===o.toLowerCase()){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
 
     /* IMMUTABLE VARIABLES */
     bytes32 private immutable i_clfDonId;
     uint64 private immutable i_clfSubId;
-    uint8 internal immutable i_donHostedSecretsSlotId;
-    uint64 internal immutable i_donHostedSecretsVersion;
-    bytes32 internal immutable i_collectLiquidityJsCodeHashSum;
-    bytes32 internal immutable i_ethersHashSum;
+    uint8 internal immutable i_clfSecretsSlotId;
+    uint64 internal immutable i_clfSecretsVersion;
+    bytes32 internal immutable i_collectLiquidityJsCodeHash;
+    bytes32 internal immutable i_ethersJsHash;
     uint256 internal immutable i_withdrawalCooldownSeconds;
 
     constructor(
         address lpToken,
         address usdc,
-        address lancaBridge,
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,
-        uint8 donHostedSecretsSlotId,
-        uint64 donHostedSecretsVersion,
-        bytes32 collectLiquidityJsCodeHashSum,
-        bytes32 ethersHashSum,
+        uint8 clfSecretsSlotId,
+        uint64 clfSecretsVersion,
+        bytes32 collectLiquidityJsCodeHash,
+        bytes32 ethersJsHash,
         uint256 withdrawalCooldownSeconds
     ) LancaParentPoolCommon(lpToken) ClfClient(clfRouter) {
         i_clfSubId = clfSubId;
         i_clfDonId = clfDonId;
-        i_donHostedSecretsSlotId = donHostedSecretsSlotId;
-        i_donHostedSecretsVersion = donHostedSecretsVersion;
-        i_collectLiquidityJsCodeHashSum = collectLiquidityJsCodeHashSum;
-        i_ethersHashSum = ethersHashSum;
+        i_clfSecretsSlotId = clfSecretsSlotId;
+        i_clfSecretsVersion = clfSecretsVersion;
+        i_collectLiquidityJsCodeHash = collectLiquidityJsCodeHash;
+        i_ethersJsHash = ethersJsHash;
         i_usdc = IERC20(usdc);
         i_withdrawalCooldownSeconds = withdrawalCooldownSeconds;
     }
@@ -92,7 +91,6 @@ contract LancaParentPoolCLFCLA is
 
         require(liquidityRequestedFromEachPool != 0, WithdrawalRequestDoesntExist(withdrawalId));
 
-        /// @dev why 10 ?
         require(
             s_withdrawRequests[withdrawalId].remainingLiquidityFromChildPools >= 10,
             WithdrawalAlreadyPerformed(withdrawalId)
@@ -342,7 +340,7 @@ contract LancaParentPoolCLFCLA is
     function _sendRequest(bytes[] memory args) internal returns (bytes32) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(JS_CODE);
-        req.addDONHostedSecrets(i_donHostedSecretsSlotId, i_donHostedSecretsVersion);
+        req.addDONHostedSecrets(i_clfSecretsSlotId, i_clfSecretsVersion);
         req.setBytesArgs(args);
 
         return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
@@ -371,17 +369,22 @@ contract LancaParentPoolCLFCLA is
         bytes32 withdrawalId,
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {
-        bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(i_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(i_ethersHashSum);
+        bytes[] memory args = new bytes[](6);
+        args[0] = abi.encodePacked(i_collectLiquidityJsCodeHash);
+        args[1] = abi.encodePacked(i_ethersJsHash);
         args[2] = abi.encodePacked(
             ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
         );
-        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawalId);
+        args[3] = abi.encodePacked(block.chainid);
+        args[4] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[5] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args);
         s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
+        s_clfRequestTypes[reqId] = ILancaParentPool
+            .ClfRequestType
+            .startWithdrawal_getChildPoolsLiquidity;
+
         return reqId;
     }
 

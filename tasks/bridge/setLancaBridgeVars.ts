@@ -7,6 +7,7 @@ import { getEnvVar } from "../../utils"
 import { networkEnvKeys } from "../../constants/conceroNetworks"
 import { Address } from "viem"
 import log from "../../utils/log"
+import { viemReceiptConfig } from "../../constants/deploymentVariables"
 
 async function setDstLancaBridgeContracts() {
     const hre: HardhatRuntimeEnvironment = require("hardhat")
@@ -17,40 +18,49 @@ async function setDstLancaBridgeContracts() {
     const { abi: lancaBridgeAbi } = await import("../../artifacts/contracts/bridge/LancaBridge.sol/LancaBridge.json")
 
     for (const dstChain in cChains) {
-        const lancaBridge = getEnvVar(`LANCA_BRIDGE_PROXY${networkEnvKeys[cName]}`) as Address
-        const dstLancaBridge = getEnvVar(`LANCA_BRIDGE_PROXY${networkEnvKeys[dstChain]}`) as Address
+        const lancaBridge = getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[cName]}`) as Address
+        const dstLancaChainName = cChains[dstChain].name as CNetworkNames
+        if (cName === dstLancaChainName) continue
+        const dstLancaBridge = getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[dstLancaChainName]}`) as Address
         const dstChainSelector = cChains[dstChain].chainSelector
 
-        try {
-            const currentDstLancaBridgeAddress = (await publicClient.readContract({
-                address: lancaBridge,
-                abi: lancaBridgeAbi,
-                functionName: "getLancaBridgeContractByChain",
-                args: [dstChainSelector],
-            })) as Address
+        const currentDstLancaBridgeAddress = (await publicClient.readContract({
+            address: lancaBridge,
+            abi: lancaBridgeAbi,
+            functionName: "getLancaBridgeContractByChain",
+            args: [dstChainSelector],
+        })) as Address
 
-            if (currentDstLancaBridgeAddress?.toLowerCase() === dstLancaBridge.toLowerCase()) continue
-        } catch (e) {
-            log(
-                `Error getting current dst lanca bridge address: ${e?.shortMessage}`,
-                "getLancaBridgeContractByChain",
-                cName,
-            )
+        if (currentDstLancaBridgeAddress?.toLowerCase() === dstLancaBridge.toLowerCase()) {
+            const logMessage = `[Skip] ${cName}.dstLancaBridge${dstLancaChainName}. Already set`
+            log(logMessage, "dstDstLancaBridge", cName)
+            continue
         }
 
         const { request } = await publicClient.simulateContract({
+            account: walletClient.account,
             address: lancaBridge,
             abi: lancaBridgeAbi,
             functionName: "setLancaBridgeContract",
             args: [dstChainSelector, dstLancaBridge],
         })
         const txHash = await walletClient.writeContract(request)
+        const setDstLancaBridgeContractsStatus = (
+            await publicClient.waitForTransactionReceipt({
+                ...viemReceiptConfig,
+                hash: txHash,
+            })
+        ).status
 
-        log(
-            `Set Lanca Bridge Contract: ${dstChain} -> ${dstLancaBridge}. Hash: ${txHash}`,
-            "setLancaBridgeContract",
-            cName,
-        )
+        if (setDstLancaBridgeContractsStatus === "success") {
+            log(
+                `Set Lanca Bridge Contract: ${dstChain} -> ${dstLancaBridge}. Hash: ${txHash}`,
+                "setLancaBridgeContract",
+                cName,
+            )
+        } else {
+            throw new Error(`Failed to set Lanca Bridge Contract: ${dstChain} -> ${dstLancaBridge}. Hash: ${txHash}`)
+        }
     }
 }
 

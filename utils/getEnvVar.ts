@@ -1,9 +1,10 @@
 import process from "process"
 import { shorten } from "./formatting"
-import { envPrefixes, networkEnvKeys } from "../constants"
 import { CNetworkNames } from "../types/CNetwork"
 import { Address } from "viem"
 import { EnvPrefixes } from "../types/deploymentVariables"
+import { networkEnvKeys } from "../constants/conceroNetworks"
+import { envPrefixes } from "../constants/deploymentVariables"
 
 export function getEnvVar(key: string): string {
     const value = process.env[key]

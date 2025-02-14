@@ -132,7 +132,15 @@ library LibLanca {
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
         );
         (bool success, bytes memory response) = target.delegatecall(args);
-        require(success, UnableToCompleteDelegateCall(args));
+
+        if (!success) {
+            assembly {
+                let response_size := mload(response)
+                let response_ptr := add(response, 32)
+                revert(response_ptr, response_size)
+            }
+        }
+
         return response;
     }
 }

@@ -20,6 +20,6 @@ library LibErrors {
 
     /// @dev Reverts when the address is invalid.
     error InvalidAddress(InvalidAddressType errorType);
-
     error Unauthorized(UnauthorizedType errorType);
+    error InvalidChainSelector();
 }

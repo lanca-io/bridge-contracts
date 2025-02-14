@@ -25,9 +25,10 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
 
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(
-            s_isSenderContractAllowed[chainSelector][sender],
+            s_dstPoolByChainSelector[chainSelector] == sender,
             LibErrors.Unauthorized(LibErrors.UnauthorizedType.notAllowedSender)
         );
+
         _;
     }
 
@@ -91,7 +92,6 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
      * @return allowed true if the caller is an allowed messenger, false otherwise
      */
     function _isMessenger(address messenger) internal view returns (bool) {
-        // @dev TODO: move messengers and messengers related functions in pools to concero messaging
         return messenger == i_messenger0 || messenger == i_messenger1 || messenger == i_messenger2;
     }
 }

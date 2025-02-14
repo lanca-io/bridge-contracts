@@ -21,4 +21,8 @@ abstract contract LancaOwnable {
         require(msg.sender == i_owner, LibErrors.Unauthorized(LibErrors.UnauthorizedType.notOwner));
         _;
     }
+
+    function getOwner() public view returns (address) {
+        return i_owner;
+    }
 }

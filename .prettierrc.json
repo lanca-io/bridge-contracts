@@ -15,6 +15,13 @@
                 "singleQuote": false,
                 "bracketSpacing": false
             }
+        },
+      {
+        "files": "./clf/**",
+        "options": {
+          "singleQuote": true,
+          "semi": true
         }
+      }
     ]
 }

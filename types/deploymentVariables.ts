@@ -6,26 +6,23 @@ type ProxyEnvPrefixes = {
     [key in ProxyEnum]: string
 }
 export type EnvPrefixes = ProxyEnvPrefixes & {
-    infraProxyAdmin: string
-    bridge: string
-    dexSwap: string
-    orchestrator: string
     parentPoolProxyAdmin: string
+    lancaBridgeProxyAdmin: string
+    lancaBridgeProxy: string
+    orchestratorProxyAdmin: string
+    orchestratorProxy: string
+    orchestrator: string
     parentPool: string
     childPoolProxyAdmin: string
     childPool: string
-    automation: string
+    lancaBridge: string
     lpToken: string
-    create3Factory: string
     pause: string
-    uniswapRouter: string
     poolMessenger0: string
     poolMessenger1: string
     poolMessenger2: string
-    infraMessenger0: string
-    infraMessenger1: string
-    infraMessenger2: string
 }
+
 /**
  * Update an environment variable in the .env file
  * @param key The key of the environment variable to update

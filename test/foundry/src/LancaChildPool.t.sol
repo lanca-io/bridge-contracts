@@ -31,12 +31,12 @@ contract LancaChildPoolTest is Test {
         deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
     }
 
-    function test_setPools() public {
+    function test_setDstPool() public {
         address pool = makeAddr("pool");
         uint64 chainSelector = 1;
 
         vm.prank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
         vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors()[0], chainSelector);
@@ -47,7 +47,7 @@ contract LancaChildPoolTest is Test {
         address pool = makeAddr("pool");
 
         vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         s_lancaChildPool.removePools(chainSelector);
 
@@ -67,7 +67,7 @@ contract LancaChildPoolTest is Test {
         address pool = makeAddr("pool");
 
         vm.prank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         deal(s_usdc, messenger, 1000 * USDC_DECIMALS);
         deal(s_lancaChildPool.exposed_getLinkToken(), 1000 ether);
@@ -188,7 +188,7 @@ contract LancaChildPoolTest is Test {
 
     /* SET POOLS */
 
-    function test_setPoolsNotOwner_revert() public {
+    function test_setDstPoolNotOwner_revert() public {
         address pool = makeAddr("pool");
         uint64 chainSelector = 1;
 
@@ -198,15 +198,15 @@ contract LancaChildPoolTest is Test {
                 LibErrors.UnauthorizedType.notOwner
             )
         );
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
     }
 
-    function test_setPoolsTheSamePool_revert() public {
+    function test_setDstPoolTheSamePool_revert() public {
         uint64 chainSelector = 1;
         address pool = makeAddr("pool");
 
         vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -214,17 +214,17 @@ contract LancaChildPoolTest is Test {
                 LibErrors.InvalidAddressType.sameAddress
             )
         );
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         vm.stopPrank();
     }
 
-    function test_setPoolsInvalidAddress_revert() public {
+    function test_setDstPoolInvalidAddress_revert() public {
         address poolAddress = makeAddr("pool");
         uint64 chainSelector = 2;
         vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
 
-        s_lancaChildPool.setPools(chainSelector, poolAddress);
+        s_lancaChildPool.setDstPool(chainSelector, poolAddress);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -232,7 +232,7 @@ contract LancaChildPoolTest is Test {
                 LibErrors.InvalidAddressType.zeroAddress
             )
         );
-        s_lancaChildPool.setPools(chainSelector, ZERO_ADDRESS);
+        s_lancaChildPool.setDstPool(chainSelector, ZERO_ADDRESS);
 
         vm.stopPrank();
     }
@@ -281,7 +281,7 @@ contract LancaChildPoolTest is Test {
         address pool = makeAddr("pool");
 
         vm.prank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setPools(chainSelector, pool);
+        s_lancaChildPool.setDstPool(chainSelector, pool);
 
         deal(s_usdc, address(s_lancaChildPool), 100 * USDC_DECIMALS);
 

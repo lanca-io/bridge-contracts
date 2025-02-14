@@ -5,18 +5,16 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
-import {LancaOrchestratorStorageSetters} from "./storages/LancaOrchestratorStorageSetters.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
+import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 
-abstract contract LancaDexSwap is ILancaDexSwap, LancaOrchestratorStorageSetters {
+abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* CONSTANTS */
     uint16 internal constant LANCA_FEE_FACTOR = 1000;
     uint8 internal constant MAX_SWAPS_LENGTH = 5;
-
-    constructor(address owner) LancaOrchestratorStorageSetters(owner) {}
 
     /* INTERNAL FUNCTIONS */
 

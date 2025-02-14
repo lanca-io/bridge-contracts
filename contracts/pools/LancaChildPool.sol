@@ -32,11 +32,11 @@ contract LancaChildPool is
 
     /* CONSTRUCTOR */
     constructor(
-        address link,
         address owner,
-        address ccipRouter,
         address usdc,
+        address link,
         address lancaBridge,
+        address ccipRouter,
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
@@ -59,6 +59,12 @@ contract LancaChildPool is
                 delete s_dstPoolByChainSelector[chainSelector];
             }
         }
+    }
+
+    // TODO: remove it!!!!
+    function withdraw() external onlyOwner {
+        uint256 balance = i_usdc.balanceOf(address(this));
+        i_usdc.transfer(msg.sender, balance);
     }
 
     function distributeLiquidity(

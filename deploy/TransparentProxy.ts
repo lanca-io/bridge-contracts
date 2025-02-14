@@ -5,6 +5,7 @@ import { IProxyType } from "../types/deploymentVariables"
 import { updateEnvAddress } from "../utils/updateEnvVariable"
 import log from "../utils/log"
 import { getEnvAddress } from "../utils/getEnvVar"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> =
     async function (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) {
@@ -23,6 +24,7 @@ const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxy
             log: true,
             autoMine: true,
             gasLimit: 2_000_000,
+            waitConfirmations: viemReceiptConfig.confirmations,
         })) as Deployment
 
         if (live) {

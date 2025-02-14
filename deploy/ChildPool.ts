@@ -7,6 +7,7 @@ import { getEnvVar } from "../utils"
 import { poolMessengers } from "../constants"
 import { getGasParameters } from "../utils/getGasPrice"
 import { CNetworkNames } from "../types/CNetwork"
+import { viemReceiptConfig } from "../constants/deploymentVariables"
 
 interface ConstructorArgs {
     conceroProxyAddress?: string
@@ -20,44 +21,45 @@ interface ConstructorArgs {
     messengers?: string[]
 }
 
-const deployChildPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
-    async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
-        const { deployer } = await hre.getNamedAccounts()
-        const { deploy } = hre.deployments
-        const { live } = hre.network
-        const name = hre.network.name as CNetworkNames
-        const { linkToken, ccipRouter, type } = conceroNetworks[name]
+const deployChildPoolImplementation: (
+    hre: HardhatRuntimeEnvironment,
+    constructorArgs?: ConstructorArgs,
+) => Promise<void> = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+    const { deployer } = await hre.getNamedAccounts()
+    const { deploy } = hre.deployments
+    const { live } = hre.network
+    const name = hre.network.name as CNetworkNames
+    const { linkToken, ccipRouter, type } = conceroNetworks[name]
 
-        const defaultArgs = {
-            conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
-            childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
-            linkToken: linkToken,
-            ccipRouter: ccipRouter,
-            usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
-            owner: deployer,
-            poolMessengers,
-        }
-
-        // Merge defaultArgs with constructorArgs
-        const args = { ...defaultArgs, ...constructorArgs }
-        const { maxFeePerGas, maxPriorityFeePerGas } = await getGasParameters(conceroNetworks[name])
-
-        log("Deploying...", "deployChildPool", name)
-
-        const deployChildPool = (await deploy("ChildPool", {
-            from: deployer,
-            args: [args.childProxyAddress, args.linkToken, args.owner, args.ccipRouter, args.usdc, args.poolMessengers],
-            log: true,
-            autoMine: true,
-            maxFeePerGas,
-            maxPriorityFeePerGas,
-        })) as Deployment
-
-        if (live) {
-            log(`Deployed at: ${deployChildPool.address}`, "deployConceroChildPool", name)
-            updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, `deployments.${type}`)
-        }
+    const defaultArgs = {
+        linkToken: linkToken,
+        ccipRouter: ccipRouter,
+        usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
+        owner: deployer,
+        lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
+        poolMessengers,
     }
 
-export default deployChildPool
-deployChildPool.tags = ["ChildPool"]
+    const args = { ...defaultArgs, ...constructorArgs }
+    const { maxFeePerGas, maxPriorityFeePerGas } = await getGasParameters(conceroNetworks[name])
+
+    log("Deploying...", "deployChildPool", name)
+
+    const deployChildPool = (await deploy("LancaChildPool", {
+        from: deployer,
+        args: [args.owner, args.usdc, args.linkToken, args.lancaBridge, args.ccipRouter, args.poolMessengers],
+        log: true,
+        autoMine: true,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        waitConfirmations: viemReceiptConfig.confirmations,
+    })) as Deployment
+
+    if (live) {
+        log(`Deployed at: ${deployChildPool.address}`, "deployConceroChildPool", name)
+        updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, `deployments.${type}`)
+    }
+}
+
+export default deployChildPoolImplementation
+deployChildPoolImplementation.tags = ["LancaChildPool"]
