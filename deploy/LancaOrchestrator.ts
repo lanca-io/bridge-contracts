@@ -19,7 +19,7 @@ const deployLancaOrchestratorImplementation: (hre: HardhatRuntimeEnvironment) =>
 
     const args = {
         usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
-        lancaBridge: getEnvVar(`LANCA_BRIDGE_${networkEnvKeys[name]}`),
+        lancaBridge: getEnvVar(`LANCA_BRIDGE_PROXY_${networkEnvKeys[name]}`),
         chainSelector,
     }
 

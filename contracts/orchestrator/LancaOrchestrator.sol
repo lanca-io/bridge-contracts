@@ -200,7 +200,10 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
             message: message
         });
 
-        ILancaBridge(getLancaBridge()).bridge(bridgeReq);
+        address lancaBridge = getLancaBridge();
+
+        IERC20(bridgeData.token).approve(lancaBridge, bridgeData.amount);
+        ILancaBridge(lancaBridge).bridge(bridgeReq);
     }
 
     /// @inheritdoc LancaIntegration

@@ -18,9 +18,9 @@ async function setDstLancaOrchestratorContracts() {
     const { abi: lancaOrchestratorAbi } = await import(
         "../../artifacts/contracts/orchestrator/LancaOrchestrator.sol/LancaOrchestrator.json"
     )
+    const lancaOrchestrator = getEnvVar(`LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[cName]}`) as Address
 
     for (const dstChain in cChains) {
-        const lancaOrchestrator = getEnvVar(`LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[cName]}`) as Address
         const dstLancaChainName = cChains[dstChain].name as CNetworkNames
         if (cName === dstLancaChainName) continue
         const dstLancaOrchestrator = getEnvVar(
@@ -50,10 +50,7 @@ async function setDstLancaOrchestratorContracts() {
         })
         const txHash = await walletClient.writeContract(request)
         const setDstLancaOrchestratorContractsStatus = (
-            await publicClient.waitForTransactionReceipt({
-                ...viemReceiptConfig,
-                hash: txHash,
-            })
+            await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash })
         ).status
 
         if (setDstLancaOrchestratorContractsStatus === "success") {

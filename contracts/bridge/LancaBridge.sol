@@ -160,7 +160,9 @@ contract LancaBridge is
         // @dev fee calculation logic based on fee token address and dst chain gas limit will be added in closest future
         uint256 ccipFee = _getCCIPFee(dstChainSelector, amount);
         uint256 lancaFee = _getLancaFee(amount);
-        uint256 conceroMessageFee = IConceroRouter(getConceroRouter()).getFee(dstChainSelector);
+        uint256 conceroMessageFee = IConceroRouter(getConceroRouter()).getFeeInUsdc(
+            dstChainSelector
+        );
         return (ccipFee, lancaFee, conceroMessageFee);
     }
 

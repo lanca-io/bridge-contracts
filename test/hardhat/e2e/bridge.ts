@@ -1,50 +1,68 @@
 import "@nomicfoundation/hardhat-chai-matchers"
-import { conceroNetworks, networkEnvKeys } from "../../../constants"
 import { getFallbackClients } from "../../../utils/getViemClients"
 import { getEnvVar } from "../../../utils"
 import { approve } from "../../../utils/approve"
 import { handleError } from "../../../utils/handleError"
-import { Address, parseUnits } from "viem"
+import { Address, parseUnits, zeroAddress } from "viem"
+import { conceroNetworks } from "../../../constants"
+import { networkEnvKeys } from "../../../constants/conceroNetworks"
 
-describe("sendMessage\n", async () => {
-    it("should send and receiveMessage in test concero client", async () => {
+describe("bridge", async () => {
+    it("should send and receive bridge", async () => {
         try {
             const srcChain = conceroNetworks.baseSepolia
             const dstChain = conceroNetworks.avalancheFuji
-            const srcLancaBridge = getEnvVar(`LANCA_BRIDGE_PROXY${networkEnvKeys[srcChain.name]}`) as Address
+            const bridgeAmount = parseUnits("2", 6)
+            const srcLancaOrchestrator = getEnvVar(
+                `LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[srcChain.name]}`,
+            ) as Address
             const srcChainUsdc = getEnvVar(`USDC_${networkEnvKeys[srcChain.name]}`) as Address
             const { publicClient: srcChainPublicClient, walletClient: srcChainWalletClient } =
                 getFallbackClients(srcChain)
+            const { abi: lancaOrchestratorAbi } = await import(
+                "../../../artifacts/contracts/orchestrator/LancaOrchestrator.sol/LancaOrchestrator.json"
+            )
             const { abi: lancaBridgeAbi } = await import(
                 "../../../artifacts/contracts/bridge/LancaBridge.sol/LancaBridge.json"
             )
-            const bridgeAmount = parseUnits("2", 6)
 
-            await approve(srcChainUsdc, srcLancaBridge, bridgeAmount, srcChainWalletClient, srcChainPublicClient)
+            await approve(srcChainUsdc, srcLancaOrchestrator, bridgeAmount, srcChainWalletClient, srcChainPublicClient)
 
             const bridgeStruct = {
-                amount: srcChainUsdc,
+                token: srcChainUsdc,
+                receiver: srcChainWalletClient.account?.address,
+                amount: bridgeAmount,
+                dstChainSelector: dstChain.chainSelector,
+                data: "0x",
             }
 
-            const sendMessageReq = (
+            const integrationStruct = {
+                integrator: zeroAddress,
+                feeBps: 0n,
+            }
+
+            const sendBridgeReq = (
                 await srcChainPublicClient.simulateContract({
                     account: srcChainWalletClient.account,
-                    address: srcLancaBridge,
-                    abi: conceroRouterAbi,
-                    functionName: "sendMessage",
-                    args: [message],
+                    address: srcLancaOrchestrator,
+                    abi: [...lancaOrchestratorAbi, ...lancaBridgeAbi],
+                    functionName: "bridge",
+                    args: [bridgeStruct, integrationStruct],
                 })
             ).request
-            const sendMessageHash = await srcChainWalletClient.writeContract(sendMessageReq)
-            const sendMessageStatus = await srcChainPublicClient.waitForTransactionReceipt({ hash: sendMessageHash })
+            const sendBridgeHash = await srcChainWalletClient.writeContract(sendBridgeReq)
 
-            if (sendMessageStatus.status === "success") {
-                console.log(`sendMessage successful`, "sendMessage", "hash:", sendMessageHash)
+            const sendBridgeStatus = (await srcChainPublicClient.waitForTransactionReceipt({ hash: sendBridgeHash }))
+                .status
+
+            if (sendBridgeStatus === "success") {
+                console.log(`bridge successful`, "sendBridge", "hash:", sendBridgeHash)
             } else {
-                throw new Error(`sendMessage failed. Hash: ${sendMessageHash}`)
+                throw new Error(`bridge failed. Hash: ${sendBridgeHash}`)
             }
         } catch (error) {
-            handleError(error, "send message test")
+            handleError(error, "bridge test")
+            throw new Error("failed")
         }
     }).timeout(0)
 })
