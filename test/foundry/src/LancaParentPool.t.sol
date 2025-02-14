@@ -393,6 +393,38 @@ contract LancaParentPoolTest is Test {
         );
     }
 
+    function test_checkUpkeepReturnsFalse() public {
+        bytes memory checkData = abi.encode("checkUpkeep");
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder(), ZERO_ADDRESS);
+        (bool isNeeded, bytes memory res) = s_lancaParentPool.checkUpkeep(checkData);
+        vm.assertEq(isNeeded, false);
+    }
+
+    function test_checkUpkeepReturnsTrue() public {
+        bytes memory checkData = abi.encode("checkUpkeep");
+        bytes32[] memory withdrawalRequestIds = new bytes32[](1);
+        withdrawalRequestIds[0] = keccak256("withdrawalRequestIds");
+        s_lancaParentPool.exposed_setWithdrawalRequestIds(withdrawalRequestIds);
+
+        s_lancaParentPool.exposed_setWithdrawalReqById(
+            withdrawalRequestIds[0],
+            ILancaParentPool.WithdrawRequest({
+                lpAddress: makeAddr("lpAddress"),
+                lpAmountToBurn: 0,
+                totalCrossChainLiquiditySnapshot: 0,
+                amountToWithdraw: 1 * USDC_DECIMALS,
+                liquidityRequestedFromEachPool: 0,
+                remainingLiquidityFromChildPools: 0,
+                triggeredAtTimestamp: 0
+            })
+        );
+
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder(), ZERO_ADDRESS);
+        (bool isNeeded, bytes memory res) = s_lancaParentPool.checkUpkeep(checkData);
+        vm.assertEq(isNeeded, true);
+        vm.assertEq(abi.decode(res, (bytes32)), withdrawalRequestIds[0]);
+    }
+
     /* ADMIN FUNCTIONS */
 
     function testFuzz_setPools(

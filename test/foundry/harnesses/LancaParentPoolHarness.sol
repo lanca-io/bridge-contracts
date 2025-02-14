@@ -48,6 +48,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_withdrawalIdByCLFRequestId[clfReqId] = withdrawalId;
     }
 
+    function exposed_setWithdrawalRequestIds(bytes32[] memory withdrawalRequestIds) public {
+        s_withdrawalRequestIds = withdrawalRequestIds;
+    }
+
     function exposed_setWithdrawalReqById(
         bytes32 withdrawalId,
         ILancaParentPool.WithdrawRequest memory withdrawalReq
