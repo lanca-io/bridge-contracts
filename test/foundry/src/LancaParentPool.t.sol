@@ -7,6 +7,8 @@ import {console} from "forge-std/src/console.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPoolHarness.s.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
+import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
@@ -252,7 +254,7 @@ contract LancaParentPoolTest is Test {
             clfReqId,
             ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
         );
-        s_lancaParentPool.exposed_setWithdrawalIdByClfId(clfReqId, withdrawalId);
+        s_lancaParentPool.exposed_setWithdrawalIdByClfRequestId(clfReqId, withdrawalId);
         s_lancaParentPool.exposed_setWithdrawalReqById(
             withdrawalId,
             ILancaParentPool.WithdrawRequest({
@@ -349,22 +351,46 @@ contract LancaParentPoolTest is Test {
     function test_performUpkeep() public {
         bytes memory data = abi.encode("withdrawalId");
         bytes32 withdrawalId = bytes32(data);
+        uint256 amountToWithdraw = 10 * USDC_DECIMALS;
+        uint256 liquidityRequestedFromEachPool = 1 * USDC_DECIMALS;
 
         ILancaParentPool.WithdrawRequest memory withdrawalReq = ILancaParentPool.WithdrawRequest({
             lpAddress: makeAddr("lpAddress"),
             lpAmountToBurn: 0,
             totalCrossChainLiquiditySnapshot: 0,
-            amountToWithdraw: 10 * USDC_DECIMALS,
-            liquidityRequestedFromEachPool: 1 * USDC_DECIMALS,
+            amountToWithdraw: amountToWithdraw,
+            liquidityRequestedFromEachPool: liquidityRequestedFromEachPool,
             remainingLiquidityFromChildPools: 0,
-            triggeredAtTimestamp: block.timestamp
+            triggeredAtTimestamp: 0
         });
 
         s_lancaParentPool.exposed_setWithdrawalReqById(withdrawalId, withdrawalReq);
 
+        vm.recordLogs();
+
         address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
         vm.prank(automationForwarder);
+
         s_lancaParentPool.performUpkeep(data);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 reqId = abi.decode(entries[3].data, (bytes32));
+        ILancaParentPool.ClfRequestType requestType = s_lancaParentPool
+            .exposed_getClfRequestTypeById(reqId);
+
+        vm.assertEq(entries.length, 4);
+        vm.assertEq(entries[3].topics[0], ILancaParentPoolCLFCLA.WithdrawUpkeepPerformed.selector);
+
+        vm.assertEq(
+            uint8(requestType),
+            uint8(ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection)
+        );
+
+        vm.assertEq(s_lancaParentPool.exposed_getWithdrawalIdByCLFRequestId(reqId), withdrawalId);
+        vm.assertEq(
+            s_lancaParentPool.exposed_getWithdrawalsOnTheWayAmount(),
+            amountToWithdraw - liquidityRequestedFromEachPool
+        );
     }
 
     /* ADMIN FUNCTIONS */
@@ -602,6 +628,88 @@ contract LancaParentPoolTest is Test {
             )
         );
         s_lancaParentPool.performUpkeep(data);
+    }
+
+    function test_performUpkeepWithdrawalRequestDoesntExist_revert() public {
+        bytes memory data = abi.encode(0);
+        address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
+        vm.prank(automationForwarder);
+        vm.expectRevert(
+            abi.encodeWithSelector(ILancaParentPool.WithdrawRequestDoesntExist.selector, bytes32(0))
+        );
+        try s_lancaParentPool.performUpkeep(data) {
+            revert("Expected revert, but got success");
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                revert("Expected revert, but got nothing");
+            }
+        }
+    }
+
+    function test_performUpkeepWithdrawalRequestNotReady_revert() public {
+        bytes memory data = abi.encode("withdrawalId");
+        bytes32 withdrawalId = bytes32(data);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalReq = ILancaParentPool.WithdrawRequest({
+            lpAddress: makeAddr("lpAddress"),
+            lpAmountToBurn: 0,
+            totalCrossChainLiquiditySnapshot: 0,
+            amountToWithdraw: 10 * USDC_DECIMALS,
+            liquidityRequestedFromEachPool: 1 * USDC_DECIMALS,
+            remainingLiquidityFromChildPools: 0,
+            triggeredAtTimestamp: block.timestamp + 7 days
+        });
+
+        s_lancaParentPool.exposed_setWithdrawalReqById(withdrawalId, withdrawalReq);
+
+        address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
+        vm.prank(automationForwarder);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestNotReady.selector,
+                withdrawalId
+            )
+        );
+        try s_lancaParentPool.performUpkeep(data) {
+            revert("Expected revert, but got success");
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                revert("Expected revert, but got nothing");
+            }
+        }
+    }
+
+    function test_performUpkeepWithdrawalAlreadyTriggered_revert() public {
+        bytes memory data = abi.encode("withdrawalId");
+        bytes32 withdrawalId = bytes32(data);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalReq = ILancaParentPool.WithdrawRequest({
+            lpAddress: makeAddr("lpAddress"),
+            lpAmountToBurn: 0,
+            totalCrossChainLiquiditySnapshot: 0,
+            amountToWithdraw: 10 * USDC_DECIMALS,
+            liquidityRequestedFromEachPool: 1 * USDC_DECIMALS,
+            remainingLiquidityFromChildPools: 0,
+            triggeredAtTimestamp: block.timestamp
+        });
+
+        s_lancaParentPool.exposed_setWithdrawalReqById(withdrawalId, withdrawalReq);
+        s_lancaParentPool.exposed_setWithdrawTriggered(withdrawalId, true);
+
+        address automationForwarder = s_lancaParentPool.exposed_getAutomationForwarder();
+        vm.prank(automationForwarder);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(ILancaPool.WithdrawalAlreadyTriggered.selector, withdrawalId)
+        );
+        try s_lancaParentPool.performUpkeep(data) {
+            revert("Expected revert, but got success");
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                revert("Expected revert, but got nothing");
+            }
+        }
     }
 
     function test_handleOracleFulfillmentOnlyRouterCanFulfill_revert() public {

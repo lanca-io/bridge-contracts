@@ -41,7 +41,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_clfRequestTypes[clfReqId] = clfReqType;
     }
 
-    function exposed_setWithdrawalIdByClfId(bytes32 clfReqId, bytes32 withdrawalId) external {
+    function exposed_setWithdrawalIdByClfRequestId(
+        bytes32 clfReqId,
+        bytes32 withdrawalId
+    ) external {
         s_withdrawalIdByCLFRequestId[clfReqId] = withdrawalId;
     }
 
@@ -56,7 +59,27 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_depositFeesSum = depositFeesSum;
     }
 
+    function exposed_setWithdrawTriggered(bytes32 withdrawalId, bool triggered) external {
+        s_withdrawTriggered[withdrawalId] = triggered;
+    }
+
     /* GETTERS */
+    function exposed_getWithdrawalsOnTheWayAmount() external view returns (uint256) {
+        return s_withdrawalsOnTheWayAmount;
+    }
+
+    function exposed_getWithdrawalIdByCLFRequestId(
+        bytes32 clfReqId
+    ) external view returns (bytes32) {
+        return s_withdrawalIdByCLFRequestId[clfReqId];
+    }
+
+    function exposed_getClfRequestTypeById(
+        bytes32 clfReqId
+    ) external view returns (ILancaParentPool.ClfRequestType) {
+        return s_clfRequestTypes[clfReqId];
+    }
+
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
     }
