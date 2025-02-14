@@ -31,16 +31,17 @@ const deployLancaBridgeImplementation: (
     const { type, chainSelector, linkToken } = conceroNetworks[name]
     const lancaPool =
         name === "base" || name === "baseSepolia"
-            ? getEnvVar(`PARENT_POOL_PROXY${networkEnvKeys[name]}`)
-            : getEnvVar(`CHILD_POOL_PROXY${networkEnvKeys[name]}`)
+            ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
+            : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`)
     const defaultArgs = {
         chainSelector,
         usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
-        conceroRouter: getEnvVar(`CONCERO_ROUTER_${networkEnvKeys[name]}`),
+        conceroRouter: getEnvVar(`CONCERO_ROUTER_PROXY_${networkEnvKeys[name]}`),
         ccipRouter: getEnvVar(`CL_CCIP_ROUTER_${networkEnvKeys[name]}`),
         linkToken,
         lancaPool,
     }
+
     const args = { ...defaultArgs, ...constructorArgs }
     const { maxFeePerGas, maxPriorityFeePerGas } = await getGasParameters(conceroNetworks[name])
 
@@ -57,7 +58,7 @@ const deployLancaBridgeImplementation: (
     })) as Deployment
 
     if (live) {
-        log(`Deployed at: ${deployLancaBridge.address}`, "deployConceroRouter", name)
+        log(`Deployed at: ${deployLancaBridge.address}`, "deployLancaBridge", name)
         updateEnvVariable(`LANCA_BRIDGE_${networkEnvKeys[name]}`, deployLancaBridge.address, `deployments.${type}`)
     }
 }

@@ -27,7 +27,9 @@ export enum ProxyEnum {
 
 export const envPrefixes: EnvPrefixes = {
     parentPoolProxyAdmin: "PARENT_POOL_PROXY_ADMIN",
-    lancaBridgeProxy: "LANCA_BRIDGE",
+    lancaBridgeProxyAdmin: "LANCA_BRIDGE_PROXY_ADMIN",
+    lancaBridgeProxy: "LANCA_BRIDGE_PROXY",
+    lancaBridge: "LANCA_BRIDGE",
     parentPoolProxy: "PARENT_POOL_PROXY",
     childPoolProxyAdmin: "CHILD_POOL_PROXY_ADMIN",
     childPoolProxy: "CHILD_POOL_PROXY",

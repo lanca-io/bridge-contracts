@@ -7,6 +7,8 @@ type ProxyEnvPrefixes = {
 }
 export type EnvPrefixes = ProxyEnvPrefixes & {
     parentPoolProxyAdmin: string
+    lancaBridgeProxyAdmin: string
+    lancaBridgeProxy: string
     parentPool: string
     childPoolProxyAdmin: string
     childPool: string

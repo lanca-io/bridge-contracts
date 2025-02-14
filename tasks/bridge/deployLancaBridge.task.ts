@@ -6,12 +6,13 @@ import { conceroNetworks } from "../../constants"
 import { networkTypes } from "../../constants/conceroNetworks"
 import { conceroChains } from "../../constants/liveChains"
 import { verifyContractVariables } from "../verifyContractVariables.task"
-import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
 import deployTransparentProxy from "../../deploy/TransparentProxy"
 import { ProxyEnum } from "../../constants/deploymentVariables"
 import deployLancaBridgeImplementation from "../../deploy/LancaBridge"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
 import { setLancaBridgeVars } from "./setLancaBridgeVars"
+import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
+import { handleError } from "../../utils/handleError"
 
 interface DeployInfraParams {
     hre: any
@@ -25,14 +26,14 @@ interface DeployInfraParams {
     slotId: number
 }
 
-async function deployConceroRouter(params: DeployInfraParams) {
+async function deployLancaBridge(params: DeployInfraParams) {
     const { hre, deployableChains, deployProxy, deployImplementation, setVars } = params
     const name = hre.network.name as CNetworkNames
     const isTestnet = deployableChains[0].type === "testnet"
 
     if (deployProxy) {
-        await deployProxyAdmin(hre, ProxyEnum.conceroRouterProxy)
-        await deployTransparentProxy(hre, ProxyEnum.conceroRouterProxy)
+        await deployProxyAdmin(hre, ProxyEnum.lancaBridgeProxy)
+        await deployTransparentProxy(hre, ProxyEnum.lancaBridgeProxy)
     }
 
     if (deployImplementation) {
@@ -46,40 +47,42 @@ async function deployConceroRouter(params: DeployInfraParams) {
 }
 
 task("deploy-lanca-bridge", "Deploy the Lanca Bridge")
-    .addFlag("deployproxy", "Deploy the proxy")
-    .addFlag("deployimplementation", "Deploy the implementation")
-    .addFlag("setvars", "Set the contract variables")
+    .addFlag("proxy", "Deploy the proxy")
+    .addFlag("implementation", "Deploy the implementation")
+    .addFlag("vars", "Set the contract variables")
     .setAction(async taskArgs => {
-        compileContracts({ quiet: true })
+        try {
+            compileContracts({ quiet: true })
 
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const hre: HardhatRuntimeEnvironment = require("hardhat")
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const hre: HardhatRuntimeEnvironment = require("hardhat")
 
-        const { live } = hre.network
-        const name = hre.network.name as CNetworkNames
-        const networkType = conceroNetworks[name].type
-        let deployableChains: CNetwork[] = []
-        if (live) deployableChains = [conceroNetworks[name]]
+            const { live } = hre.network
+            const name = hre.network.name as CNetworkNames
+            const networkType = conceroNetworks[name].type
+            let deployableChains: CNetwork[] = []
+            if (live) deployableChains = [conceroNetworks[name]]
 
-        let liveChains: CNetwork[] = []
-        if (networkType == networkTypes.mainnet) {
-            liveChains = conceroChains.mainnet.infra
-            await verifyContractVariables()
-        } else {
-            liveChains = conceroChains.testnet.infra
+            let liveChains: CNetwork[] = []
+            if (networkType == networkTypes.mainnet) {
+                liveChains = conceroChains.mainnet.infra
+                await verifyContractVariables()
+            } else {
+                liveChains = conceroChains.testnet.infra
+            }
+
+            await deployLancaBridge({
+                hre,
+                deployableChains,
+                liveChains,
+                networkType,
+                deployProxy: taskArgs.proxy,
+                deployImplementation: taskArgs.implementation,
+                setVars: taskArgs.vars,
+            })
+        } catch (error) {
+            handleError(error, "deploy lanca bridge")
         }
-
-        await deployConceroRouter({
-            hre,
-            deployableChains,
-            liveChains,
-            networkType,
-            deployProxy: taskArgs.deployproxy,
-            deployImplementation: taskArgs.deployimplementation,
-            setVars: taskArgs.setvars,
-            uploadSecrets: taskArgs.uploadsecrets,
-            slotId: parseInt(taskArgs.slotid),
-        })
     })
 
 export default {}

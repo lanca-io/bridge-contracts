@@ -190,8 +190,7 @@ contract LancaParentPool is
         delete s_depositRequests[depositRequestId];
     }
 
-    /**
-     * @notice function to manage the Cross-chain ConceroPool contracts
+    /* @notice function to manage the Cross-chain ConceroPool contracts
      * @param chainSelector chain identifications
      * @param pool address of the Cross-chain ConceroPool contract
      * @dev only owner can call it

@@ -15,7 +15,6 @@ const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxy
         const networkType = conceroNetworks[name].type
         const [initialImplementation, initialImplementationAlias] = getEnvAddress("pause", name)
         const [proxyAdmin, proxyAdminAlias] = getEnvAddress(`${proxyType}Admin`, name)
-        console.log(proxyAdmin)
 
         log("Deploying...", `deployTransparentProxy:${proxyType}`, name)
 

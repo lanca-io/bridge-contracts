@@ -18,11 +18,14 @@ async function retryWithdrawFromPool(isTestnet: boolean) {
     const { abi: parentPoolAbi } = await import(
         "../../artifacts/contracts/pools/LancaParentPool.sol/LancaParentPool.json"
     )
+    const { abi: parentPoolClfClaAbi } = await import(
+        "../../artifacts/contracts/pools/LancaParentPoolCLFCLA.sol/LancaParentPoolCLFCLA.json"
+    )
 
     const retryWithdrawalReq = (
         await publicClient.simulateContract({
             account: walletClient.account,
-            abi: parentPoolAbi,
+            abi: [...parentPoolAbi, ...parentPoolClfClaAbi],
             functionName: "retryPerformWithdrawalRequest",
             address: parentPoolAddress,
             args: [],

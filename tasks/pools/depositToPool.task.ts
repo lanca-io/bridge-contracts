@@ -54,7 +54,7 @@ async function depositToPoo(isTestnet: boolean) {
 
     if (!depositId) throw new Error("Deposit initiated id not found")
 
-    await sleep(30_000)
+    await sleep(20_000)
 
     await approve(
         getEnvVar(`USDC_${networkEnvKeys[parentPoolChain.name]}`),
