@@ -330,7 +330,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
 
     /* REVERTS */
 
-    function testFuzz_bridgeInvalidBridgeToken_revert() public {
+    function test_bridgeInvalidBridgeToken_revert() public {
         address bridgeToken = makeAddr("wrong bridge token");
 
         vm.assume(bridgeToken != s_usdc);
