@@ -30,18 +30,24 @@ export const envPrefixes: EnvPrefixes = {
     lancaBridgeProxyAdmin: "LANCA_BRIDGE_PROXY_ADMIN",
     lancaBridgeProxy: "LANCA_BRIDGE_PROXY",
     lancaBridge: "LANCA_BRIDGE",
+    orchestrator: "LANCA_ORCHESTRATOR",
+    orchestratorProxy: "LANCA_ORCHESTRATOR_PROXY",
+    orchestratorProxyAdmin: "LANCA_ORCHESTRATOR_PROXY_ADMIN",
     parentPoolProxy: "PARENT_POOL_PROXY",
     childPoolProxyAdmin: "CHILD_POOL_PROXY_ADMIN",
     childPoolProxy: "CHILD_POOL_PROXY",
     childPool: "CHILD_POOL",
     parentPool: "PARENT_POOL",
     lpToken: "LPTOKEN",
-    orchestratorProxy: "ORCHESTRATOR_PROXY",
-    orchestrator: "ORCHESTRATOR",
     pause: "CONCERO_PAUSE",
 }
 
-export const parentPoolLiqCap = parseUnits("60000", 18)
-export const parentPoolClfSecretsSlotId = "1"
+// @dev parent pool deploy vars
+export const PARENT_POOL_LIQ_CAP = parseUnits("60000", 18)
+export const PARENT_POOL_CLF_SECRETS_SLOT_ID = "1"
 export const PARENT_POOL_TESTNET_WITHDRAWAL_COOLDOWN_SECONDS = 60
 export const PARENT_POOL_MAINNET_WITHDRAWAL_COOLDOWN_SECONDS = 604_800
+
+// @dev lanca bridge deploy vars
+export const LANCA_BRIDGE_TESTNET_BATCHED_TX_THRESHOLD = parseUnits("7", 6)
+export const LANCA_BRIDGE_MAINNET_BATCHED_TX_THRESHOLD = parseUnits("3000", 6)

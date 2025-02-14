@@ -10,6 +10,7 @@ import depositToPoolTask from "./pools/depositToPool.task"
 import simulateClfTask from "./clf/simulateClf.task"
 import withdrawFromPoolTask from "./pools/withdrawFromPool.task"
 import retryWithdrawFromPoolTask from "./pools/retryWithdrawFromPool.task"
+import deployLancaOrchestratorImplementation from "./orchestrator/deployOrchestrator.task"
 
 export {
     deployLancaBridgeTask,
@@ -24,4 +25,5 @@ export {
     simulateClfTask,
     withdrawFromPoolTask,
     retryWithdrawFromPoolTask,
+    deployLancaOrchestratorImplementation,
 }

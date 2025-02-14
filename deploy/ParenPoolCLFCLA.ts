@@ -8,7 +8,7 @@ import { getGasParameters } from "../utils/getGasPrice"
 import {
     PARENT_POOL_MAINNET_WITHDRAWAL_COOLDOWN_SECONDS,
     PARENT_POOL_TESTNET_WITHDRAWAL_COOLDOWN_SECONDS,
-    parentPoolClfSecretsSlotId,
+    PARENT_POOL_CLF_SECRETS_SLOT_ID,
     viemReceiptConfig,
 } from "../constants/deploymentVariables"
 import { CNetworkNames } from "../types/CNetwork"
@@ -54,7 +54,7 @@ const deployParentPoolClfClfImplementation: (
         clfRouter: functionsRouter,
         clfSubId: functionsSubIds[0],
         clfDonId: functionsDonId,
-        clfSecretsSlotId: parentPoolClfSecretsSlotId,
+        clfSecretsSlotId: PARENT_POOL_CLF_SECRETS_SLOT_ID,
         clfSecretsVersion: getEnvVar(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`),
         collectLiqJsHash: getHashSum(await getClfJsCode(ClfJsCodeType.CollectLiq)),
         ethersJsHash: getHashSum(await getClfJsCode(ClfJsCodeType.EthersV6)),

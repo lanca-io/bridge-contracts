@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 abstract contract LancaOrchestratorStorage is ReentrancyGuard {
-    mapping(uint64 dstChainSelector => address dstOrchetrator)
+    mapping(uint64 dstChainSelector => address dstLancaOrchestrator)
         internal s_lancaOrchestratorDstByChainSelector;
 
     mapping(address integrator => mapping(address token => uint256 amount))
@@ -13,9 +13,20 @@ abstract contract LancaOrchestratorStorage is ReentrancyGuard {
     /// @notice mapping to keep track of allowed routers to perform swaps.
     mapping(address router => bool isAllowed) internal s_routerAllowed;
 
-    mapping(address sender => bool isAllowed) internal s_isLancaBridgeSenderAllowed;
-
-    mapping(uint64 srcChainSelector => bool isAllowed) internal s_isLancaBridgeSrcChainAllowed;
-
     /* GETTERS */
+
+    function getLancaOrchestratorByChain(uint64 dstChainSelector) external view returns (address) {
+        return s_lancaOrchestratorDstByChainSelector[dstChainSelector];
+    }
+
+    function isDexRouterAllowed(address router) external view returns (bool) {
+        return s_routerAllowed[router];
+    }
+
+    function getIntegratorFeeAmount(
+        address integrator,
+        address token
+    ) external view returns (uint256) {
+        return s_integratorFeesAmountByToken[integrator][token];
+    }
 }

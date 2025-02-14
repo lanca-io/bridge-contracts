@@ -9,20 +9,18 @@ export type EnvPrefixes = ProxyEnvPrefixes & {
     parentPoolProxyAdmin: string
     lancaBridgeProxyAdmin: string
     lancaBridgeProxy: string
+    orchestratorProxyAdmin: string
+    orchestratorProxy: string
+    orchestrator: string
     parentPool: string
     childPoolProxyAdmin: string
     childPool: string
     lancaBridge: string
     lpToken: string
     pause: string
-    orchestrator: string
-    orchestratorProxy: string
     poolMessenger0: string
     poolMessenger1: string
     poolMessenger2: string
-    infraMessenger0: string
-    infraMessenger1: string
-    infraMessenger2: string
 }
 
 /**

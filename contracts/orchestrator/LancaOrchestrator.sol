@@ -12,8 +12,10 @@ import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaIntegration} from "./LancaIntegration.sol";
 import {LancaBridgeClient} from "../LancaBridgeClient/LancaBridgeClient.sol";
+import {LancaOwnable} from "../common/LancaOwnable.sol";
+import {LibErrors} from "../common/libraries/LibErrors.sol";
 
-contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient {
+contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient, LancaOwnable {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -33,6 +35,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
+    uint64 internal immutable i_chainSelector;
 
     /* ERRORS */
     error InvalidBridgeToken();
@@ -41,6 +44,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
     error TransferFailed();
     error InvalidLancaBridgeSender();
     error InvalidLancaBridgeSrcChain();
+    error InvalidChainSelector();
 
     /* EVENTS */
     event LancaBridgeReceived(bytes32 indexed id, address token, address receiver, uint256 amount);
@@ -52,9 +56,16 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
      */
     constructor(
         address usdc,
-        address lancaBridge
-    ) LancaDexSwap(msg.sender) LancaBridgeClient(lancaBridge) {
+        address lancaBridge,
+        uint64 chainSelector
+    )
+        LancaDexSwap()
+        LancaBridgeClient(lancaBridge)
+        // @dev TODO: check if it ok to pass msg.sender as owner
+        LancaOwnable(msg.sender)
+    {
         i_usdc = usdc;
+        i_chainSelector = chainSelector;
     }
 
     /* MODIFIERS */
@@ -133,6 +144,32 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
         _swap(swapData, receiver);
     }
 
+    /* ADMIN FUNCTIONS */
+
+    /**
+     * @notice Sets the address of a DEX Router as approved or not approved to perform swaps.
+     * @param router the address of the DEX Router
+     * @param isApproved true if the router is approved, false if it is not approved
+     */
+    function setDexRouterAddress(address router, bool isApproved) external payable onlyOwner {
+        require(
+            router != ZERO_ADDRESS,
+            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
+        );
+        s_routerAllowed[router] = isApproved;
+    }
+
+    function setDstLancaOrchestratorByChain(
+        uint64 dstChainSelector,
+        address dstOrchestrator
+    ) external payable onlyOwner {
+        require(
+            dstChainSelector != 0 && dstChainSelector != i_chainSelector,
+            InvalidChainSelector()
+        );
+        s_lancaOrchestratorDstByChainSelector[dstChainSelector] = dstOrchestrator;
+    }
+
     /* INTERNAL FUNCTIONS */
 
     function _bridge(BridgeData memory bridgeData, Integration calldata integration) internal {
@@ -160,7 +197,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
             fallbackReceiver: msg.sender,
             dstChainSelector: bridgeData.dstChainSelector,
             dstChainGasLimit: DST_CHAIN_GAS_LIMIT,
-            message: bridgeData.data
+            message: message
         });
 
         ILancaBridge(getLancaBridge()).bridge(bridgeReq);
@@ -208,11 +245,9 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient 
     }
 
     function _lancaBridgeReceive(LancaBridgeMessage calldata bridgeData) internal override {
-        // @dev: mb it is possible to pack it into one sload
-        require(s_isLancaBridgeSenderAllowed[bridgeData.sender], InvalidLancaBridgeSender());
         require(
-            s_isLancaBridgeSrcChainAllowed[bridgeData.srcChainSelector],
-            InvalidLancaBridgeSrcChain()
+            s_lancaOrchestratorDstByChainSelector[bridgeData.srcChainSelector] == bridgeData.sender,
+            InvalidLancaBridgeSender()
         );
 
         (address receiver, bytes memory compressedDstSwapData) = abi.decode(

@@ -8,7 +8,7 @@ import { conceroChains } from "../../constants/liveChains"
 import { verifyContractVariables } from "../verifyContractVariables.task"
 import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
 import deployTransparentProxy from "../../deploy/TransparentProxy"
-import { parentPoolClfSecretsSlotId, ProxyEnum } from "../../constants/deploymentVariables"
+import { PARENT_POOL_CLF_SECRETS_SLOT_ID, ProxyEnum } from "../../constants/deploymentVariables"
 import { upgradeProxyImplementation } from "../transparentProxy/upgradeProxyImplementation.task"
 import { getEnvAddress } from "../../utils/getEnvVar"
 import { addClfConsumer } from "../clf/addClfConsumer.task"
@@ -44,7 +44,7 @@ async function deployParentPool(params: DeployInfraParams) {
         }
 
         if (uploadSecrets) {
-            await uploadClfSecrets([conceroNetworks[name]], parentPoolClfSecretsSlotId)
+            await uploadClfSecrets([conceroNetworks[name]], PARENT_POOL_CLF_SECRETS_SLOT_ID)
         }
 
         if (deployImplementation) {

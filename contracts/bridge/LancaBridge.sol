@@ -29,12 +29,12 @@ contract LancaBridge is
     uint256 internal constant LANCA_FEE_FACTOR = 1_000;
     uint24 internal constant MAX_DST_CHAIN_GAS_LIMIT = 1_400_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
-    uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * 1e6;
     uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 1_000_000;
     uint256 private constant STANDARD_TOKEN_DECIMALS = 1e18;
 
     /* IMMUTABLES */
 
+    uint256 internal immutable i_batchedTxThreshold;
     uint64 internal immutable i_chainSelector;
     address internal immutable i_usdc;
     IERC20 internal immutable i_link;
@@ -46,12 +46,14 @@ contract LancaBridge is
         address usdc,
         address link,
         address lancaPool,
-        uint64 chainSelector
+        uint64 chainSelector,
+        uint256 batchedTxThreshold
     ) ConceroClient(conceroRouter) CCIPReceiver(ccipRouter) LancaOwnable(msg.sender) {
         i_usdc = usdc;
         i_link = IERC20(link);
         i_lancaPool = ILancaPool(lancaPool);
         i_chainSelector = chainSelector;
+        i_batchedTxThreshold = batchedTxThreshold;
     }
 
     /* EXTERNAL FUNCTIONS */
@@ -106,7 +108,7 @@ contract LancaBridge is
         );
 
         if (
-            (updatedBatchedTxAmount >= BATCHED_TX_THRESHOLD) ||
+            (updatedBatchedTxAmount >= i_batchedTxThreshold) ||
             (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
                 MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
         ) {
@@ -318,9 +320,9 @@ contract LancaBridge is
     function _calculateProportionalCCIPFee(
         uint256 ccipFeeInUsdc,
         uint256 amount
-    ) internal pure returns (uint256) {
-        if (amount >= BATCHED_TX_THRESHOLD) return ccipFeeInUsdc;
-        return (ccipFeeInUsdc * amount) / BATCHED_TX_THRESHOLD;
+    ) internal view returns (uint256) {
+        if (amount >= i_batchedTxThreshold) return ccipFeeInUsdc;
+        return (ccipFeeInUsdc * amount) / i_batchedTxThreshold;
     }
 
     /* CONCERO CLIENT FUNCTIONS */

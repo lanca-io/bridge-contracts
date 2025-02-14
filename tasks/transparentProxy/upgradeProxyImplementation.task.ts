@@ -23,6 +23,8 @@ export async function upgradeProxyImplementation(hre: any, proxyType: ProxyEnum,
         implementationKey = "parentPool"
     } else if (proxyType === ProxyEnum.childPoolProxy) {
         implementationKey = "childPool"
+    } else if (proxyType === ProxyEnum.orchestratorProxy) {
+        implementationKey = "orchestrator"
     } else {
         err(`Proxy type ${proxyType} not found`, "upgradeProxyImplementation", chainName)
         return

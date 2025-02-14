@@ -6,7 +6,11 @@ import { Deployment } from "hardhat-deploy/types"
 import { getGasParameters } from "../utils/getGasPrice"
 import { CNetworkNames } from "../types/CNetwork"
 import updateEnvVariable from "../utils/updateEnvVariable"
-import { viemReceiptConfig } from "../constants/deploymentVariables"
+import {
+    LANCA_BRIDGE_MAINNET_BATCHED_TX_THRESHOLD,
+    LANCA_BRIDGE_TESTNET_BATCHED_TX_THRESHOLD,
+    viemReceiptConfig,
+} from "../constants/deploymentVariables"
 
 interface ConstructorArgs {
     conceroProxyAddress?: string
@@ -29,6 +33,7 @@ const deployLancaBridgeImplementation: (
     const { live } = hre.network
     const name = hre.network.name as CNetworkNames
     const { type, chainSelector, linkToken } = conceroNetworks[name]
+    const isTestnet = type === "testnet"
     const lancaPool =
         name === "base" || name === "baseSepolia"
             ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
@@ -40,6 +45,9 @@ const deployLancaBridgeImplementation: (
         ccipRouter: getEnvVar(`CL_CCIP_ROUTER_${networkEnvKeys[name]}`),
         linkToken,
         lancaPool,
+        batchedTxThreshold: isTestnet
+            ? LANCA_BRIDGE_TESTNET_BATCHED_TX_THRESHOLD
+            : LANCA_BRIDGE_MAINNET_BATCHED_TX_THRESHOLD,
     }
 
     const args = { ...defaultArgs, ...constructorArgs }
@@ -49,7 +57,15 @@ const deployLancaBridgeImplementation: (
 
     const deployLancaBridge = (await deploy("LancaBridge", {
         from: deployer,
-        args: [args.conceroRouter, args.ccipRouter, args.usdc, args.linkToken, args.lancaPool, args.chainSelector],
+        args: [
+            args.conceroRouter,
+            args.ccipRouter,
+            args.usdc,
+            args.linkToken,
+            args.lancaPool,
+            args.chainSelector,
+            args.batchedTxThreshold,
+        ],
         log: true,
         autoMine: true,
         maxFeePerGas: maxFeePerGas.toString(),

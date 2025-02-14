@@ -3,7 +3,7 @@ import { CNetworkNames } from "../../types/CNetwork"
 import { conceroNetworks } from "../../constants"
 import { getFallbackClients } from "../../utils"
 import { getEnvAddress } from "../../utils/getEnvVar"
-import { parentPoolLiqCap, ProxyEnum } from "../../constants/deploymentVariables"
+import { PARENT_POOL_LIQ_CAP, ProxyEnum } from "../../constants/deploymentVariables"
 import log from "../../utils/log"
 import { setDstPools } from "./setDstPool"
 
@@ -19,7 +19,7 @@ async function setParentPoolCap(poolChainName: CNetworkNames) {
         functionName: "getLiquidityCap",
     })
 
-    if (currentPoolCup === parentPoolLiqCap) {
+    if (currentPoolCup === PARENT_POOL_LIQ_CAP) {
         const logMessage = `[Skip] ${currentChainPoolAddress}.setParentPoolCap. Already set`
         log(logMessage, "setParentPoolCap", poolChainName)
         return
@@ -30,14 +30,14 @@ async function setParentPoolCap(poolChainName: CNetworkNames) {
         address: currentChainPoolAddress,
         abi: poolAbi,
         functionName: "setPoolCap",
-        args: [parentPoolLiqCap],
+        args: [PARENT_POOL_LIQ_CAP],
     })
     const setCapHash = await walletClient.writeContract(setCapReq)
     const { cumulativeGasUsed: setCapGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setCapHash,
     })
 
-    const logMessage = `${currentChainPoolAddress}.cap -> ${parentPoolLiqCap}. Gas: ${setCapGasUsed}`
+    const logMessage = `${currentChainPoolAddress}.cap -> ${PARENT_POOL_LIQ_CAP}. Gas: ${setCapGasUsed}`
     log(logMessage, "setParentPoolCap", poolChainName)
 }
 
