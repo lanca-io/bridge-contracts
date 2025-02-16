@@ -61,7 +61,11 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     }
 
     /* EXTERNAL FUNCTIONS */
-    function takeLoan(address token, uint256 amount, address receiver) external onlyLancaBridge {
+    function takeLoan(
+        address token,
+        uint256 amount,
+        address receiver
+    ) external onlyLancaBridge returns (uint256) {
         require(
             receiver != ZERO_ADDRESS,
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.zeroAddress)
@@ -70,8 +74,11 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
             token == address(i_usdc),
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
-        IERC20(token).safeTransfer(receiver, amount);
-        s_loansInUse += amount;
+
+        uint256 loanAmountAfterFee = amount - getDstTotalFeeInUsdc(amount);
+        IERC20(token).safeTransfer(receiver, loanAmountAfterFee);
+        s_loansInUse += loanAmountAfterFee;
+        return loanAmountAfterFee;
     }
 
     function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {

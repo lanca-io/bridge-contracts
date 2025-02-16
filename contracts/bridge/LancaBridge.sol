@@ -358,17 +358,22 @@ contract LancaBridge is
             (LancaBridgeMessageDataV1)
         );
 
+        uint256 loanAmount = i_lancaPool.takeLoan(
+            i_usdc,
+            lancaMessageData.amount,
+            lancaMessageData.receiver
+        );
+
         ILancaBridgeClient.LancaBridgeMessage memory bridgeData = ILancaBridgeClient
             .LancaBridgeMessage({
                 id: conceroMessage.id,
                 sender: lancaMessageData.sender,
                 token: i_usdc,
-                amount: lancaMessageData.amount,
+                amount: loanAmount,
                 srcChainSelector: conceroMessage.srcChainSelector,
                 data: lancaMessageData.data
             });
 
-        i_lancaPool.takeLoan(i_usdc, lancaMessageData.amount, lancaMessageData.receiver);
         ILancaBridgeClient(lancaMessageData.receiver).lancaBridgeReceive{
             gas: lancaMessageData.dstChainGasLimit
         }(bridgeData);
