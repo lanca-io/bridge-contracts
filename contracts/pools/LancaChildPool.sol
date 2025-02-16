@@ -61,12 +61,6 @@ contract LancaChildPool is
         }
     }
 
-    // TODO: remove it!!!!
-    function withdraw() external onlyOwner {
-        uint256 balance = i_usdc.balanceOf(address(this));
-        i_usdc.transfer(msg.sender, balance);
-    }
-
     function distributeLiquidity(
         uint64 chainSelector,
         uint256 amountToSend,

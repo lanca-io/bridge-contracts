@@ -82,8 +82,9 @@ const deployParentPoolClfClfImplementation: (
         ],
         log: true,
         autoMine: true,
-        maxFeePerGas,
-        maxPriorityFeePerGas,
+        maxFeePerGas: maxFeePerGas.toString(),
+        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        gasLimit: 6_000_000,
         waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 

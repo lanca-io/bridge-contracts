@@ -60,9 +60,9 @@ const deployParentPoolImplementation: (
         args: [args.tokenConfig, args.addressConfig, args.hashConfig, args.poolConfig],
         log: true,
         autoMine: true,
-        gasLimit: 4_000_000,
-        maxFeePerGas,
-        maxPriorityFeePerGas,
+        gasLimit: 10_000_000,
+        maxFeePerGas: maxFeePerGas.toString(),
+        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
         waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 
