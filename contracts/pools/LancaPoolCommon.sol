@@ -8,6 +8,7 @@ import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
 import {ILancaPool} from "./interfaces/ILancaPool.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     using SafeERC20 for IERC20;
@@ -76,8 +77,8 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
         );
 
         uint256 loanAmountAfterFee = amount - getDstTotalFeeInUsdc(amount);
-        IERC20(token).safeTransfer(receiver, loanAmountAfterFee);
         s_loansInUse += loanAmountAfterFee;
+        IERC20(token).safeTransfer(receiver, loanAmountAfterFee);
         return loanAmountAfterFee;
     }
 

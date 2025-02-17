@@ -9,8 +9,19 @@ contract LancaBridgeHarness is LancaBridge {
         address usdc,
         address link,
         address lancaPool,
-        uint64 chainSelector
-    ) LancaBridge(conceroRouter, ccipRouter, usdc, link, lancaPool, chainSelector) {}
+        uint64 chainSelector,
+        uint256 batchedTxThreshold
+    )
+        LancaBridge(
+            conceroRouter,
+            ccipRouter,
+            usdc,
+            link,
+            lancaPool,
+            chainSelector,
+            batchedTxThreshold
+        )
+    {}
 
     /* SETTERS */
     function exposed_setIsBridgeProcessed(bytes32 messageId) public {
@@ -21,8 +32,8 @@ contract LancaBridgeHarness is LancaBridge {
         return MAX_DST_CHAIN_GAS_LIMIT;
     }
 
-    function exposed_getBatchedTxThreshold() public pure returns (uint256) {
-        return BATCHED_TX_THRESHOLD;
+    function exposed_getBatchedTxThreshold() public view returns (uint256) {
+        return i_batchedTxThreshold;
     }
 
     function exposed_getLancaPool() public view returns (address) {

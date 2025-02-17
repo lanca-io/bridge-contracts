@@ -20,7 +20,8 @@ contract DeployLancaBridgeHarnessScript is DeployBase {
                 getUsdcAddress(),
                 getLinkAddress(),
                 lancaPool,
-                getChainSelector()
+                getChainSelector(),
+                getBatchedTxThreshold()
             )
         );
 

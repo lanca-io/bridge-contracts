@@ -11,6 +11,7 @@ import simulateClfTask from "./clf/simulateClf.task"
 import withdrawFromPoolTask from "./pools/withdrawFromPool.task"
 import retryWithdrawFromPoolTask from "./pools/retryWithdrawFromPool.task"
 import deployLancaOrchestratorImplementation from "./orchestrator/deployOrchestrator.task"
+import getLoansInUseTask from "./pools/getLoansInUse.task"
 
 export {
     deployLancaBridgeTask,
@@ -26,4 +27,5 @@ export {
     withdrawFromPoolTask,
     retryWithdrawFromPoolTask,
     deployLancaOrchestratorImplementation,
+    getLoansInUseTask,
 }

@@ -202,9 +202,9 @@ contract DeployHelper is Script {
 
     function getMessengers() public view returns (address[] memory) {
         address[] memory messengers = new address[](3);
-        messengers[0] = vm.envAddress("MESSENGER_0_ADDRESS");
-        messengers[1] = vm.envAddress("MESSENGER_1_ADDRESS");
-        messengers[2] = vm.envAddress("MESSENGER_2_ADDRESS");
+        messengers[0] = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
+        messengers[1] = vm.envAddress("POOL_MESSENGER_1_ADDRESS");
+        messengers[2] = vm.envAddress("POOL_MESSENGER_2_ADDRESS");
         return messengers;
     }
 
@@ -243,6 +243,14 @@ contract DeployHelper is Script {
     }
 
     function getWithdrawalCooldownSeconds() public view returns (uint256) {
+        if (!isTestnet()) {
+            return 7 days;
+        }
+
+        return 1 seconds;
+    }
+
+    function isTestnet() public view returns (bool) {
         uint256 chainId = block.chainid;
 
         if (
@@ -253,9 +261,17 @@ contract DeployHelper is Script {
             chainId == vm.envUint("OPTIMISM_CHAIN_ID") ||
             chainId == vm.envUint("ETHEREUM_CHAIN_ID")
         ) {
-            return 7 days;
+            return false;
         }
 
-        return 1 seconds;
+        return true;
+    }
+
+    function getBatchedTxThreshold() public view returns (uint256) {
+        if (isTestnet()) {
+            return 7e6;
+        } else {
+            return 3000e6;
+        }
     }
 }

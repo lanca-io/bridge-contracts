@@ -343,14 +343,15 @@ contract LancaBridge is
         );
 
         if (lancaBridgeMessageVersion == LancaBridgeMessageVersion.V1) {
-            _handleLancaBridgeMessageV1(conceroMessage, data);
+            _handleLancaBridgeMessageV1(conceroMessage.id, conceroMessage.srcChainSelector, data);
         } else {
             revert InvalidLancaBridgeMessageVersion();
         }
     }
 
     function _handleLancaBridgeMessageV1(
-        Message calldata conceroMessage,
+        bytes32 conceroMessageId,
+        uint64 srcChainSelector,
         bytes memory lancaBridgeMessageData
     ) internal {
         LancaBridgeMessageDataV1 memory lancaMessageData = abi.decode(
@@ -366,11 +367,11 @@ contract LancaBridge is
 
         ILancaBridgeClient.LancaBridgeMessage memory bridgeData = ILancaBridgeClient
             .LancaBridgeMessage({
-                id: conceroMessage.id,
+                id: conceroMessageId,
                 sender: lancaMessageData.sender,
                 token: i_usdc,
                 amount: loanAmount,
-                srcChainSelector: conceroMessage.srcChainSelector,
+                srcChainSelector: srcChainSelector,
                 data: lancaMessageData.data
             });
 

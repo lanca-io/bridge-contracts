@@ -9,13 +9,13 @@ contract ConceroRouterMock is IConceroRouter {
         IERC20(messageReq.feeToken).transferFrom(
             msg.sender,
             address(this),
-            getFee(messageReq.dstChainSelector)
+            getFeeInUsdc(messageReq.dstChainSelector)
         );
 
         return keccak256(abi.encode(block.number, block.prevrandao));
     }
 
-    function getFee(uint64 /*dstChainSelector*/) public pure returns (uint256) {
+    function getFeeInUsdc(uint64 /*dstChainSelector*/) public pure returns (uint256) {
         return 10000;
     }
 }
