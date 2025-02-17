@@ -6,9 +6,9 @@ import { getEnvVar } from "../../utils/getEnvVar"
 import { networkEnvKeys } from "../../constants/conceroNetworks"
 import { CNetworkNames } from "../../types/CNetwork"
 import { isMasterChain } from "../../utils"
-import { Address, formatUnits } from "viem"
+import { Address, erc20Abi, formatUnits } from "viem"
 
-task("get-loans-in-use", "").setAction(async taskArgs => {
+task("get-pool-info", "").setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat")
     const name = hre.network.name as CNetworkNames
     const conceroChain = conceroNetworks[name]
@@ -17,17 +17,25 @@ task("get-loans-in-use", "").setAction(async taskArgs => {
     const { abi: lancaPoolAbi } = await import(
         "../../artifacts/contracts/pools/LancaPoolCommon.sol/LancaPoolCommon.json"
     )
+    const poolAddress = getEnvVar(
+        (isMasterChain(conceroChain) ? "PARENT_POOL_PROXY_" : "CHILD_POOL_PROXY_") + networkEnvKeys[name],
+    ) as Address
 
     const loansInUse = (await publicClient.readContract({
-        address: getEnvVar(
-            (isMasterChain(conceroChain) ? "PARENT_POOL_PROXY_" : "CHILD_POOL_PROXY_") + networkEnvKeys[name],
-        ) as Address,
+        address: poolAddress,
         abi: lancaPoolAbi,
         functionName: "getUsdcLoansInUse",
         args: [],
     })) as bigint
 
-    console.table([formatUnits(loansInUse, 6)])
+    const usdcBalance = (await publicClient.readContract({
+        address: getEnvVar("USDC_" + networkEnvKeys[name]) as Address,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [poolAddress],
+    })) as bigint
+
+    console.table([{ loansInUse: formatUnits(loansInUse, 6), usdcBalance: formatUnits(usdcBalance, 6) }])
 })
 
 export default {}
