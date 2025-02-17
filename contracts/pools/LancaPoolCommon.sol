@@ -87,11 +87,12 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
 
     function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
         // @dev TODO: mb move to transferFrom lanca bridge?
+
         // amount -= getDstTotalFeeInUsdc(amount);
         // s_loansInUse -= amount;
 
-        (, uint256 updatedLoansInUse) = s_loansInUse.trySub(amount - getDstTotalFeeInUsdc(amount));
-        s_loansInUse = updatedLoansInUse;
+        uint256 loansInUse = s_loansInUse;
+        (, s_loansInUse) = loansInUse.trySub(amount - getDstTotalFeeInUsdc(amount));
     }
 
     /* PUBLIC FUNCTIONS */

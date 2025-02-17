@@ -3,14 +3,12 @@ pragma solidity 0.8.28;
 
 import {DeployBase} from "./DeployBase.s.sol";
 import {LancaChildPoolHarness} from "../harnesses/LancaChildPoolHarness.sol";
-import {ERC20Mock} from "../mocks/ERC20Mock.sol";
 
 contract DeployLancaChildPoolHarnessScript is DeployBase {
     function _deployImplementation() internal override returns (address) {
         vm.startPrank(getDeployer());
 
         address ccipRouter = getCcipRouter();
-        address clfRouter = getClfRouter();
         address lancaBridge = makeAddr("lancaBridge");
         address owner = getDeployer();
 
