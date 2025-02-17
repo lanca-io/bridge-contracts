@@ -9,8 +9,6 @@ contract DeployLancaChildPoolHarnessScript is DeployBase {
     function _deployImplementation() internal override returns (address) {
         vm.startPrank(getDeployer());
 
-        address link = address(new ERC20Mock("LinkToken", "LinkToken", 18)); //getLinkAddress();
-        address usdc = address(new ERC20Mock("USDC", "USDC", 6)); //getUsdcAddress()
         address ccipRouter = getCcipRouter();
         address clfRouter = getClfRouter();
         address lancaBridge = makeAddr("lancaBridge");
@@ -19,7 +17,14 @@ contract DeployLancaChildPoolHarnessScript is DeployBase {
         address[3] memory messengers = [getMessengers()[0], getMessengers()[1], getMessengers()[2]];
 
         address lancaChildPool = address(
-            new LancaChildPoolHarness(link, owner, ccipRouter, usdc, lancaBridge, messengers)
+            new LancaChildPoolHarness(
+                owner,
+                getUsdcAddress(),
+                getLinkAddress(),
+                lancaBridge,
+                ccipRouter,
+                messengers
+            )
         );
 
         vm.stopPrank();

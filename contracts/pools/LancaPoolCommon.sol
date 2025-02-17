@@ -12,10 +12,13 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     using SafeERC20 for IERC20;
+    using Math for uint256;
 
     /* CONSTANT VARIABLES */
     uint256 internal constant PRECISION_HANDLER = 1e10;
     uint256 internal constant LP_FEE_FACTOR = 1000;
+    uint256 internal constant LP_FEE_BPS = 10;
+    uint256 internal constant BPS_DIVISOR = 10_000;
 
     /* IMMUTABLE VARIABLES */
     IERC20 internal immutable i_usdc;
@@ -83,14 +86,18 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     }
 
     function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
-        amount -= getDstTotalFeeInUsdc(amount);
-        s_loansInUse -= amount;
+        // @dev TODO: mb move to transferFrom lanca bridge?
+        // amount -= getDstTotalFeeInUsdc(amount);
+        // s_loansInUse -= amount;
+
+        (, uint256 updatedLoansInUse) = s_loansInUse.trySub(amount - getDstTotalFeeInUsdc(amount));
+        s_loansInUse = updatedLoansInUse;
     }
 
     /* PUBLIC FUNCTIONS */
 
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+        return amount.mulDiv(LP_FEE_BPS, BPS_DIVISOR, Math.Rounding.Ceil);
     }
 
     /* INTERNAL FUNCTIONS */

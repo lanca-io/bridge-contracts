@@ -9,6 +9,7 @@ import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaChildPool} from "contracts/pools/interfaces/ILancaChildPool.sol";
+import {console} from "forge-std/src/Console.sol";
 
 contract LancaChildPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -19,11 +20,9 @@ contract LancaChildPoolTest is Test {
     address internal s_usdc;
 
     function setUp() public {
-        uint256 forkId = vm.createSelectFork(vm.envString("RPC_URL_BASE"), 26000933);
+        vm.createSelectFork(vm.envString("RPC_URL_BASE"), 26000933);
         s_deployChildPoolHarnessScript = new DeployLancaChildPoolHarnessScript();
-        s_lancaChildPool = LancaChildPoolHarness(
-            payable(s_deployChildPoolHarnessScript.run(forkId))
-        );
+        s_lancaChildPool = LancaChildPoolHarness(payable(s_deployChildPoolHarnessScript.run()));
         s_usdc = s_lancaChildPool.exposed_getUsdcToken();
     }
 
@@ -97,10 +96,30 @@ contract LancaChildPoolTest is Test {
         uint256 amount = 100 * USDC_DECIMALS;
 
         vm.prank(s_lancaChildPool.exposed_getLancaBridge());
-        s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
+        uint256 loanAmount = s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
 
-        vm.assertEq(IERC20(s_usdc).balanceOf(receiver), amount);
-        vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), amount);
+        vm.assertEq(IERC20(s_usdc).balanceOf(receiver), loanAmount);
+        vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), loanAmount);
+    }
+
+    function testFuzz_completeRebalancingMultipleTimes(
+        uint256 amountToLoan,
+        uint256 loansCount
+    ) public {
+        vm.assume(loansCount > 0 && loansCount < 1_000 && amountToLoan < 100_000_000_000e6);
+
+        address receiver = makeAddr("receiver");
+
+        deal(s_usdc, address(s_lancaChildPool), amountToLoan * loansCount);
+
+        vm.startPrank(s_lancaChildPool.exposed_getLancaBridge());
+        for (uint256 i; i < loansCount; ++i) {
+            s_lancaChildPool.takeLoan(s_usdc, amountToLoan, receiver);
+        }
+        s_lancaChildPool.completeRebalancing(bytes32(0), amountToLoan * loansCount);
+        vm.stopPrank();
+
+        assertEq(s_lancaChildPool.getUsdcLoansInUse(), 0);
     }
 
     /* REVERTS */
