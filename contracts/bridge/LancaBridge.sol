@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {ConceroClient} from "concero/contracts/ConceroClient/ConceroClient.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
-import {IConceroRouter} from "../common/interfaces/IConceroRouter.sol";
+import {IConceroRouter} from "concero/contracts/interfaces/IConceroRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaBridgeClient} from "../LancaBridgeClient/Interfaces/ILancaBridgeClient.sol";
 import {ILancaBridge} from "./interfaces/ILancaBridge.sol";
@@ -154,14 +154,16 @@ contract LancaBridge is
     function getBridgeFeeBreakdown(
         uint64 dstChainSelector,
         uint256 amount,
-        address /*feeToken*/,
-        uint32 /*dstChainGasLimit*/
+        address feeToken,
+        uint32 dstChainGasLimit
     ) public view returns (uint256, uint256, uint256) {
         // @dev fee calculation logic based on fee token address and dst chain gas limit will be added in closest future
         uint256 ccipFee = _getCCIPFee(dstChainSelector, amount);
         uint256 lancaFee = _getLancaFee(amount);
-        uint256 conceroMessageFee = IConceroRouter(getConceroRouter()).getFeeInUsdc(
-            dstChainSelector
+        uint256 conceroMessageFee = IConceroRouter(getConceroRouter()).getFee(
+            dstChainSelector,
+            feeToken,
+            dstChainGasLimit
         );
         return (ccipFee, lancaFee, conceroMessageFee);
     }
