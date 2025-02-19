@@ -119,14 +119,6 @@ contract LancaBridge is
             );
         }
 
-        emit LancaBridgeSent(
-            conceroMessageId,
-            bridgeReq.token,
-            amountToSendAfterFee,
-            bridgeReq.receiver,
-            bridgeReq.dstChainSelector
-        );
-
         return conceroMessageId;
     }
 
@@ -136,13 +128,13 @@ contract LancaBridge is
         address feeToken,
         uint32 dstChainGasLimit
     ) public view returns (uint256) {
-        (uint256 ccipFee, uint256 lancaFee, uint256 messengerFee) = getBridgeFeeBreakdown(
+        (uint256 ccipFee, uint256 lancaFee, uint256 conceroMessageFee) = getBridgeFeeBreakdown(
             dstChainSelector,
             amount,
             feeToken,
             dstChainGasLimit
         );
-        return ccipFee + lancaFee + messengerFee;
+        return ccipFee + lancaFee + conceroMessageFee;
     }
 
     /* PUBLIC FUNCTIONS */
@@ -188,6 +180,7 @@ contract LancaBridge is
     }
 
     function _getLancaFee(uint256 amount) internal pure returns (uint256) {
+        // TODO: double check this
         return amount / LANCA_FEE_FACTOR;
     }
 
@@ -200,6 +193,7 @@ contract LancaBridge is
         require(bridgeReq.token == i_usdc, InvalidBridgeToken());
         require(bridgeReq.feeToken == i_usdc, InvalidFeeToken());
         require(bridgeReq.receiver != ZERO_ADDRESS, InvalidReceiver());
+        // @dev TODO: check fallbackReceiver address
         require(bridgeReq.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 
@@ -337,7 +331,8 @@ contract LancaBridge is
             UnauthorizedConceroMessageSender()
         );
 
-        _processBridge(conceroMessage.id);
+        require(!s_isBridgeProcessed[conceroMessage.id], BridgeAlreadyProcessed());
+        s_isBridgeProcessed[conceroMessage.id] = true;
 
         (LancaBridgeMessageVersion lancaBridgeMessageVersion, bytes memory data) = abi.decode(
             conceroMessage.data,
@@ -380,11 +375,6 @@ contract LancaBridge is
         ILancaBridgeClient(lancaMessageData.receiver).lancaBridgeReceive{
             gas: lancaMessageData.dstChainGasLimit
         }(bridgeData);
-    }
-
-    function _processBridge(bytes32 id) internal {
-        require(!s_isBridgeProcessed[id], BridgeAlreadyProcessed());
-        s_isBridgeProcessed[id] = true;
     }
 
     /* CCIP CLIENT FUNCTIONS */

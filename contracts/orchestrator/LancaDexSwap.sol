@@ -13,7 +13,6 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* CONSTANTS */
-    uint16 internal constant LANCA_FEE_FACTOR = 1000;
     uint8 internal constant MAX_SWAPS_LENGTH = 5;
 
     /* INTERNAL FUNCTIONS */
@@ -27,7 +26,7 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
     function _swap(
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
-    ) internal virtual returns (uint256) {
+    ) internal returns (uint256) {
         address addressThis = address(this);
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
@@ -89,6 +88,7 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
         if (!isFromNative) {
             IERC20(fromToken).safeIncreaseAllowance(dexRouter, fromAmount);
             (success, ) = dexRouter.call(dexCallData);
+            IERC20(fromToken).forceApprove(dexRouter, 0);
         } else {
             (success, ) = dexRouter.call{value: fromAmount}(dexCallData);
         }

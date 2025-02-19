@@ -56,13 +56,7 @@ interface ILancaBridge {
     error UnauthorizedCcipMessageSender();
 
     /* EVENTS */
-    event LancaBridgeSent(
-        bytes32 indexed conceroMessageId,
-        address token,
-        uint256 amount,
-        address receiver,
-        uint64 dstChainSelector
-    );
+
     event LancaSettlementSent(
         bytes32 indexed ccipMessageId,
         address token,

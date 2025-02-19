@@ -32,6 +32,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1_000;
     uint16 internal constant BPS_DIVISOR = 10_000;
     uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
+    uint16 internal constant LANCA_FEE_FACTOR = 1000;
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
@@ -47,7 +48,15 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     error InvalidChainSelector();
 
     /* EVENTS */
+    // TODO: move this events to the LancaBridge
     event LancaBridgeReceived(bytes32 indexed id, address token, address receiver, uint256 amount);
+    event LancaBridgeSent(
+        bytes32 indexed conceroMessageId,
+        address token,
+        uint256 amount,
+        address receiver,
+        uint64 dstChainSelector
+    );
 
     /**
      * @dev Constructor for the LancaOrchestrator contract.
@@ -75,7 +84,12 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     }
 
     modifier validateBridgeData(BridgeData memory bridgeData) {
-        require(bridgeData.amount != 0 && bridgeData.receiver != ZERO_ADDRESS, InvalidBridgeData());
+        require(
+            bridgeData.amount != 0 &&
+                bridgeData.receiver != ZERO_ADDRESS &&
+                bridgeData.token == i_usdc,
+            InvalidBridgeData()
+        );
         _;
     }
 
@@ -92,8 +106,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         ILancaDexSwap.SwapData[] memory swapData,
         Integration calldata integration
     ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
-        address usdc = LibLanca.getUSDCAddressByChain(ICcip.CcipToken.usdc);
-        require(swapData[swapData.length - 1].toToken == usdc, InvalidSwapData());
+        require(swapData[swapData.length - 1].toToken == i_usdc, InvalidSwapData());
 
         LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
         bridgeData.amount = _swap(swapData, address(this));
@@ -103,11 +116,25 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     function bridge(
         BridgeData memory bridgeData,
         Integration calldata integration
-    ) external nonReentrant {
-        require(bridgeData.token == i_usdc, InvalidBridgeToken());
-
+    )
+        external
+        // @dev TODO: do we need nonReentrant modifier here?
+        nonReentrant
+        validateBridgeData(bridgeData)
+    {
         IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
         _bridge(bridgeData, integration);
+    }
+
+    function swap(
+        ILancaDexSwap.SwapData[] memory swapData,
+        address receiver,
+        Integration calldata integration
+    ) external payable nonReentrant validateSwapData(swapData) {
+        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
+        LibLanca.transferTokenFromUser(fromToken, fromAmount);
+        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
+        _swap(swapData, receiver);
     }
 
     /// @inheritdoc ILancaIntegration
@@ -130,18 +157,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
                 emit IntegratorFeesWithdrawn(integrator, token, amount);
             }
         }
-    }
-
-    /// @inheritdoc ILancaDexSwap
-    function swap(
-        ILancaDexSwap.SwapData[] memory swapData,
-        address receiver,
-        Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) {
-        (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
-        LibLanca.transferTokenFromUser(fromToken, fromAmount);
-        swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
-        _swap(swapData, receiver);
     }
 
     /* ADMIN FUNCTIONS */
@@ -203,7 +218,15 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address lancaBridge = getLancaBridge();
 
         IERC20(bridgeData.token).approve(lancaBridge, bridgeData.amount);
-        ILancaBridge(lancaBridge).bridge(bridgeReq);
+        bytes32 bridgeId = ILancaBridge(lancaBridge).bridge(bridgeReq);
+
+        emit LancaBridgeSent(
+            bridgeId,
+            bridgeReq.token,
+            bridgeData.amount,
+            bridgeReq.receiver,
+            bridgeReq.dstChainSelector
+        );
     }
 
     /// @inheritdoc LancaIntegration
@@ -221,7 +244,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
-            s_integratorFeesAmountByToken[address(this)][token] += lancaFee;
+            s_integratorFeesAmountByToken[i_owner][token] += lancaFee;
         }
         return lancaFee;
     }

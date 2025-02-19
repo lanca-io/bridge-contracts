@@ -79,8 +79,9 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
+        s_loansInUse += amount;
+
         uint256 loanAmountAfterFee = amount - getDstTotalFeeInUsdc(amount);
-        s_loansInUse += loanAmountAfterFee;
         IERC20(token).safeTransfer(receiver, loanAmountAfterFee);
         return loanAmountAfterFee;
     }
@@ -88,11 +89,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
         // @dev TODO: mb move to transferFrom lanca bridge?
 
-        // amount -= getDstTotalFeeInUsdc(amount);
-        // s_loansInUse -= amount;
-
-        uint256 loansInUse = s_loansInUse;
-        (, s_loansInUse) = loansInUse.trySub(amount - getDstTotalFeeInUsdc(amount));
+        s_loansInUse -= amount;
     }
 
     /* PUBLIC FUNCTIONS */

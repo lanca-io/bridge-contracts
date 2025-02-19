@@ -35,36 +35,11 @@ interface ILancaDexSwap {
     );
 
     /* ERRORS */
-    /// @notice error emitted when the router is not allowed
+
     error DexRouterNotAllowed();
-
-    /// @notice error emitted when the swapData is empty
     error EmptySwapData();
-
-    /// @notice error emitted when provided DEX data is invalid
     error InvalidSwapData();
-
-    /// @notice error emitted when a swap operation fails
     error LancaSwapFailed();
-
-    /// @notice this error is emitted when the path of tokens to be swapped is invalid
     error InvalidTokenPath();
-
-    /// @notice error emitted when the received amount is less than the minimum allowed
-    /// @param amount the amount received
     error InsufficientAmount(uint256 amount);
-
-    /* FUNCTIONS */
-
-    /**
-     * @notice Perform a swap on a list of SwapData, with the first SwapData.fromToken being the input token and the last SwapData.toToken being the output token.
-     * @param swapData the list of SwapData to perform the swap in order
-     * @param receiver the address to send the output token to
-     * @param integration Integration details for fee calculation
-     */
-    function swap(
-        SwapData[] calldata swapData,
-        address receiver,
-        ILancaIntegration.Integration calldata integration
-    ) external payable;
 }
