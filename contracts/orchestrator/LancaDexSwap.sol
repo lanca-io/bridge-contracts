@@ -23,10 +23,10 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
      * @param receiver the address to send the output token to
      * @return dstTokenReceived the amount of token received after the swap
      */
-    function _swap(
+    function preformSwaps(
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
-    ) internal returns (uint256) {
+    ) external returns (uint256) {
         address addressThis = address(this);
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;

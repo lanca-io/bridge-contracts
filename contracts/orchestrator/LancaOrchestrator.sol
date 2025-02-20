@@ -31,7 +31,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     /* CONSTANTS */
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1_000;
     uint16 internal constant BPS_DIVISOR = 10_000;
-    uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_000_000;
+    uint24 internal constant DST_CHAIN_GAS_LIMIT = 1_200_000;
     uint16 internal constant LANCA_FEE_FACTOR = 1000;
 
     /* IMMUTABLES */
@@ -48,7 +48,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     error InvalidChainSelector();
 
     /* EVENTS */
-    // TODO: move this events to the LancaBridge
+    // TODO: move this events to the LancaBridge in future
     event LancaBridgeReceived(bytes32 indexed id, address token, address receiver, uint256 amount);
     event LancaBridgeSent(
         bytes32 indexed conceroMessageId,
@@ -57,6 +57,8 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address receiver,
         uint64 dstChainSelector
     );
+
+    event DstSwapFailed(bytes32);
 
     /**
      * @dev Constructor for the LancaOrchestrator contract.
@@ -67,12 +69,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address usdc,
         address lancaBridge,
         uint64 chainSelector
-    )
-        LancaDexSwap()
-        LancaBridgeClient(lancaBridge)
-        // @dev TODO: check if it ok to pass msg.sender as owner
-        LancaOwnable(msg.sender)
-    {
+    ) LancaDexSwap() LancaBridgeClient(lancaBridge) LancaOwnable(msg.sender) {
         i_usdc = usdc;
         i_chainSelector = chainSelector;
     }
@@ -109,7 +106,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         require(swapData[swapData.length - 1].toToken == i_usdc, InvalidSwapData());
 
         LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-        bridgeData.amount = _swap(swapData, address(this));
+        bridgeData.amount = this.preformSwaps(swapData, address(this));
         _bridge(bridgeData, integration);
     }
 
@@ -134,7 +131,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
         LibLanca.transferTokenFromUser(fromToken, fromAmount);
         swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
-        _swap(swapData, receiver);
+        this.preformSwaps(swapData, receiver);
     }
 
     /// @inheritdoc ILancaIntegration
@@ -290,8 +287,11 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
             swapData[0].fromAmount = bridgeData.amount;
 
             _validateSwapData(swapData);
-            // @dev TODO: add try catch block
-            _swap(swapData, receiver);
+
+            try this.preformSwaps(swapData, receiver) {} catch {
+                IERC20(bridgeData.token).safeTransfer(receiver, bridgeData.amount);
+                emit DstSwapFailed(bridgeData.id);
+            }
         }
 
         emit LancaBridgeReceived(bridgeData.id, bridgeData.token, receiver, bridgeData.amount);
