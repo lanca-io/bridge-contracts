@@ -102,25 +102,23 @@ contract LancaBridge is
         IERC20(messageReq.feeToken).forceApprove(i_conceroRouter, conceroMessageFee);
         bytes32 conceroMessageId = IConceroRouter(i_conceroRouter).sendMessage(messageReq);
 
-        {
-            uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
-                conceroMessageId,
-                bridgeReq.fallbackReceiver,
-                amountToSendAfterFee,
+        uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
+            conceroMessageId,
+            bridgeReq.fallbackReceiver,
+            amountToSendAfterFee,
+            bridgeReq.dstChainSelector
+        );
+
+        if (
+            (updatedBatchedTxAmount >= i_batchedTxThreshold) ||
+            (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
+                MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
+        ) {
+            _sendBatchViaSettlement(
+                bridgeReq.token,
+                updatedBatchedTxAmount,
                 bridgeReq.dstChainSelector
             );
-
-            if (
-                (updatedBatchedTxAmount >= i_batchedTxThreshold) ||
-                (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
-                    MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
-            ) {
-                _sendBatchViaSettlement(
-                    bridgeReq.token,
-                    updatedBatchedTxAmount,
-                    bridgeReq.dstChainSelector
-                );
-            }
         }
 
         return conceroMessageId;
