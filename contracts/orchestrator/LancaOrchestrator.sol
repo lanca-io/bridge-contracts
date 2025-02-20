@@ -24,7 +24,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
         address receiver;
         uint256 amount;
         uint64 dstChainSelector;
-        bytes data; // TODO: rename to compressed dst swap data
+        bytes compressedDstSwapData;
     }
 
     /* CONSTANTS */
@@ -206,7 +206,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
 
         require(dstLancaContract != ZERO_ADDRESS, InvalidRecipient());
 
-        bytes memory message = abi.encode(bridgeData.receiver, bridgeData.data);
+        bytes memory message = abi.encode(bridgeData.receiver, bridgeData.compressedDstSwapData);
 
         ILancaBridge.BridgeReq memory bridgeReq = ILancaBridge.BridgeReq({
             amount: bridgeData.amount,
