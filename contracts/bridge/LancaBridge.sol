@@ -182,21 +182,21 @@ contract LancaBridge is
     }
 
     function _getLancaFee(uint256 amount) internal pure returns (uint256) {
-        // TODO: double check this
         return amount / LANCA_FEE_FACTOR;
     }
 
     function _getCCIPFeeInUsdc(uint64 dstChainSelector) internal view returns (uint256) {
         uint256 ccipFeeInLink = s_lastCcipFeeInLink[dstChainSelector];
-        // TODO: get s_latestLinkUsdcRate with the external call from concero router
-        return (ccipFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
+        return
+            (ccipFeeInLink * IConceroRouter(i_conceroRouter).getLinkUsdcRate()) /
+            STANDARD_TOKEN_DECIMALS;
     }
 
     function _validateBridgeReq(BridgeReq calldata bridgeReq) internal view {
         require(bridgeReq.token == i_usdc, InvalidBridgeToken());
         require(bridgeReq.feeToken == i_usdc, InvalidFeeToken());
         require(bridgeReq.receiver != ZERO_ADDRESS, InvalidReceiver());
-        // @dev TODO: check fallbackReceiver address
+        require(bridgeReq.fallbackReceiver != ZERO_ADDRESS, InvalidReceiver());
         require(bridgeReq.dstChainGasLimit <= MAX_DST_CHAIN_GAS_LIMIT, InvalidDstChainGasLimit());
     }
 

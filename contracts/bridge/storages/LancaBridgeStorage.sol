@@ -5,7 +5,6 @@ import {ILancaBridgeStorage} from "../interfaces/ILancaBridgeStorage.sol";
 
 abstract contract LancaBridgeStorage is ILancaBridgeStorage {
     /* STORAGE */
-    uint256 internal s_latestLinkUsdcRate;
 
     /* MAPPINGS */
     mapping(uint64 chainSelector => address lancaBridge) internal s_lancaBridgeContractsByChain;

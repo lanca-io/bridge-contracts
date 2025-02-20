@@ -4256,7 +4256,7 @@ concat-map@0.0.1:
 
 "concero@https://github.com/concero/messaging-contracts-v1.git#release":
   version "1.0.0"
-  resolved "https://github.com/concero/messaging-contracts-v1.git#e824dae1769c4ee9dd21cd924aa8aafad3d95450"
+  resolved "https://github.com/concero/messaging-contracts-v1.git#63b49c4da36b10221467289f25e77ad88ccaa8ef"
   dependencies:
     "@chainlink/contracts" "1.3.0"
     "@openzeppelin/contracts" "5.0.2"
