@@ -204,9 +204,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
             bridgeData.dstChainSelector
         ];
 
-        if (dstLancaContract == ZERO_ADDRESS) {
-            revert InvalidRecipient();
-        }
+        require(dstLancaContract != ZERO_ADDRESS, InvalidRecipient());
 
         bytes memory message = abi.encode(bridgeData.receiver, bridgeData.data);
 
@@ -215,8 +213,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
             token: bridgeData.token,
             feeToken: i_usdc,
             receiver: dstLancaContract,
-            // @dev TODO: check this
-            fallbackReceiver: msg.sender,
+            fallbackReceiver: bridgeData.receiver,
             dstChainSelector: bridgeData.dstChainSelector,
             dstChainGasLimit: DST_CHAIN_GAS_LIMIT,
             message: message
@@ -241,7 +238,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
         uint256 fromAmount,
         Integration calldata integration
     ) internal returns (uint256) {
-        fromAmount -= _getLancaFee(amount);
+        fromAmount -= _getLancaFee(fromAmount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
     }
