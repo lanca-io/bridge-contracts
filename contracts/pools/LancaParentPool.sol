@@ -273,7 +273,7 @@ contract LancaParentPool is
 
         s_clfRequestTypes[clfRequestId] = ClfRequestType.startWithdrawal_getChildPoolsLiquidity;
 
-        // @dev partially initialise withdrawalRequest struct
+        // @dev partially initialize withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = lpAddress;
         s_withdrawRequests[withdrawalId].lpAmountToBurn = lpAmount;
 

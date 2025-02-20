@@ -231,14 +231,14 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address fromToken,
         uint256 fromAmount,
         Integration calldata integration
-    ) internal override returns (uint256) {
+    ) internal returns (uint256) {
         fromAmount -= _collectLancaFee(fromToken, fromAmount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
     }
 
     /// @inheritdoc LancaIntegration
-    function _collectLancaFee(address token, uint256 amount) internal override returns (uint256) {
+    function _collectLancaFee(address token, uint256 amount) internal returns (uint256) {
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
             s_integratorFeesAmountByToken[i_owner][token] += lancaFee;
@@ -251,7 +251,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address token,
         uint256 amount,
         Integration calldata integration
-    ) internal override returns (uint256) {
+    ) internal returns (uint256) {
         (address integrator, uint256 feeBps) = (integration.integrator, integration.feeBps);
         if (integrator == ZERO_ADDRESS || feeBps == 0) return 0;
 
@@ -300,7 +300,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     /// @notice Calculates the Lanca fee for a given amount.
     /// @param amount the amount for which to calculate the fee
     /// @return the calculated Lanca fee
-    function _getLancaFee(uint256 amount) internal pure virtual returns (uint256) {
+    function _getLancaFee(uint256 amount) internal pure returns (uint256) {
         unchecked {
             return (amount / LANCA_FEE_FACTOR);
         }
