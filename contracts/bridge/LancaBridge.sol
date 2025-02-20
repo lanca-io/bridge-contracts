@@ -60,17 +60,20 @@ contract LancaBridge is
 
     function bridge(BridgeReq calldata bridgeReq) external returns (bytes32) {
         _validateBridgeReq(bridgeReq);
-        uint256 fee = getFee(
+
+        (uint256 ccipFee, uint256 lancaFee, uint256 conceroMessageFee) = getBridgeFeeBreakdown(
             bridgeReq.dstChainSelector,
             bridgeReq.amount,
             bridgeReq.feeToken,
             bridgeReq.dstChainGasLimit
         );
-        require(bridgeReq.amount > fee, InsufficientBridgeAmount());
+        uint256 totalFee = ccipFee + lancaFee + conceroMessageFee;
+
+        require(bridgeReq.amount > totalFee, InsufficientBridgeAmount());
 
         IERC20(bridgeReq.token).safeTransferFrom(msg.sender, address(this), bridgeReq.amount);
 
-        uint256 amountToSendAfterFee = bridgeReq.amount - fee;
+        uint256 amountToSendAfterFee = bridgeReq.amount - totalFee;
         address dstLancaBridgeContract = s_lancaBridgeContractsByChain[bridgeReq.dstChainSelector];
         require(dstLancaBridgeContract != ZERO_ADDRESS, InvalidDstChainSelector());
 
@@ -96,28 +99,28 @@ contract LancaBridge is
             data: bridgeDataMessage
         });
 
-        address conceroRouter = getConceroRouter();
-        // TODO: replace this fee with call from concero router (getFee)
-        IERC20(messageReq.feeToken).approve(conceroRouter, fee);
-        bytes32 conceroMessageId = IConceroRouter(conceroRouter).sendMessage(messageReq);
+        IERC20(messageReq.feeToken).forceApprove(i_conceroRouter, conceroMessageFee);
+        bytes32 conceroMessageId = IConceroRouter(i_conceroRouter).sendMessage(messageReq);
 
-        uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
-            conceroMessageId,
-            bridgeReq.fallbackReceiver,
-            amountToSendAfterFee,
-            bridgeReq.dstChainSelector
-        );
-
-        if (
-            (updatedBatchedTxAmount >= i_batchedTxThreshold) ||
-            (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
-                MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
-        ) {
-            _sendBatchViaSettlement(
-                bridgeReq.token,
-                updatedBatchedTxAmount,
+        {
+            uint256 updatedBatchedTxAmount = _addPendingSettlementTx(
+                conceroMessageId,
+                bridgeReq.fallbackReceiver,
+                amountToSendAfterFee,
                 bridgeReq.dstChainSelector
             );
+
+            if (
+                (updatedBatchedTxAmount >= i_batchedTxThreshold) ||
+                (s_pendingSettlementIdsByDstChain[bridgeReq.dstChainSelector].length >=
+                    MAX_PENDING_SETTLEMENT_TXS_BY_LANE)
+            ) {
+                _sendBatchViaSettlement(
+                    bridgeReq.token,
+                    updatedBatchedTxAmount,
+                    bridgeReq.dstChainSelector
+                );
+            }
         }
 
         return conceroMessageId;
