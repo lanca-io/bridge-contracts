@@ -19,11 +19,11 @@ import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ILancaParentPoolCLFCLAViewDelegate, ILancaParentPoolCLFCLA} from "./interfaces/ILancaParentPoolCLFCLA.sol";
-import {LancaPoolCommon} from "./LancaPoolCommon.sol";
+import {LancaPool} from "./LancaPool.sol";
 import {ILancaPoolCcip} from "./interfaces/ILancaPoolCcip.sol";
 
 contract LancaParentPool is
-    LancaPoolCommon,
+    LancaPool,
     LancaParentPoolStorageSetters,
     LancaParentPoolCommon,
     CCIPReceiver,
@@ -81,7 +81,7 @@ contract LancaParentPool is
         HashConfig memory hashConfig,
         PoolConfig memory poolConfig
     )
-        LancaPoolCommon(tokenConfig.usdc, addressConfig.lancaBridge, addressConfig.messengers)
+        LancaPool(tokenConfig.usdc, addressConfig.lancaBridge, addressConfig.messengers)
         LancaParentPoolStorageSetters(addressConfig.owner)
         LancaParentPoolCommon(tokenConfig.lpToken)
         CCIPReceiver(addressConfig.ccipRouter)
@@ -450,18 +450,6 @@ contract LancaParentPool is
                 .calculateWithdrawableAmountViaDelegateCall(childPoolsBalance, clpAmount);
     }
 
-    /**
-     * @notice Getter function to get the deposits on the way.
-     * @return the array of deposits on the way
-     */
-    function getDepositsOnTheWay()
-        external
-        view
-        returns (ILancaParentPool.DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
-    {
-        return s_depositsOnTheWayArray;
-    }
-
     /* PUBLIC FUNCTIONS */
 
     /**
@@ -487,9 +475,21 @@ contract LancaParentPool is
         return DEPOSIT_DEADLINE_SECONDS;
     }
 
-    /* ADMIN FUNCTIONS */
-
     /* INTERNAL FUNCTIONS */
+
+    function _getLoansInUse() internal view override returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function _setLoansInUse(uint256 loansInUse) internal override {
+        s_loansInUse = loansInUse;
+    }
+
+    function _getDstPoolByChainSelector(
+        uint64 dstChainSelector
+    ) internal view override returns (address) {
+        return s_dstPoolByChainSelector[dstChainSelector];
+    }
 
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information

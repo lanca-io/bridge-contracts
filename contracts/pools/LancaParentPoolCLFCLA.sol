@@ -10,12 +10,11 @@ import {ILancaParentPool} from "./interfaces/ILancaParentPool.sol";
 import {ILancaPool} from "./interfaces/ILancaPool.sol";
 import {LancaParentPoolCommon} from "./LancaParentPoolCommon.sol";
 import {LancaParentPoolStorage} from "./storages/LancaParentPoolStorage.sol";
-import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
+
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LancaParentPoolCLFCLA is
-    LancaPoolCommonStorage,
     LancaParentPoolStorage,
     ILancaParentPoolCLFCLA,
     ClfClient,
@@ -123,7 +122,7 @@ contract LancaParentPoolCLFCLA is
         bytes memory delegateCallResponse,
         bytes memory err
     ) external {
-        //require(msg.sender == i_clfRouter, OnlyRouterCanFulfill());
+        // require(msg.sender == i_clfRouter, OnlyRouterCanFulfill());
         fulfillRequest(requestId, delegateCallResponse, err);
     }
 

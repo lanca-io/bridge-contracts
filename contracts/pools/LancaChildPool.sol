@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ILancaChildPool} from "./interfaces/ILancaChildPool.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
-import {LancaPoolCommon} from "./LancaPoolCommon.sol";
+import {LancaPool} from "./LancaPool.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaChildPoolStorageSetters} from "./storages/LancaChildPoolStorageSetters.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
@@ -17,6 +17,7 @@ import {ILancaPoolCcip} from "./interfaces/ILancaPoolCcip.sol";
 
 contract LancaChildPool is
     LancaChildPoolStorageSetters,
+    LancaPool,
     CCIPReceiver,
     ILancaChildPool,
     ILancaPoolCcip
@@ -40,7 +41,7 @@ contract LancaChildPool is
         address[3] memory messengers
     )
         CCIPReceiver(ccipRouter)
-        LancaPoolCommon(usdc, lancaBridge, messengers)
+        LancaPool(usdc, lancaBridge, messengers)
         LancaChildPoolStorageSetters(owner)
     {
         i_linkToken = LinkTokenInterface(link);
@@ -130,6 +131,21 @@ contract LancaChildPool is
     }
 
     /* INTERNAL FUNCTIONS */
+
+    function _getLoansInUse() internal view override returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function _setLoansInUse(uint256 loansInUse) internal override {
+        s_loansInUse = loansInUse;
+    }
+
+    function _getDstPoolByChainSelector(
+        uint64 chainSelector
+    ) internal view override returns (address) {
+        return s_dstPoolByChainSelector[chainSelector];
+    }
+
     /**
      * @notice CCIP function to receive bridged values
      * @param any2EvmMessage the CCIP message

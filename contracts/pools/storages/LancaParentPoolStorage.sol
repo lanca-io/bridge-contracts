@@ -8,29 +8,42 @@ abstract contract LancaParentPoolStorage {
 
     uint256 internal s_liquidityCap;
 
-    uint256 internal s_withdrawAmountLocked;
+    uint256 internal s_loansInUse;
+
+    uint8 private s_donHostedSecretsSlotId_DEPRECATED;
+
+    uint64 private s_donHostedSecretsVersion_DEPRECATED;
+
+    bytes32 private s_getChildPoolsLiquidityJsCodeHashSum_DEPRECATED;
+
+    bytes32 private s_ethersHashSum_DEPRECATED;
 
     uint256 internal s_depositsOnTheWayAmount;
 
+    uint8 internal s_latestDepositOnTheWayIndex;
+
     uint256 internal s_depositFeeAmount;
+
+    uint256 internal s_withdrawAmountLocked;
 
     uint256 internal s_withdrawalsOnTheWayAmount;
 
-    uint8 internal s_latestDepositOnTheWayIndex;
-
-    //    bytes32 internal s_getChildPoolsLiquidityJsCodeHashSum;
-
-    //    bytes32 internal s_ethersHashSum;
+    uint256[50] private __gap;
 
     /* ARRAYS */
 
-    ILancaParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
+    uint64[] internal s_poolChainSelectors;
 
-    bytes32[] internal s_withdrawalRequestIds;
+    ILancaParentPool.DepositOnTheWay_DEPRECATED[] internal s_depositsOnTheWayArray_DEPRECATED;
 
     /* MAPPINGS */
 
-    //    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
+    mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
+
+    mapping(uint64 chainSelector => mapping(address poolAddress => bool))
+        public s_isSenderContractAllowed; // @dev mb deprecated
+
+    mapping(bytes32 => bool) internal s_distributeLiquidityRequestProcessed;
 
     mapping(bytes32 clfReqId => ILancaParentPool.ClfRequestType) internal s_clfRequestTypes;
 
@@ -42,11 +55,14 @@ abstract contract LancaParentPoolStorage {
 
     mapping(bytes32 withdrawalId => ILancaParentPool.WithdrawRequest) internal s_withdrawRequests;
 
-    mapping(bytes32 withdrawalId => bool isTriggered) internal s_withdrawTriggered;
+    ILancaParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 
-    /* STORAGE GAP */
-    /// @notice gap to reserve storage in the contract for future variable additions
-    uint256[50] private __gap;
+    bytes32 private s_collectLiquidityJsCodeHashSum_DEPRECATED;
+    bytes32 private s_distributeLiquidityJsCodeHashSum_DEPRECATED;
+
+    bytes32[] internal s_withdrawalRequestIds;
+
+    mapping(bytes32 withdrawalId => bool isTriggered) internal s_withdrawTriggered;
 
     /* GETTERS */
 
@@ -82,5 +98,17 @@ abstract contract LancaParentPoolStorage {
         bytes32 withdrawalId
     ) external view returns (ILancaParentPool.WithdrawRequest memory) {
         return s_withdrawRequests[withdrawalId];
+    }
+
+    /**
+     * @notice Getter function to get the deposits on the way.
+     * @return the array of deposits on the way
+     */
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (ILancaParentPool.DepositOnTheWay[150] memory)
+    {
+        return s_depositsOnTheWayArray;
     }
 }

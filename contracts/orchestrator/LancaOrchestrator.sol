@@ -10,12 +10,11 @@ import {LancaDexSwap} from "./LancaDexSwap.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
-import {LancaIntegration} from "./LancaIntegration.sol";
 import {LancaBridgeClient} from "../LancaBridgeClient/LancaBridgeClient.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 
-contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient, LancaOwnable {
+contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient, LancaOwnable {
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -25,7 +24,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         address receiver;
         uint256 amount;
         uint64 dstChainSelector;
-        bytes data;
+        bytes data; // TODO: rename to compressed dst swap data
     }
 
     /* CONSTANTS */
@@ -113,12 +112,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     function bridge(
         BridgeData memory bridgeData,
         Integration calldata integration
-    )
-        external
-        // @dev TODO: do we need nonReentrant modifier here?
-        nonReentrant
-        validateBridgeData(bridgeData)
-    {
+    ) external nonReentrant validateBridgeData(bridgeData) {
         IERC20(bridgeData.token).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
         _bridge(bridgeData, integration);
     }
@@ -135,7 +129,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
     }
 
     /// @inheritdoc ILancaIntegration
-    function withdrawIntegratorFees(address[] calldata tokens) external override nonReentrant {
+    function withdrawIntegratorFees(address[] calldata tokens) external nonReentrant {
         address integrator = msg.sender;
         for (uint256 i; i < tokens.length; ++i) {
             address token = tokens[i];
@@ -206,6 +200,7 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
             token: bridgeData.token,
             feeToken: i_usdc,
             receiver: dstLancaContract,
+            // @dev TODO: check this
             fallbackReceiver: msg.sender,
             dstChainSelector: bridgeData.dstChainSelector,
             dstChainGasLimit: DST_CHAIN_GAS_LIMIT,
@@ -226,7 +221,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         );
     }
 
-    /// @inheritdoc LancaIntegration
     function _collectSwapFee(
         address fromToken,
         uint256 fromAmount,
@@ -237,8 +231,9 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         return fromAmount;
     }
 
-    /// @inheritdoc LancaIntegration
     function _collectLancaFee(address token, uint256 amount) internal returns (uint256) {
+        // TODO: rewrite as in v1
+
         uint256 lancaFee = _getLancaFee(amount);
         if (lancaFee != 0) {
             s_integratorFeesAmountByToken[i_owner][token] += lancaFee;
@@ -246,7 +241,6 @@ contract LancaOrchestrator is LancaDexSwap, LancaIntegration, LancaBridgeClient,
         return lancaFee;
     }
 
-    /// @inheritdoc LancaIntegration
     function _collectIntegratorFee(
         address token,
         uint256 amount,

@@ -47,6 +47,13 @@ interface ILancaParentPool is ILancaPool {
         uint256 amount;
     }
 
+    struct DepositOnTheWay_DEPRECATED {
+        bytes1 id;
+        uint64 chainSelector;
+        bytes32 ccipMessageId;
+        uint256 amount;
+    }
+
     struct PerformWithdrawRequest {
         address lpAddress;
         uint256 amount;

@@ -84,16 +84,17 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
         address fromToken = swapData.fromToken;
         bool isFromNative = fromToken == ZERO_ADDRESS;
 
-        bool success;
         if (!isFromNative) {
             IERC20(fromToken).safeIncreaseAllowance(dexRouter, fromAmount);
-            (success, ) = dexRouter.call(dexCallData);
+
+            (bool success, ) = dexRouter.call(dexCallData);
+            require(success, LancaSwapFailed());
+
             IERC20(fromToken).forceApprove(dexRouter, 0);
         } else {
-            (success, ) = dexRouter.call{value: fromAmount}(dexCallData);
+            (bool success, ) = dexRouter.call{value: fromAmount}(dexCallData);
+            require(success, LancaSwapFailed());
         }
-
-        require(success, LancaSwapFailed());
     }
 
     function _decompressSwapData(

@@ -6,11 +6,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
-import {LancaPoolCommonStorage} from "./storages/LancaPoolCommonStorage.sol";
 import {ILancaPool} from "./interfaces/ILancaPool.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
+abstract contract LancaPool is ILancaPool {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
@@ -29,7 +28,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
 
     modifier onlyAllowListedSenderOfChainSelector(uint64 chainSelector, address sender) {
         require(
-            s_dstPoolByChainSelector[chainSelector] == sender,
+            _getDstPoolByChainSelector(chainSelector) == sender,
             LibErrors.Unauthorized(LibErrors.UnauthorizedType.notAllowedSender)
         );
 
@@ -79,7 +78,7 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
             LibErrors.InvalidAddress(LibErrors.InvalidAddressType.notUsdcToken)
         );
 
-        s_loansInUse += amount;
+        _setLoansInUse(_getLoansInUse() + amount);
 
         uint256 loanAmountAfterFee = amount - getDstTotalFeeInUsdc(amount);
         IERC20(token).safeTransfer(receiver, loanAmountAfterFee);
@@ -87,9 +86,8 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     }
 
     function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
-        // @dev TODO: mb move to transferFrom lanca bridge?
-
-        s_loansInUse -= amount;
+        IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
+        _setLoansInUse(_getLoansInUse() - amount);
     }
 
     /* PUBLIC FUNCTIONS */
@@ -107,4 +105,12 @@ abstract contract LancaPoolCommon is LancaPoolCommonStorage, ILancaPool {
     function _isMessenger(address messenger) internal view returns (bool) {
         return messenger == i_messenger0 || messenger == i_messenger1 || messenger == i_messenger2;
     }
+
+    function _getLoansInUse() internal virtual returns (uint256);
+
+    function _setLoansInUse(uint256 value) internal virtual;
+
+    function _getDstPoolByChainSelector(
+        uint64 dstChainSelector
+    ) internal view virtual returns (address);
 }

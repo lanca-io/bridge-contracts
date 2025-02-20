@@ -97,6 +97,7 @@ contract LancaBridge is
         });
 
         address conceroRouter = getConceroRouter();
+        // TODO: replace this fee with call from concero router (getFee)
         IERC20(messageReq.feeToken).approve(conceroRouter, fee);
         bytes32 conceroMessageId = IConceroRouter(conceroRouter).sendMessage(messageReq);
 
@@ -186,6 +187,7 @@ contract LancaBridge is
 
     function _getCCIPFeeInUsdc(uint64 dstChainSelector) internal view returns (uint256) {
         uint256 ccipFeeInLink = s_lastCcipFeeInLink[dstChainSelector];
+        // TODO: get s_latestLinkUsdcRate with the external call from concero router
         return (ccipFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
     }
 
@@ -224,7 +226,7 @@ contract LancaBridge is
         uint256 amount,
         uint64 dstChainSelector
     ) internal {
-        CcipSettlementTxs[] memory ccipSettlementTxs = _getSettlementPendingTxsByDstChain(
+        CcipSettlementTxs[] memory ccipSettlementTxs = _getAndClearSettlementPendingTxsByDstChain(
             dstChainSelector
         );
 
@@ -245,9 +247,9 @@ contract LancaBridge is
         emit LancaSettlementSent(ccipMessageId, token, amount, dstChainSelector);
     }
 
-    function _getSettlementPendingTxsByDstChain(
+    function _getAndClearSettlementPendingTxsByDstChain(
         uint64 dstChainSelector
-    ) internal view returns (CcipSettlementTxs[] memory) {
+    ) internal returns (CcipSettlementTxs[] memory) {
         bytes32[] memory pendingTxs = s_pendingSettlementIdsByDstChain[dstChainSelector];
         uint256 pendingTxsLength = pendingTxs.length;
         CcipSettlementTxs[] memory ccipSettlementTxs = new CcipSettlementTxs[](pendingTxsLength);
@@ -258,6 +260,8 @@ contract LancaBridge is
                 receiver: s_pendingSettlementTxById[pendingTxs[i]].receiver,
                 amount: s_pendingSettlementTxById[pendingTxs[i]].amount
             });
+
+            delete s_pendingSettlementTxById[pendingTxs[i]];
         }
 
         return ccipSettlementTxs;
@@ -410,14 +414,14 @@ contract LancaBridge is
             (CcipSettlementTxs[])
         );
 
-        uint256 rebalancedAmount;
+        uint256 amountToSettle;
 
         for (uint256 i; i < ccipSettlementTxs.length; ++i) {
             bytes32 txId = ccipSettlementTxs[i].id;
             uint256 txAmount = ccipSettlementTxs[i].amount;
 
             if (s_isBridgeProcessed[txId]) {
-                rebalancedAmount += txAmount;
+                amountToSettle += txAmount;
             } else {
                 s_isBridgeProcessed[txId] = true;
                 IERC20(i_usdc).safeTransfer(ccipSettlementTxs[i].receiver, txAmount);
@@ -426,9 +430,9 @@ contract LancaBridge is
             }
         }
 
-        if (rebalancedAmount > 0) {
-            IERC20(i_usdc).safeTransfer(address(i_lancaPool), rebalancedAmount);
-            i_lancaPool.completeRebalancing(ccipMessageId, rebalancedAmount);
+        if (amountToSettle > 0) {
+            IERC20(i_usdc).forceApprove(address(i_lancaPool), amountToSettle);
+            i_lancaPool.completeRebalancing(ccipMessageId, amountToSettle);
         }
     }
 }
