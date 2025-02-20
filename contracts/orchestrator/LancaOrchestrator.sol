@@ -137,6 +137,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
 
             if (amount > 0) {
                 delete s_integratorFeesAmountByToken[integrator][token];
+                s_totalIntegratorFeesAmountByToken[token] -= amount;
 
                 if (token == ZERO_ADDRESS) {
                     (bool success, ) = integrator.call{value: amount}("");
@@ -174,6 +175,20 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
             InvalidChainSelector()
         );
         s_lancaOrchestratorDstByChainSelector[dstChainSelector] = dstOrchestrator;
+    }
+
+    function withdrawLancaFee(address[] calldata tokens) external nonReentrant onlyOwner {
+        for (uint256 i; i < tokens.length; ++i) {
+            address token = tokens[i];
+            uint256 tokenBalance = IERC20(token).balanceOf(address(this));
+
+            if (tokenBalance > 0) {
+                IERC20(token).safeTransfer(
+                    msg.sender,
+                    tokenBalance - s_totalIntegratorFeesAmountByToken[token]
+                );
+            }
+        }
     }
 
     /* INTERNAL FUNCTIONS */
@@ -226,19 +241,9 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
         uint256 fromAmount,
         Integration calldata integration
     ) internal returns (uint256) {
-        fromAmount -= _collectLancaFee(fromToken, fromAmount);
+        fromAmount -= _getLancaFee(amount);
         fromAmount -= _collectIntegratorFee(fromToken, fromAmount, integration);
         return fromAmount;
-    }
-
-    function _collectLancaFee(address token, uint256 amount) internal returns (uint256) {
-        // TODO: rewrite as in v1
-
-        uint256 lancaFee = _getLancaFee(amount);
-        if (lancaFee != 0) {
-            s_integratorFeesAmountByToken[i_owner][token] += lancaFee;
-        }
-        return lancaFee;
     }
 
     function _collectIntegratorFee(
@@ -255,6 +260,8 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
 
         if (integratorFeeAmount != 0) {
             s_integratorFeesAmountByToken[integrator][token] += integratorFeeAmount;
+            s_totalIntegratorFeesAmountByToken[token] += integratorFeeAmount;
+
             emit IntegratorFeesCollected(integrator, token, integratorFeeAmount);
         }
 
@@ -282,6 +289,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
 
             _validateSwapData(swapData);
 
+            // @dev TODO: rewrite this !!!
             try this.preformSwaps(swapData, receiver) {} catch {
                 IERC20(bridgeData.token).safeTransfer(receiver, bridgeData.amount);
                 emit DstSwapFailed(bridgeData.id);

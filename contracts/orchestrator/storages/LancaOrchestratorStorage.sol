@@ -7,8 +7,10 @@ abstract contract LancaOrchestratorStorage is ReentrancyGuard {
     mapping(uint64 dstChainSelector => address dstLancaOrchestrator)
         internal s_lancaOrchestratorDstByChainSelector;
 
+    // @notice integration mappings
     mapping(address integrator => mapping(address token => uint256 amount))
         internal s_integratorFeesAmountByToken;
+    mapping(address token => uint256 amount) internal s_totalIntegratorFeesAmountByToken;
 
     /// @notice mapping to keep track of allowed routers to perform swaps.
     mapping(address router => bool isAllowed) internal s_routerAllowed;
