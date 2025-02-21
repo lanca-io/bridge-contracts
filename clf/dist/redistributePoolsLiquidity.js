@@ -6,7 +6,7 @@
                 urls: ['https://base-sepolia-rpc.publicnode.com'],
                 chainId: '0x14a34',
                 usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-                poolAddress: '0x3f89F49e33d437018dfea711DA7e38c1Fa4d126D',
+                poolAddress: '0x412fDf62011abfCFD3fA9aE85bd910505C372b32',
             },
         };
         const chainsMapMainnet = {};

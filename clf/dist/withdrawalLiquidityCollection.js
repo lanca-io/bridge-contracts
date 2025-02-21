@@ -6,13 +6,13 @@
                 urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
                 chainId: '0x66eee',
                 usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-                poolAddress: '0x1416f873EFa0fb98b1331Df2Fd2F5d66B33AAB9F',
+                poolAddress: '0xb9fAEE3A6A70599C75761A458854ad21B384e8F9',
             },
             ['14767482510784806043']: {
                 urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
                 chainId: '0xa869',
                 usdcAddress: '0x5425890298aed601595a70AB815c96711a31Bc65',
-                poolAddress: '0x788b8B75d486da5C0bd8bBc366e585C5a664f5Cf',
+                poolAddress: '0xDedEfCC3d91B952356e83A6246DaA08BBB824386',
             },
         };
         const mainnetChainsMap = {};
