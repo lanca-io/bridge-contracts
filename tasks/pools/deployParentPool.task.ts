@@ -64,8 +64,8 @@ async function deployParentPool(params: DeployInfraParams) {
 task("deploy-parent-pool", "Deploy the Lanca parent pool")
     .addFlag("proxy", "Deploy the proxy")
     .addFlag("implementation", "Deploy the implementation")
-    .addFlag("setvars", "Set the contract variables")
-    .addFlag("uploadsecrets", "Upload the secrets")
+    .addFlag("vars", "Set the contract variables")
+    .addFlag("secrets", "Upload the secrets")
     .setAction(async taskArgs => {
         compileContracts({ quiet: true })
 
@@ -93,8 +93,8 @@ task("deploy-parent-pool", "Deploy the Lanca parent pool")
             networkType,
             deployProxy: taskArgs.proxy,
             deployImplementation: taskArgs.implementation,
-            setVars: taskArgs.setvars,
-            uploadSecrets: taskArgs.uploadsecrets,
+            setVars: taskArgs.vars,
+            uploadSecrets: taskArgs.secrets,
         })
     })
 

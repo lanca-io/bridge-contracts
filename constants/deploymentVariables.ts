@@ -15,7 +15,7 @@ export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
 }
 
 export const writeContractConfig: WriteContractParameters = {
-    gas: 3000000n, // 3M
+    gas: 5000000n,
 }
 
 export enum ProxyEnum {

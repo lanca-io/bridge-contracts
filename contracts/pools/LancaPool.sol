@@ -90,6 +90,12 @@ abstract contract LancaPool is ILancaPool {
         _setLoansInUse(_getLoansInUse() - amount);
     }
 
+    /* GETTERS */
+
+    function getDstPoolByChainSelector(uint64 chainSelector) external view returns (address) {
+        return _getDstPoolByChainSelector(chainSelector);
+    }
+
     /* PUBLIC FUNCTIONS */
 
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {

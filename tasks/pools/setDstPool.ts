@@ -12,7 +12,7 @@ export async function setDstPools(currentChainPoolName: CNetworkNames) {
     const dstPoolChains = isTestnet ? testnetChains : mainnetChains
     const cChain = conceroNetworks[currentChainPoolName]
     const { publicClient, walletClient } = getFallbackClients(cChain)
-    const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaPoolCommon.sol/LancaPoolCommon.json")
+    const { abi: poolAbi } = await import("../../artifacts/contracts/pools/LancaPool.sol/LancaPool.json")
     const isParentPool = currentChainPoolName === "baseSepolia" || currentChainPoolName === "base"
     const [currentChainPoolAddress] = getEnvAddress(
         isParentPool ? ProxyEnum.parentPoolProxy : ProxyEnum.childPoolProxy,
