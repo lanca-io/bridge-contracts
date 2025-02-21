@@ -85,7 +85,7 @@ abstract contract LancaPool is ILancaPool {
         return loanAmountAfterFee;
     }
 
-    function completeRebalancing(bytes32 id, uint256 amount) external onlyLancaBridge {
+    function completeRebalancing(bytes32, uint256 amount) external onlyLancaBridge {
         IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
         _setLoansInUse(_getLoansInUse() - amount);
     }

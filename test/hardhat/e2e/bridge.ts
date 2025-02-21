@@ -11,7 +11,7 @@ describe("bridge", async () => {
     it("should send and receive bridge", async () => {
         try {
             const srcChain = conceroNetworks.baseSepolia
-            const dstChain = conceroNetworks.arbitrumSepolia
+            const dstChain = conceroNetworks.avalancheFuji
             const bridgeAmount = parseUnits("2", 6)
             const srcLancaOrchestrator = getEnvVar(
                 `LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[srcChain.name]}`,
