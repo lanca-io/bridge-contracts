@@ -3,13 +3,56 @@
         const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId] = bytesArgs;
         const chainsMapTestnet = {
             ['10344971235874465080']: {
-                urls: ['https://base-sepolia-rpc.publicnode.com'],
+                urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
                 chainId: '0x14a34',
                 usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
                 poolAddress: '0x412fDf62011abfCFD3fA9aE85bd910505C372b32',
             },
+            ['3478487238524512106']: {
+                urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x66eee',
+                usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
+                poolAddress: '0xb9fAEE3A6A70599C75761A458854ad21B384e8F9',
+            },
+            ['14767482510784806043']: {
+                urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa869',
+                usdcAddress: '0x5425890298aed601595a70AB815c96711a31Bc65',
+                poolAddress: '0xDedEfCC3d91B952356e83A6246DaA08BBB824386',
+            },
         };
-        const chainsMapMainnet = {};
+        const chainsMapMainnet = {
+            ['4949039107694359620']: {
+                urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa4b1',
+                usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+                poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
+            },
+            ['4051577828743386545']: {
+                urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x89',
+                usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+                poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
+            },
+            ['6433500567565415381']: {
+                urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa86a',
+                usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+                poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
+            },
+            ['15971525489660198786']: {
+                urls: [`https://base-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x2105',
+                usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+                poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',
+            },
+            ['3734403246176062136']: {
+                urls: [`https://optimism-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa',
+                usdcAddress: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+                poolAddress: '0x8698c6DF1E354Ce3ED0dE508EF7AF4baB85D2F2D',
+            },
+        };
         let chainsMap;
         const chainIdNumber = parseInt(chainId, 16);
         if (chainIdNumber === 84532) {

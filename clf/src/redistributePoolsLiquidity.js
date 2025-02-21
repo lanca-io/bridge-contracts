@@ -3,14 +3,57 @@
         const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId] = bytesArgs;
         const chainsMapTestnet = {
             ['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
-                urls: ['https://base-sepolia-rpc.publicnode.com'],
+                urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
                 chainId: '0x14a34',
                 usdcAddress: '${USDC_BASE_SEPOLIA}',
                 poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
             },
+            ['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
+                urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x66eee',
+                usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+                poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+            },
+            ['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
+                urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa869',
+                usdcAddress: '${USDC_FUJI}',
+                poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+            },
         };
 
-        const chainsMapMainnet = {};
+        const chainsMapMainnet = {
+            ['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}']: {
+                urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa4b1',
+                usdcAddress: '${USDC_ARBITRUM}',
+                poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
+            },
+            ['${CL_CCIP_CHAIN_SELECTOR_POLYGON}']: {
+                urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x89',
+                usdcAddress: '${USDC_POLYGON}',
+                poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
+            },
+            ['${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}']: {
+                urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa86a',
+                usdcAddress: '${USDC_AVALANCHE}',
+                poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
+            },
+            ['${CL_CCIP_CHAIN_SELECTOR_BASE}']: {
+                urls: [`https://base-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0x2105',
+                usdcAddress: '${USDC_BASE}',
+                poolAddress: '${PARENT_POOL_PROXY_BASE}',
+            },
+            ['${CL_CCIP_CHAIN_SELECTOR_OPTIMISM}']: {
+                urls: [`https://optimism-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+                chainId: '0xa',
+                usdcAddress: '${USDC_OPTIMISM}',
+                poolAddress: '${CHILD_POOL_PROXY_OPTIMISM}',
+            },
+        };
 
         let chainsMap;
         const chainIdNumber = parseInt(chainId, 16);
