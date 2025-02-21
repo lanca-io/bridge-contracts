@@ -6,10 +6,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
-import {LibZip} from "solady/src/utils/LibZip.sol";
 import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 
-abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
+contract DexSwap is LancaOrchestratorStorage, ILancaDexSwap {
     using SafeERC20 for IERC20;
 
     /* CONSTANTS */
@@ -23,10 +22,12 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
      * @param receiver the address to send the output token to
      * @return dstTokenReceived the amount of token received after the swap
      */
-    function preformSwaps(
+    function performSwaps(
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
     ) external returns (uint256) {
+        _validateSwapData(swapData);
+
         address addressThis = address(this);
         uint256 swapDataLength = swapData.length;
         uint256 lastSwapStepIndex = swapDataLength - 1;
@@ -69,6 +70,15 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
         return dstTokenReceived;
     }
 
+    function _validateSwapData(SwapData[] memory swapData) internal pure {
+        require(
+            swapData.length != 0 &&
+                swapData.length <= MAX_SWAPS_LENGTH &&
+                swapData[0].fromAmount != 0,
+            InvalidSwapData()
+        );
+    }
+
     /**
      * @notice Perform a swap on a SwapData
      * @param swapData the SwapData to perform the swap
@@ -95,26 +105,5 @@ abstract contract LancaDexSwap is LancaOrchestratorStorage, ILancaDexSwap {
             (bool success, ) = dexRouter.call{value: fromAmount}(dexCallData);
             require(success, LancaSwapFailed());
         }
-    }
-
-    function _decompressSwapData(
-        bytes memory compressedSwapData
-    ) internal pure returns (SwapData[] memory swapData) {
-        bytes memory decompressedSwapData = LibZip.cdDecompress(compressedSwapData);
-
-        if (decompressedSwapData.length == 0) {
-            return new SwapData[](0);
-        } else {
-            return abi.decode(decompressedSwapData, (SwapData[]));
-        }
-    }
-
-    function _validateSwapData(SwapData[] memory swapData) internal pure {
-        require(
-            swapData.length != 0 &&
-                swapData.length <= MAX_SWAPS_LENGTH &&
-                swapData[0].fromAmount != 0,
-            InvalidSwapData()
-        );
     }
 }

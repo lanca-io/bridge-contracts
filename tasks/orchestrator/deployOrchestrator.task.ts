@@ -13,6 +13,7 @@ import deployProxyAdmin from "../../deploy/TransparentProxyAdmin"
 import { handleError } from "../../utils/handleError"
 import deployLancaOrchestratorImplementation from "../../deploy/LancaOrchestrator"
 import { setOrchestratorVars } from "./setOrchestratorVars"
+import deployDexSwap from "../../deploy/DexSwap"
 
 interface DeployOrchestratorParams {
     hre: HardhatRuntimeEnvironment
@@ -33,6 +34,7 @@ async function deployOrchestrator(params: DeployOrchestratorParams) {
     }
 
     if (deployImplementation) {
+        await deployDexSwap(hre)
         await deployLancaOrchestratorImplementation(hre)
         await upgradeProxyImplementation(hre, ProxyEnum.orchestratorProxy, false)
     }

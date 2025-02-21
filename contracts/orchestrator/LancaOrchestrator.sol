@@ -6,15 +6,21 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ILancaBridge} from "../bridge/interfaces/ILancaBridge.sol";
 import {ILancaIntegration} from "./interfaces/ILancaIntegration.sol";
 import {ILancaDexSwap} from "./interfaces/ILancaDexSwap.sol";
-import {LancaDexSwap} from "./LancaDexSwap.sol";
+import {LancaOrchestratorStorage} from "./storages/LancaOrchestratorStorage.sol";
 import {ICcip} from "../common/interfaces/ICcip.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
 import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {LancaBridgeClient} from "../LancaBridgeClient/LancaBridgeClient.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
 import {LibErrors} from "../common/libraries/LibErrors.sol";
+import {LibZip} from "solady/src/utils/LibZip.sol";
 
-contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient, LancaOwnable {
+contract LancaOrchestrator is
+    LancaOrchestratorStorage,
+    ILancaIntegration,
+    LancaBridgeClient,
+    LancaOwnable
+{
     using SafeERC20 for IERC20;
 
     /* TYPES */
@@ -35,6 +41,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
 
     /* IMMUTABLES */
     address internal immutable i_usdc;
+    address internal immutable i_dexSwap;
     uint64 internal immutable i_chainSelector;
 
     /* ERRORS */
@@ -67,17 +74,15 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
     constructor(
         address usdc,
         address lancaBridge,
+        address dexSwap,
         uint64 chainSelector
-    ) LancaDexSwap() LancaBridgeClient(lancaBridge) LancaOwnable(msg.sender) {
+    ) LancaBridgeClient(lancaBridge) LancaOwnable(msg.sender) {
         i_usdc = usdc;
         i_chainSelector = chainSelector;
+        i_dexSwap = dexSwap;
     }
 
     /* MODIFIERS */
-    modifier validateSwapData(ILancaDexSwap.SwapData[] memory swapData) {
-        _validateSwapData(swapData);
-        _;
-    }
 
     modifier validateBridgeData(BridgeData memory bridgeData) {
         require(
@@ -101,11 +106,22 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
         BridgeData memory bridgeData,
         ILancaDexSwap.SwapData[] memory swapData,
         Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) validateBridgeData(bridgeData) {
-        require(swapData[swapData.length - 1].toToken == i_usdc, InvalidSwapData());
+    ) external payable nonReentrant validateBridgeData(bridgeData) {
+        require(swapData[swapData.length - 1].toToken == i_usdc, ILancaDexSwap.InvalidSwapData());
 
         LibLanca.transferTokenFromUser(swapData[0].fromToken, swapData[0].fromAmount);
-        bridgeData.amount = this.preformSwaps(swapData, address(this));
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaDexSwap.performSwaps.selector,
+            swapData,
+            address(this)
+        );
+
+        uint256 usdcReceived = abi.decode(
+            LibLanca.safeDelegateCall(i_dexSwap, delegateCallArgs),
+            (uint256)
+        );
+
+        bridgeData.amount = usdcReceived;
         _bridge(bridgeData, integration);
     }
 
@@ -121,11 +137,17 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver,
         Integration calldata integration
-    ) external payable nonReentrant validateSwapData(swapData) {
+    ) external payable nonReentrant {
         (address fromToken, uint256 fromAmount) = (swapData[0].fromToken, swapData[0].fromAmount);
         LibLanca.transferTokenFromUser(fromToken, fromAmount);
         swapData[0].fromAmount = _collectSwapFee(fromToken, fromAmount, integration);
-        this.preformSwaps(swapData, receiver);
+
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            ILancaDexSwap.performSwaps.selector,
+            swapData,
+            receiver
+        );
+        LibLanca.safeDelegateCall(i_dexSwap, delegateCallArgs);
     }
 
     /// @inheritdoc ILancaIntegration
@@ -276,7 +298,7 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
             (address, bytes)
         );
 
-        SwapData[] memory swapData = _decompressSwapData(compressedDstSwapData);
+        ILancaDexSwap.SwapData[] memory swapData = _decompressSwapData(compressedDstSwapData);
 
         if (swapData.length == 0) {
             IERC20(bridgeData.token).safeTransfer(receiver, bridgeData.amount);
@@ -284,10 +306,14 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
             swapData[0].fromToken = bridgeData.token;
             swapData[0].fromAmount = bridgeData.amount;
 
-            _validateSwapData(swapData);
+            bytes memory delegateCallArgs = abi.encodeWithSelector(
+                ILancaDexSwap.performSwaps.selector,
+                swapData,
+                receiver
+            );
 
-            // @dev TODO: rewrite this !!!
-            try this.preformSwaps(swapData, receiver) {} catch {
+            (bool success, ) = i_dexSwap.delegatecall(delegateCallArgs);
+            if (!success) {
                 IERC20(bridgeData.token).safeTransfer(receiver, bridgeData.amount);
                 emit DstSwapFailed(bridgeData.id);
             }
@@ -302,6 +328,18 @@ contract LancaOrchestrator is LancaDexSwap, ILancaIntegration, LancaBridgeClient
     function _getLancaFee(uint256 amount) internal pure returns (uint256) {
         unchecked {
             return (amount / LANCA_FEE_FACTOR);
+        }
+    }
+
+    function _decompressSwapData(
+        bytes memory compressedSwapData
+    ) internal pure returns (ILancaDexSwap.SwapData[] memory swapData) {
+        bytes memory decompressedSwapData = LibZip.cdDecompress(compressedSwapData);
+
+        if (decompressedSwapData.length == 0) {
+            return new ILancaDexSwap.SwapData[](0);
+        } else {
+            return abi.decode(decompressedSwapData, (ILancaDexSwap.SwapData[]));
         }
     }
 }

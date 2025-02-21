@@ -95,37 +95,6 @@ library LibLanca {
         }
     }
 
-    function getUSDCAddressByChain(
-        ICcip.CcipToken tokenType
-    ) internal view returns (address usdcAddress) {
-        require(
-            tokenType == ICcip.CcipToken.usdc,
-            LibErrors.InvalidAddress(LibErrors.InvalidAddressType.unsupportedCcipToken)
-        );
-        uint256 chainId = block.chainid;
-
-        if (chainId == CHAIN_ID_AVALANCHE) {
-            return USDC_AVALANCHE;
-        }
-        if (chainId == CHAIN_ID_ARBITRUM) {
-            return USDC_ARBITRUM;
-        }
-        if (chainId == CHAIN_ID_BASE) {
-            return USDC_BASE;
-        }
-        if (chainId == CHAIN_ID_POLYGON) {
-            return USDC_POLYGON;
-        }
-        if (chainId == CHAIN_ID_OPTIMISM) {
-            return USDC_OPTIMISM;
-        }
-        if (chainId == CHAIN_ID_ETHEREUM) {
-            return USDC_ETHEREUM;
-        }
-
-        revert ChainNotSupported(chainId);
-    }
-
     function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
         require(
             target != ZERO_ADDRESS,

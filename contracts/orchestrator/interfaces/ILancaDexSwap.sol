@@ -42,4 +42,6 @@ interface ILancaDexSwap {
     error LancaSwapFailed();
     error InvalidTokenPath();
     error InsufficientAmount(uint256 amount);
+
+    function performSwaps(SwapData[] memory swapData, address receiver) external returns (uint256);
 }
