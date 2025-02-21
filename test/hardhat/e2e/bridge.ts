@@ -33,7 +33,7 @@ describe("bridge", async () => {
                 receiver: srcChainWalletClient.account?.address,
                 amount: bridgeAmount,
                 dstChainSelector: dstChain.chainSelector,
-                data: "0x",
+                compressedDstSwapData: "0x",
             }
 
             const integrationStruct = {

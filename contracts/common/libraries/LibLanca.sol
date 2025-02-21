@@ -5,33 +5,23 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICcip} from "../interfaces/ICcip.sol";
 import {LibErrors} from "./LibErrors.sol";
-import {ZERO_ADDRESS, USDC_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM, CHAIN_ID_AVALANCHE, CHAIN_ID_ARBITRUM, CHAIN_ID_BASE, CHAIN_ID_POLYGON, CHAIN_ID_OPTIMISM, CHAIN_ID_ETHEREUM} from "../Constants.sol";
+import {ZERO_ADDRESS} from "../Constants.sol";
 
 library LibLanca {
     using SafeERC20 for IERC20;
 
     /* ERRORS */
-    /// @dev Reverts when transfer data is invalid (e.g., zero amount or recipient address).
+
     error InvalidTransferData();
-
-    /// @notice Reverts when the provided amount is invalid (e.g., zero amount).
-    /// @dev This error is typically thrown when the amount of tokens to transfer is invalid.
     error InvalidAmount();
-
-    /// @dev Reverts when the token transfer fails.
     error TransferFailed();
-
-    /// @dev Reverts when the provided chain ID is not supported.
-    /// @param chainId The ID of the chain that is not supported.
     error ChainNotSupported(uint256 chainId);
-
-    /// @dev Reverts when the token type is not supported.
-    /// @param tokenType The unsupported token type.
     error TokenTypeNotSupported(ICcip.CcipToken tokenType);
-
-    /// @dev Reverts when the delegate call failed.
-    /// @param data The data that was passed to the delegate call.
     error UnableToCompleteDelegateCall(bytes data);
+
+    /* CONSTANTS */
+    uint256 internal constant USDC_DECIMALS = 1e6;
+    uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
     /**
      * @dev Returns the balance of the token for the contractAddress.
@@ -111,5 +101,9 @@ library LibLanca {
         }
 
         return response;
+    }
+
+    function toUsdcDecimals(uint256 amount) internal pure returns (uint256) {
+        return (amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
     }
 }

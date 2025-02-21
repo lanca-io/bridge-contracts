@@ -15,6 +15,7 @@ import {ZERO_ADDRESS} from "../common/Constants.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
+import {LibLanca} from "../common/libraries/LibLanca.sol";
 
 contract LancaBridge is
     LancaBridgeStorage,
@@ -188,8 +189,10 @@ contract LancaBridge is
     function _getCCIPFeeInUsdc(uint64 dstChainSelector) internal view returns (uint256) {
         uint256 ccipFeeInLink = s_lastCcipFeeInLink[dstChainSelector];
         return
-            (ccipFeeInLink * IConceroRouter(i_conceroRouter).getLinkUsdcRate()) /
-            STANDARD_TOKEN_DECIMALS;
+            LibLanca.toUsdcDecimals(
+                (ccipFeeInLink * IConceroRouter(i_conceroRouter).getLinkUsdcRate()) /
+                    STANDARD_TOKEN_DECIMALS
+            );
     }
 
     function _validateBridgeReq(BridgeReq calldata bridgeReq) internal view {
