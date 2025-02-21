@@ -11,7 +11,7 @@ export const poolMessengers: string[] = [
 
 export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
     timeout: 0,
-    confirmations: 2,
+    confirmations: 3,
 }
 
 export const writeContractConfig: WriteContractParameters = {
