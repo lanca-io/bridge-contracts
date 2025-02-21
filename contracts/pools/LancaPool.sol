@@ -96,6 +96,10 @@ abstract contract LancaPool is ILancaPool {
         return _getDstPoolByChainSelector(chainSelector);
     }
 
+    function getUsdcLoansInUse() external view returns (uint256) {
+        return _getLoansInUse();
+    }
+
     /* PUBLIC FUNCTIONS */
 
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
@@ -112,7 +116,7 @@ abstract contract LancaPool is ILancaPool {
         return messenger == i_messenger0 || messenger == i_messenger1 || messenger == i_messenger2;
     }
 
-    function _getLoansInUse() internal virtual returns (uint256);
+    function _getLoansInUse() internal view virtual returns (uint256);
 
     function _setLoansInUse(uint256 value) internal virtual;
 

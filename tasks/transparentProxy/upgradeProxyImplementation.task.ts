@@ -3,7 +3,7 @@ import conceroNetworks from "../../constants/conceroNetworks"
 import { privateKeyToAccount } from "viem/accounts"
 import log, { err } from "../../utils/log"
 import { task } from "hardhat/config"
-import { ProxyEnum, viemReceiptConfig, writeContractConfig } from "../../constants/deploymentVariables"
+import { ProxyEnum, viemReceiptConfig } from "../../constants/deploymentVariables"
 import { formatGas } from "../../utils/formatting"
 import { getFallbackClients } from "../../utils"
 import { CNetworkNames } from "../../types/CNetwork"
@@ -52,7 +52,6 @@ export async function upgradeProxyImplementation(hre: any, proxyType: ProxyEnum,
         account: viemAccount,
         args: [conceroProxy, implementation, "0x"],
         chain: viemChain,
-        ...writeContractConfig,
     })
 
     const txHash = await walletClient.writeContract(request)

@@ -14,9 +14,7 @@ task("get-pool-info", "").setAction(async taskArgs => {
     const conceroChain = conceroNetworks[name]
     const viemChain = conceroNetworks[name].viemChain
     const { publicClient } = getClients(viemChain)
-    const { abi: lancaPoolAbi } = await import(
-        "../../artifacts/contracts/pools/LancaPoolCommon.sol/LancaPoolCommon.json"
-    )
+    const { abi: lancaPoolAbi } = await import("../../artifacts/contracts/pools/LancaPool.sol/LancaPool.json")
     const poolAddress = getEnvVar(
         (isMasterChain(conceroChain) ? "PARENT_POOL_PROXY_" : "CHILD_POOL_PROXY_") + networkEnvKeys[name],
     ) as Address
