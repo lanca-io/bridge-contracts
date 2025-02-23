@@ -284,8 +284,8 @@ contract LancaParentPoolCLFCLA is
         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
         ILancaParentPool.WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
-        _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
         _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
+        _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
     }
 
     /**

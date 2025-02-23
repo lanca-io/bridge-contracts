@@ -10,9 +10,9 @@ import { networkEnvKeys } from "../../../constants/conceroNetworks"
 describe("bridge", async () => {
     it("should send and receive bridge", async () => {
         try {
-            const srcChain = conceroNetworks.baseSepolia
-            const dstChain = conceroNetworks.avalancheFuji
-            const bridgeAmount = parseUnits("2", 6)
+            const srcChain = conceroNetworks.arbitrumSepolia
+            const dstChain = conceroNetworks.baseSepolia
+            const bridgeAmount = parseUnits("4", 6)
             const srcLancaOrchestrator = getEnvVar(
                 `LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[srcChain.name]}`,
             ) as Address
