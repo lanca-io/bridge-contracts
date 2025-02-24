@@ -6,19 +6,19 @@
                 urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
                 chainId: '0x14a34',
                 usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-                poolAddress: '0x412fDf62011abfCFD3fA9aE85bd910505C372b32',
+                poolAddress: '0x367fd6BE1B78767c15b82a181e98158f426551c0',
             },
             ['3478487238524512106']: {
                 urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
                 chainId: '0x66eee',
                 usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-                poolAddress: '0xb9fAEE3A6A70599C75761A458854ad21B384e8F9',
+                poolAddress: '0xa246a2cFfC46B754771C1FC90d0C06595754a324',
             },
             ['14767482510784806043']: {
                 urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
                 chainId: '0xa869',
                 usdcAddress: '0x5425890298aed601595a70AB815c96711a31Bc65',
-                poolAddress: '0xDedEfCC3d91B952356e83A6246DaA08BBB824386',
+                poolAddress: '0x7A6F837CC8d4156812700F1C199B9d5931005FcC',
             },
         };
         const chainsMapMainnet = {
