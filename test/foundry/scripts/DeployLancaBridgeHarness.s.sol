@@ -8,7 +8,7 @@ import {DeployBase} from "./DeployBase.s.sol";
 
 contract DeployLancaBridgeHarnessScript is DeployBase {
     function _deployImplementation() internal override returns (address) {
-        address lancaPool = address(new LancaPoolMock());
+        address lancaPool = address(new LancaPoolMock(getUsdcAddress()));
         TestHarness cheats = new TestHarness();
         cheats.exposed_deal(getUsdcAddress(), lancaPool, 1_000_000e6);
 

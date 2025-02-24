@@ -25,7 +25,7 @@ async function depositToPoo(isTestnet: boolean) {
     const { abi: parentPoolClfClaAbi } = await import(
         "../../artifacts/contracts/pools/LancaParentPoolClfCla.sol/LancaParentPoolClfCla.json"
     )
-    const depositAmountUsdc = parseUnits("20", 6)
+    const depositAmountUsdc = parseUnits("21", 6)
 
     const startDepositReq = (
         await publicClient.simulateContract({

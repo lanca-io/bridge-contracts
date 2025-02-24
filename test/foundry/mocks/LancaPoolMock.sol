@@ -8,14 +8,20 @@ contract LancaPoolMock is ILancaPool {
     uint256 internal constant PRECISION_HANDLER = 1e10;
     uint256 internal constant LP_FEE_FACTOR = 1000;
 
+    IERC20 internal i_usdc;
+
+    constructor(address usdc) {
+        i_usdc = IERC20(usdc);
+    }
+
     function takeLoan(address token, uint256 amount, address receiver) external returns (uint256) {
         uint256 loanAmount = amount - getDstTotalFeeInUsdc(amount);
         IERC20(token).transfer(receiver, loanAmount);
         return loanAmount;
     }
 
-    function completeRebalancing(bytes32 /*id*/, uint256 /*amount*/) external {
-        //@dev do nothing
+    function completeRebalancing(bytes32 /*id*/, uint256 amount) external {
+        i_usdc.transferFrom(msg.sender, address(this), amount);
     }
 
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {

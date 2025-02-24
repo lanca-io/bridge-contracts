@@ -311,8 +311,7 @@ contract LancaBridgeTest is LancaBridgeTestBase {
         assertEq(
             lancaPoolBalanceAfter,
             lancaPoolBalanceBefore +
-                destTokenAmounts[0].amount -
-                ccipSettlementTxs[failedTxIndex].amount
+                (destTokenAmounts[0].amount - ccipSettlementTxs[failedTxIndex].amount)
         );
 
         uint256 receiver1BalanceAfter = IERC20(s_usdc).balanceOf(receiver1);

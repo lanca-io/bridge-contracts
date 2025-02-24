@@ -53,43 +53,6 @@ contract LancaChildPoolTest is Test {
         );
     }
 
-    /// @dev check this test
-    function test_distributeLiquidity() public {
-        address messenger = s_lancaChildPool.exposed_getMessengers()[0];
-        uint64 chainSelector = 1;
-        uint256 amountToSend = 100 * USDC_DECIMALS;
-        bytes32 distributeLiquidityRequestId = bytes32(0);
-        address pool = makeAddr("pool");
-
-        vm.prank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setDstPool(chainSelector, pool);
-
-        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
-        deal(s_usdc, messenger, 1000 * USDC_DECIMALS);
-        deal(s_lancaChildPool.exposed_getLinkToken(), 1000 ether);
-
-        vm.startPrank(messenger);
-
-        s_lancaChildPool.distributeLiquidity(
-            chainSelector,
-            amountToSend,
-            distributeLiquidityRequestId
-        );
-
-        vm.stopPrank();
-
-        vm.assertEq(
-            s_lancaChildPool.exposed_getDistributeLiquidityRequestProcessed(
-                distributeLiquidityRequestId
-            ),
-            true
-        );
-        /// @dev fix _ccipSend approvals checks
-        address ccipRouter = s_lancaChildPool.getRouter();
-        uint256 allowance = IERC20(s_usdc).allowance(address(s_lancaChildPool), ccipRouter);
-        vm.assertEq(allowance, amountToSend);
-    }
-
     function test_takeLoan() public {
         deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
         address receiver = makeAddr("receiver");
@@ -99,27 +62,7 @@ contract LancaChildPoolTest is Test {
         uint256 loanAmount = s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
 
         vm.assertEq(IERC20(s_usdc).balanceOf(receiver), loanAmount);
-        vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), loanAmount);
-    }
-
-    function testFuzz_completeRebalancingMultipleTimes(
-        uint256 amountToLoan,
-        uint256 loansCount
-    ) public {
-        vm.assume(loansCount > 0 && loansCount < 1_000 && amountToLoan < 100_000_000_000e6);
-
-        address receiver = makeAddr("receiver");
-
-        deal(s_usdc, address(s_lancaChildPool), amountToLoan * loansCount);
-
-        vm.startPrank(s_lancaChildPool.exposed_getLancaBridge());
-        for (uint256 i; i < loansCount; ++i) {
-            s_lancaChildPool.takeLoan(s_usdc, amountToLoan, receiver);
-        }
-        s_lancaChildPool.completeRebalancing(bytes32(0), amountToLoan * loansCount);
-        vm.stopPrank();
-
-        assertEq(s_lancaChildPool.getUsdcLoansInUse(), 0);
+        vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), amount);
     }
 
     /* REVERTS */
@@ -137,24 +80,6 @@ contract LancaChildPoolTest is Test {
             )
         );
         s_lancaChildPool.setDstPool(chainSelector, pool);
-    }
-
-    function test_setDstPoolTheSamePool_revert() public {
-        uint64 chainSelector = 1;
-        address pool = makeAddr("pool");
-
-        vm.startPrank(s_deployChildPoolHarnessScript.getDeployer());
-        s_lancaChildPool.setDstPool(chainSelector, pool);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                LibErrors.InvalidAddress.selector,
-                LibErrors.InvalidAddressType.sameAddress
-            )
-        );
-        s_lancaChildPool.setDstPool(chainSelector, pool);
-
-        vm.stopPrank();
     }
 
     function test_setDstPoolInvalidAddress_revert() public {

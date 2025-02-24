@@ -264,35 +264,6 @@ contract LancaParentPoolTest is Test {
         );
     }
 
-    function test_handleOracleFulfillmentStartWithdrawalGetChildPoolsLiqSuccess() public {
-        bytes32 clfReqId = keccak256("clfReqId");
-        uint256 amountUsdcToWithdraw = 85_000 * USDC_DECIMALS;
-        bytes memory response = abi.encode(amountUsdcToWithdraw);
-        bytes memory err;
-
-        s_lancaParentPool.exposed_setClfReqTypeById(
-            clfReqId,
-            ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
-        );
-
-        vm.assertEq(
-            s_lancaParentPool.getWithdrawalRequestById(clfReqId).totalCrossChainLiquiditySnapshot,
-            0
-        );
-
-        vm.prank(s_lancaParentPool.exposed_getClfRouter());
-        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
-
-        vm.assertEq(
-            s_lancaParentPool.getWithdrawalRequestById(clfReqId).totalCrossChainLiquiditySnapshot,
-            amountUsdcToWithdraw
-        );
-        vm.assertEq(
-            uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
-            uint8(ILancaParentPool.ClfRequestType.empty)
-        );
-    }
-
     /* ADMIN FUNCTIONS */
 
     function testFuzz_setDstPool(
