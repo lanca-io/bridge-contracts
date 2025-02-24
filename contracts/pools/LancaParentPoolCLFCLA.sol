@@ -368,21 +368,21 @@ contract LancaParentPoolCLFCLA is
         bytes32 withdrawalId,
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {
+        ILancaParentPool.ClfRequestType requestType = ILancaParentPool
+            .ClfRequestType
+            .withdrawal_requestLiquidityCollection;
+
         bytes[] memory args = new bytes[](6);
         args[0] = abi.encodePacked(i_collectLiquidityJsCodeHash);
         args[1] = abi.encodePacked(i_ethersJsHash);
-        args[2] = abi.encodePacked(
-            ILancaParentPool.ClfRequestType.withdrawal_requestLiquidityCollection
-        );
+        args[2] = abi.encodePacked(requestType);
         args[3] = abi.encodePacked(block.chainid);
         args[4] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[5] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args);
         s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
-        s_clfRequestTypes[reqId] = ILancaParentPool
-            .ClfRequestType
-            .startWithdrawal_getChildPoolsLiquidity;
+        s_clfRequestTypes[reqId] = requestType;
 
         return reqId;
     }
