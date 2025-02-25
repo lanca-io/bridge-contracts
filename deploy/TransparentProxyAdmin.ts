@@ -28,6 +28,7 @@ const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) 
         autoMine: true,
         maxFeePerGas: maxFeePerGas.toString(),
         maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        gasLimit: 2_000_000,
     })) as Deployment
 
     if (live) {
