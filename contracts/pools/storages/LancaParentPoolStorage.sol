@@ -41,7 +41,7 @@ abstract contract LancaParentPoolStorage {
     mapping(uint64 chainSelector => address pool) internal s_dstPoolByChainSelector;
 
     mapping(uint64 chainSelector => mapping(address poolAddress => bool))
-        public s_isSenderContractAllowed; // @dev mb deprecated
+        private s_isSenderContractAllowed_DEPRECATED;
 
     mapping(bytes32 => bool) internal s_distributeLiquidityRequestProcessed;
 
