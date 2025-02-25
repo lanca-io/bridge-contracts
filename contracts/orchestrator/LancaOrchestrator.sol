@@ -82,6 +82,8 @@ contract LancaOrchestrator is
         i_dexSwap = dexSwap;
     }
 
+    receive() external payable {}
+
     /* MODIFIERS */
 
     modifier validateBridgeData(BridgeData memory bridgeData) {
