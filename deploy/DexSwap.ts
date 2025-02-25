@@ -20,7 +20,7 @@ const deployDexSwap: (hre: HardhatRuntimeEnvironment) => Promise<void> = async f
 
     log("Deploying...", "deployDexSwap", name)
 
-    const deployLancaOrchestrator = (await deploy("DexSwap", {
+    const deployDexSwap = (await deploy("DexSwap", {
         from: deployer,
         args: [],
         log: true,
@@ -31,8 +31,8 @@ const deployDexSwap: (hre: HardhatRuntimeEnvironment) => Promise<void> = async f
     })) as Deployment
 
     if (live) {
-        log(`Deployed at: ${deployLancaOrchestrator.address}`, "deployLancaOrchestrator", name)
-        updateEnvVariable(`DEX_SWAP_${networkEnvKeys[name]}`, deployLancaOrchestrator.address, `deployments.${type}`)
+        log(`Deployed at: ${deployDexSwap.address}`, "deployDexSwap", name)
+        updateEnvVariable(`DEX_SWAP_${networkEnvKeys[name]}`, deployDexSwap.address, `deployments.${type}`)
     }
 }
 

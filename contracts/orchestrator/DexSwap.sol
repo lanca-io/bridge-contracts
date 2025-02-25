@@ -25,7 +25,7 @@ contract DexSwap is LancaOrchestratorStorage, ILancaDexSwap {
     function performSwaps(
         ILancaDexSwap.SwapData[] memory swapData,
         address receiver
-    ) external returns (uint256) {
+    ) external payable returns (uint256) {
         _validateSwapData(swapData);
 
         address addressThis = address(this);
@@ -83,7 +83,7 @@ contract DexSwap is LancaOrchestratorStorage, ILancaDexSwap {
      * @notice Perform a swap on a SwapData
      * @param swapData the SwapData to perform the swap
      */
-    function _performSwap(ILancaDexSwap.SwapData memory swapData) internal virtual {
+    function _performSwap(ILancaDexSwap.SwapData memory swapData) internal {
         bytes memory dexCallData = swapData.dexCallData;
         require(dexCallData.length != 0, EmptySwapData());
 
