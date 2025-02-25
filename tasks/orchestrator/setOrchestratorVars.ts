@@ -8,6 +8,7 @@ import { networkEnvKeys } from "../../constants/conceroNetworks"
 import { Address } from "viem"
 import log from "../../utils/log"
 import { viemReceiptConfig } from "../../constants/deploymentVariables"
+import { arbitrum, avalanche, base, optimism, polygon } from "viem/chains"
 
 async function setDstLancaOrchestratorContracts() {
     const hre: HardhatRuntimeEnvironment = require("hardhat")
@@ -67,6 +68,65 @@ async function setDstLancaOrchestratorContracts() {
     }
 }
 
+const allowedRouters = {
+    [arbitrum.id]: [getEnvVar("SUSHISWAP_ROUTER_ARBITRUM")],
+    [base.id]: [getEnvVar("SUSHISWAP_ROUTER_BASE")],
+    [optimism.id]: [getEnvVar("SUSHISWAP_ROUTER_OPTIMISM")],
+    [polygon.id]: [getEnvVar("SUSHISWAP_ROUTER_POLYGON")],
+    [avalanche.id]: [getEnvVar("SUSHISWAP_ROUTER_AVALANCHE")],
+}
+
+async function setAllowedDexRouters() {
+    const hre: HardhatRuntimeEnvironment = require("hardhat")
+    const cName = hre.network.name as CNetworkNames
+    const cNetwork = conceroNetworks[cName]
+    const { publicClient, walletClient } = getFallbackClients(cNetwork)
+    const { abi: lancaOrchestratorAbi } = await import(
+        "../../artifacts/contracts/orchestrator/LancaOrchestrator.sol/LancaOrchestrator.json"
+    )
+    const lancaOrchestrator = getEnvVar(`LANCA_ORCHESTRATOR_PROXY_${networkEnvKeys[cName]}`) as Address
+
+    const allowedRoutersForChain = allowedRouters[cNetwork.chainId]
+    if (!allowedRoutersForChain) {
+        log(`No allowed routers for ${cName}`, "setAllowedDexRouters", cName)
+        return
+    }
+
+    for (const router of allowedRoutersForChain) {
+        const currentAllowedRouters = (await publicClient.readContract({
+            address: lancaOrchestrator,
+            abi: lancaOrchestratorAbi,
+            functionName: "isDexRouterAllowed",
+            args: [router],
+        })) as boolean
+
+        if (currentAllowedRouters) {
+            const logMessage = `[Skip] ${cName}.allowedDexRouter.${router}. Already set`
+            log(logMessage, "setDexRouterAddress", cName)
+            continue
+        }
+
+        const { request } = await publicClient.simulateContract({
+            account: walletClient.account,
+            address: lancaOrchestrator,
+            abi: lancaOrchestratorAbi,
+            functionName: "setDexRouterAddress",
+            args: [router, true],
+        })
+        const txHash = await walletClient.writeContract(request)
+        const setAllowedDexRoutersStatus = (
+            await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash })
+        ).status
+
+        if (setAllowedDexRoutersStatus === "success") {
+            log(`Set Allowed Dex Router: ${router}. Hash: ${txHash}`, "setAllowedDexRouters", cName)
+        } else {
+            throw new Error(`Failed to set Allowed Dex Router: ${router}. Hash: ${txHash}`)
+        }
+    }
+}
+
 export async function setOrchestratorVars() {
     await setDstLancaOrchestratorContracts()
+    await setAllowedDexRouters()
 }
