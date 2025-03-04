@@ -296,10 +296,12 @@ contract LancaParentPoolCLFCLA is
      */
     function _handleAutomationCLFFulfill(bytes32 requestId) internal {
         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
-        uint256 withdrawalRequestIdsLength = s_withdrawalRequestIds.length;
-        for (uint256 i; i < withdrawalRequestIdsLength; ++i) {
+
+        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
             if (s_withdrawalRequestIds[i] == withdrawalId) {
-                s_withdrawalRequestIds[i] = s_withdrawalRequestIds[withdrawalRequestIdsLength - 1];
+                s_withdrawalRequestIds[i] = s_withdrawalRequestIds[
+                    s_withdrawalRequestIds.length - 1
+                ];
                 s_withdrawalRequestIds.pop();
             }
         }
