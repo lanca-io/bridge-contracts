@@ -655,6 +655,57 @@ contract LancaParentPool is
         );
     }
 
+    function fixWithdrawRequestsStorage() external onlyOwner {
+        bytes32[] clashedRequestsIds = new bytes32(9);
+
+        clashedRequestsIds[0] = bytes32(
+            0x884f5e5a2e88889b437aca5a80ff063206dd3504b8770b658acb44a499d6b94d
+        );
+        clashedRequestsIds[1] = bytes32(
+            0x6ea9dec5d874830cbaa31ed36bc6226a9caaa4c77d0fcb3da3fa1bf9e5c6a1a9
+        );
+        clashedRequestsIds[2] = bytes32(
+            0x8e112aa013d77f70afb3ce4b15a3ef8b496346759e3286e7d0b5f86b7ca201f9
+        );
+        clashedRequestsIds[3] = bytes32(
+            0x29df88f432fcb24a4e56d99a28c1fbad970f20ef2a9f3fa3c61adf9ce834cd87
+        );
+        clashedRequestsIds[4] = bytes32(
+            0x4f8ae2e726a4e21be37f2648e1fd07397bba1f403f08c29ac11e1842746803b7
+        );
+        clashedRequestsIds[5] = bytes32(
+            0x27831d0e555512d7e357bf84d11452845cae275b5a21fe9dff1d99ccaa3dc7b1
+        );
+        clashedRequestsIds[6] = bytes32(
+            0xb65b5abc0926dbf7031edd9224426b7e0a917987143c86f3a78ddba179a32b3c
+        );
+        clashedRequestsIds[7] = bytes32(
+            0xf71d9dc89fd06e4ad53f5d7093e2b926d42787b0cd8642f8ef215eee01e30584
+        );
+        clashedRequestsIds[8] = bytes32(
+            0x67aa923dd50c5ff2e1c1e3eb87f36ae8a67f5805ad324df83a2a18ccbb849b45
+        );
+
+        for (uint256 i; i < clashedRequestsIds.length; ++i) {
+            bytes32 id = clashedRequestsIds[i];
+
+            WithdrawRequest memory cachedRequest = s_withdrawRequests[id];
+            require(cachedRequest.lpAddress != address(0), "Zero lp address");
+            require(cachedRequest.lpSupplySnapshot_DEPRECATED != 0, "Zero lp amount to burn");
+
+            delete s_withdrawRequests[id].lpSupplySnapshot_DEPRECATED;
+            s_withdrawRequests[id].lpAmountToBurn = cachedRequest.lpSupplySnapshot_DEPRECATED;
+            s_withdrawRequests[id].totalCrossChainLiquiditySnapshot = cachedRequest.lpAmountToBurn;
+            s_withdrawRequests[id].amountToWithdraw = cachedRequest
+                .totalCrossChainLiquiditySnapshot;
+            s_withdrawRequests[id].liquidityRequestedFromEachPool = cachedRequest.amountToWithdraw;
+            s_withdrawRequests[id].remainingLiquidityFromChildPools = cachedRequest
+                .liquidityRequestedFromEachPool;
+            s_withdrawRequests[id].triggeredAtTimestamp = cachedRequest
+                .remainingLiquidityFromChildPools;
+        }
+    }
+
     function _ccipSend(
         uint64 chainSelector,
         uint256 amount,

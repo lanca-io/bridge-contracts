@@ -26,6 +26,7 @@ interface ILancaParentPool is ILancaPool {
 
     struct WithdrawRequest {
         address lpAddress;
+        uint256 lpSupplySnapshot_DEPRECATED;
         uint256 lpAmountToBurn;
         uint256 totalCrossChainLiquiditySnapshot; //todo: we don't update this updateWithdrawalRequest
         uint256 amountToWithdraw;
