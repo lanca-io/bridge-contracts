@@ -656,7 +656,7 @@ contract LancaParentPool is
     }
 
     function fixWithdrawRequestsStorage() external onlyOwner {
-        bytes32[] clashedRequestsIds = new bytes32(9);
+        bytes32[] memory clashedRequestsIds = new bytes32[](9);
 
         clashedRequestsIds[0] = bytes32(
             0x884f5e5a2e88889b437aca5a80ff063206dd3504b8770b658acb44a499d6b94d
