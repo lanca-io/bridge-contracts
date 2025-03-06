@@ -593,60 +593,6 @@ contract LancaParentPool is
         return index;
     }
 
-    // @dev TODO: remove it latter
-    function _isStuckCcipTx(bytes32 withdrawalId) internal returns (bool) {
-        if (
-            withdrawalId ==
-            bytes32(0xaa3f269b715442675ab96b256c03e478104c936a0018739375b572e1ba49c348) ||
-            withdrawalId ==
-            bytes32(0xdfb04e61a0843af4bde8c55aa29c72d246574a917fc63d59712cbf82ff085c27) ||
-            withdrawalId ==
-            bytes32(0x1f54816b5305a2735a6c49dd93d888619ba667c3bc390a41cf8220f90e5951b3) ||
-            withdrawalId ==
-            bytes32(0x52b7923ba6d27eb535e510104555f1821bbf4dbf16f1f9571eb48bb00c4c405b) ||
-            withdrawalId ==
-            bytes32(0x4bcda26c028e970cd1e4c7c6ab444834a49ecabebcc741d239cf32a1d2b5f611) ||
-            withdrawalId ==
-            bytes32(0x5ccb1a36191d89b8f5d4eda5e4d3cb644f3eca24a26f83d48988a4ef17ce4f12) ||
-            withdrawalId ==
-            bytes32(0x2f1e8d618a52e2b90b20fccdc503e9a4a13b2e840804522b82a3f50447eceec6) ||
-            withdrawalId ==
-            bytes32(0xe349ec4a47594af8e33cf5ee511da19eeb779bb8c43b4c5a36661e48a684a86b) ||
-            withdrawalId ==
-            bytes32(0x49d06309e25edecb214ffab24fa80703418f2ea22846f6271c88715d692974c7) ||
-            withdrawalId ==
-            bytes32(0x874e10f7897cf83eca3b98515bc4d8dd803da16ee35804effc4a51e5221329f9) ||
-            withdrawalId ==
-            bytes32(0xf5264af75764bd50256541c6e4a4486ee00bb885a1fff5cae4ba1ebdb9fb00e8) ||
-            withdrawalId ==
-            bytes32(0x24f2506a77f31b9f597e6fc7e60a295aa837d3c7eb0938a8c6c73c2fc2c2a1a4) ||
-            withdrawalId ==
-            bytes32(0x6d8a1dd976ec322551491f87a0f195219bc362de3ce593637d7c50434e6adca4) ||
-            withdrawalId ==
-            bytes32(0x1c362f00f0cfdddbfc2520220ee214c5925d2f6db2785818894825f6b16302b5) ||
-            withdrawalId ==
-            bytes32(0x32161e6bfef4a996d1cd90b2f17d814adf53d88914f467d968f332d90352894a) ||
-            withdrawalId ==
-            bytes32(0x51b7396a31c89699f0a4f1d70a21536ef7d6daac4f513db847c06f4747a5bc92) ||
-            withdrawalId ==
-            bytes32(0x83ee73c75f563ca5caa78dd03f95ecf085448c9c6660621ad0ea39c99084675d) ||
-            withdrawalId ==
-            bytes32(0xfc3a4b06ae9adb1173f3e8b6054e8a698db3e712f8dfe53b4b613c904983a3a5) ||
-            withdrawalId ==
-            bytes32(0xd177a901a9dd339f2d2d340f9e9bda9f63126fe64520d0e37af6c9d17daf9025) ||
-            withdrawalId ==
-            bytes32(0x3aa5bdc0494b56f803bc3a6401b5f912715d275d08eb6b90288b125df9550049) ||
-            withdrawalId ==
-            bytes32(0xcd87f80b6f9cfbd61567abb7a023161daa0f90f788ac73dd2e3706f432c16877) ||
-            withdrawalId ==
-            bytes32(0x30955bf7ae74523a2fa8ac3137e9c7662bec89e1c5ed2cf4fee64d08ba81a4d9)
-        ) {
-            return true;
-        }
-
-        return false;
-    }
-
     /**
      * @notice CCIP function to receive bridged values
      * @param any2EvmMessage the CCIP message
@@ -675,16 +621,6 @@ contract LancaParentPool is
         );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
-            if (_isStuckCcipTx(any2EvmMessage.messageId)) {
-                _ccipSend(
-                    any2EvmMessage.sourceChainSelector,
-                    ccipReceivedAmount,
-                    ICcip.CcipTxType.deposit
-                );
-
-                return;
-            }
-
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
@@ -717,57 +653,6 @@ contract LancaParentPool is
             ccipReceivedToken,
             ccipReceivedAmount
         );
-    }
-
-    function fixWithdrawRequestsStorage() external onlyOwner {
-        bytes32[] memory clashedRequestsIds = new bytes32[](9);
-
-        clashedRequestsIds[0] = bytes32(
-            0x884f5e5a2e88889b437aca5a80ff063206dd3504b8770b658acb44a499d6b94d
-        );
-        clashedRequestsIds[1] = bytes32(
-            0x6ea9dec5d874830cbaa31ed36bc6226a9caaa4c77d0fcb3da3fa1bf9e5c6a1a9
-        );
-        clashedRequestsIds[2] = bytes32(
-            0x8e112aa013d77f70afb3ce4b15a3ef8b496346759e3286e7d0b5f86b7ca201f9
-        );
-        clashedRequestsIds[3] = bytes32(
-            0x29df88f432fcb24a4e56d99a28c1fbad970f20ef2a9f3fa3c61adf9ce834cd87
-        );
-        clashedRequestsIds[4] = bytes32(
-            0x4f8ae2e726a4e21be37f2648e1fd07397bba1f403f08c29ac11e1842746803b7
-        );
-        clashedRequestsIds[5] = bytes32(
-            0x27831d0e555512d7e357bf84d11452845cae275b5a21fe9dff1d99ccaa3dc7b1
-        );
-        clashedRequestsIds[6] = bytes32(
-            0xb65b5abc0926dbf7031edd9224426b7e0a917987143c86f3a78ddba179a32b3c
-        );
-        clashedRequestsIds[7] = bytes32(
-            0xf71d9dc89fd06e4ad53f5d7093e2b926d42787b0cd8642f8ef215eee01e30584
-        );
-        clashedRequestsIds[8] = bytes32(
-            0x67aa923dd50c5ff2e1c1e3eb87f36ae8a67f5805ad324df83a2a18ccbb849b45
-        );
-
-        for (uint256 i; i < clashedRequestsIds.length; ++i) {
-            bytes32 id = clashedRequestsIds[i];
-
-            WithdrawRequest memory cachedRequest = s_withdrawRequests[id];
-            require(cachedRequest.lpAddress != address(0), "Zero lp address");
-            require(cachedRequest.lpSupplySnapshot_DEPRECATED != 0, "Zero lp amount to burn");
-
-            delete s_withdrawRequests[id].lpSupplySnapshot_DEPRECATED;
-            s_withdrawRequests[id].lpAmountToBurn = cachedRequest.lpSupplySnapshot_DEPRECATED;
-            s_withdrawRequests[id].totalCrossChainLiquiditySnapshot = cachedRequest.lpAmountToBurn;
-            s_withdrawRequests[id].amountToWithdraw = cachedRequest
-                .totalCrossChainLiquiditySnapshot;
-            s_withdrawRequests[id].liquidityRequestedFromEachPool = cachedRequest.amountToWithdraw;
-            s_withdrawRequests[id].remainingLiquidityFromChildPools = cachedRequest
-                .liquidityRequestedFromEachPool;
-            s_withdrawRequests[id].triggeredAtTimestamp = cachedRequest
-                .remainingLiquidityFromChildPools;
-        }
     }
 
     function _ccipSend(
