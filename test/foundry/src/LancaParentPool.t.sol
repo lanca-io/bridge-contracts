@@ -210,7 +210,7 @@ contract LancaParentPoolTest is Test {
                 liquidityRequestedFromEachPool: 0,
                 remainingLiquidityFromChildPools: 0,
                 triggeredAtTimestamp: 0,
-                totalCrossChainLiquiditySnapshot: 0
+                totalCrossChainLiquiditySnapshot_DEPRECATED: 0
             })
         );
 
