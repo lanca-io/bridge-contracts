@@ -21,6 +21,7 @@ task("fix-clashed-withdrawals", "").setAction(async taskArgs => {
                 account: walletClient.account,
                 address: parentPoolAddress,
                 abi: parentPoolAbi,
+                functionName: "fixWithdrawRequestsStorage",
                 args: [],
             })
         ).request
