@@ -593,6 +593,60 @@ contract LancaParentPool is
         return index;
     }
 
+    // @dev TODO: remove it latter
+    function _isStuckCcipTx(bytes32 withdrawalId) internal returns (bool) {
+        if (
+            withdrawalId ==
+            bytes32(0xaa3f269b715442675ab96b256c03e478104c936a0018739375b572e1ba49c348) ||
+            withdrawalId ==
+            bytes32(0xdfb04e61a0843af4bde8c55aa29c72d246574a917fc63d59712cbf82ff085c27) ||
+            withdrawalId ==
+            bytes32(0x1f54816b5305a2735a6c49dd93d888619ba667c3bc390a41cf8220f90e5951b3) ||
+            withdrawalId ==
+            bytes32(0x52b7923ba6d27eb535e510104555f1821bbf4dbf16f1f9571eb48bb00c4c405b) ||
+            withdrawalId ==
+            bytes32(0x4bcda26c028e970cd1e4c7c6ab444834a49ecabebcc741d239cf32a1d2b5f611) ||
+            withdrawalId ==
+            bytes32(0x5ccb1a36191d89b8f5d4eda5e4d3cb644f3eca24a26f83d48988a4ef17ce4f12) ||
+            withdrawalId ==
+            bytes32(0x2f1e8d618a52e2b90b20fccdc503e9a4a13b2e840804522b82a3f50447eceec6) ||
+            withdrawalId ==
+            bytes32(0xe349ec4a47594af8e33cf5ee511da19eeb779bb8c43b4c5a36661e48a684a86b) ||
+            withdrawalId ==
+            bytes32(0x49d06309e25edecb214ffab24fa80703418f2ea22846f6271c88715d692974c7) ||
+            withdrawalId ==
+            bytes32(0x874e10f7897cf83eca3b98515bc4d8dd803da16ee35804effc4a51e5221329f9) ||
+            withdrawalId ==
+            bytes32(0xf5264af75764bd50256541c6e4a4486ee00bb885a1fff5cae4ba1ebdb9fb00e8) ||
+            withdrawalId ==
+            bytes32(0x24f2506a77f31b9f597e6fc7e60a295aa837d3c7eb0938a8c6c73c2fc2c2a1a4) ||
+            withdrawalId ==
+            bytes32(0x6d8a1dd976ec322551491f87a0f195219bc362de3ce593637d7c50434e6adca4) ||
+            withdrawalId ==
+            bytes32(0x1c362f00f0cfdddbfc2520220ee214c5925d2f6db2785818894825f6b16302b5) ||
+            withdrawalId ==
+            bytes32(0x32161e6bfef4a996d1cd90b2f17d814adf53d88914f467d968f332d90352894a) ||
+            withdrawalId ==
+            bytes32(0x51b7396a31c89699f0a4f1d70a21536ef7d6daac4f513db847c06f4747a5bc92) ||
+            withdrawalId ==
+            bytes32(0x83ee73c75f563ca5caa78dd03f95ecf085448c9c6660621ad0ea39c99084675d) ||
+            withdrawalId ==
+            bytes32(0xfc3a4b06ae9adb1173f3e8b6054e8a698db3e712f8dfe53b4b613c904983a3a5) ||
+            withdrawalId ==
+            bytes32(0xd177a901a9dd339f2d2d340f9e9bda9f63126fe64520d0e37af6c9d17daf9025) ||
+            withdrawalId ==
+            bytes32(0x3aa5bdc0494b56f803bc3a6401b5f912715d275d08eb6b90288b125df9550049) ||
+            withdrawalId ==
+            bytes32(0xcd87f80b6f9cfbd61567abb7a023161daa0f90f788ac73dd2e3706f432c16877) ||
+            withdrawalId ==
+            bytes32(0x30955bf7ae74523a2fa8ac3137e9c7662bec89e1c5ed2cf4fee64d08ba81a4d9)
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * @notice CCIP function to receive bridged values
      * @param any2EvmMessage the CCIP message
@@ -621,6 +675,16 @@ contract LancaParentPool is
         );
 
         if (ccipTxData.ccipTxType == ICcip.CcipTxType.withdrawal) {
+            if (_isStuckCcipTx(any2EvmMessage.messageId)) {
+                _ccipSend(
+                    any2EvmMessage.sourceChainSelector,
+                    ccipReceivedAmount,
+                    ICcip.CcipTxType.deposit
+                );
+
+                return;
+            }
+
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
