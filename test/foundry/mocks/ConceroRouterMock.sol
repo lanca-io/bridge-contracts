@@ -19,7 +19,7 @@ contract ConceroRouterMock is IConceroRouter {
         return 10000;
     }
 
-    function getLinkUsdcRate() external view returns (uint256) {
+    function getLinkUsdcRate() external pure returns (uint256) {
         return 100;
     }
 }

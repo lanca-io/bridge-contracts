@@ -35,6 +35,30 @@ contract LancaChildPoolTest is Test {
 
         vm.assertEq(s_lancaChildPool.exposed_getDstPoolByChainSelector(chainSelector), pool);
         vm.assertEq(s_lancaChildPool.exposed_getPoolChainSelectors()[0], chainSelector);
+        vm.assertEq(s_lancaChildPool.getDstPoolByChainSelector(chainSelector), pool);
+    }
+
+    function test_getDstTotalFeeInUsdc() public view {
+        uint256 amount0 = 1 ether;
+        uint256 amount1 = 2 ether;
+        uint256 fee0 = s_lancaChildPool.getDstTotalFeeInUsdc(amount0);
+        uint256 fee1 = s_lancaChildPool.getDstTotalFeeInUsdc(amount1);
+
+        vm.assertGt(fee0, 0);
+        vm.assertGt(fee1, 0);
+        vm.assertGt(fee1 - fee0, 0);
+    }
+
+    function test_getUsdcLoansInUse() public {
+        uint256 beforeLoans = s_lancaChildPool.getUsdcLoansInUse();
+        vm.assertEq(beforeLoans, 0);
+
+        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
+        address receiver = makeAddr("receiver");
+        uint256 amount = 100 * USDC_DECIMALS;
+        vm.prank(s_lancaChildPool.exposed_getLancaBridge());
+        uint256 afterLoans = s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
+        vm.assertGt(afterLoans, 0);
     }
 
     function test_removePools() public {
