@@ -59,6 +59,8 @@ contract LancaChildPoolTest is Test {
         vm.prank(s_lancaChildPool.exposed_getLancaBridge());
         uint256 afterLoans = s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
         vm.assertGt(afterLoans, 0);
+        uint256 fee = amount - afterLoans;
+        vm.assertGt(fee, 0);
     }
 
     function test_removePools() public {
@@ -89,10 +91,29 @@ contract LancaChildPoolTest is Test {
         vm.assertEq(s_lancaChildPool.exposed_getLoansInUse(), amount);
     }
 
+    function test_completeRebalancing() public {
+        deal(s_usdc, address(s_lancaChildPool.exposed_getLancaBridge()), 100 * USDC_DECIMALS);
+        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
+        uint256 amount = 100 * USDC_DECIMALS;
+        address receiver = makeAddr("receiver");
+
+        vm.prank(s_lancaChildPool.exposed_getLancaBridge());
+        s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
+        uint256 beforeBal = s_lancaChildPool.getUsdcLoansInUse();
+        vm.assertEq(beforeBal, amount);
+
+        vm.startPrank(s_lancaChildPool.exposed_getLancaBridge());
+        IERC20(s_usdc).approve(address(s_lancaChildPool), amount);
+        bytes32 anyValue = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        amount = 22 * USDC_DECIMALS;
+
+        s_lancaChildPool.completeRebalancing(anyValue, amount);
+        uint256 afterBal = s_lancaChildPool.getUsdcLoansInUse();
+        vm.assertEq(afterBal, beforeBal - amount);
+        vm.stopPrank();
+    }
+
     /* REVERTS */
-
-    /* SET POOLS */
-
     function test_setDstPoolNotOwner_revert() public {
         address pool = makeAddr("pool");
         uint64 chainSelector = 1;
@@ -105,6 +126,30 @@ contract LancaChildPoolTest is Test {
         );
         s_lancaChildPool.setDstPool(chainSelector, pool);
     }
+
+    function test_useNotOnlyLancaBridge_revert() public {
+        deal(s_usdc, address(s_lancaChildPool), 1000 * USDC_DECIMALS);
+        address receiver = makeAddr("receiver");
+        uint256 amount = 100 * USDC_DECIMALS;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notLancaBridge
+            )
+        );
+        s_lancaChildPool.takeLoan(s_usdc, amount, receiver);
+
+        bytes32 anyValue = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notLancaBridge
+            )
+        );
+        s_lancaChildPool.completeRebalancing(anyValue, amount);
+    }
+    /* SET POOLS */
 
     function test_setDstPoolInvalidAddress_revert() public {
         address poolAddress = makeAddr("pool");
