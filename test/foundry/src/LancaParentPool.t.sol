@@ -5,6 +5,7 @@ import {Test} from "forge-std/src/Test.sol";
 import {Vm} from "forge-std/src/Vm.sol";
 import {console} from "forge-std/src/console.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
+import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPoolHarness.s.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -393,6 +394,120 @@ contract LancaParentPoolTest is Test {
             )
         );
         s_lancaParentPool.setDstPool(chainSelector, poolAddress, false);
+    }
+
+    /* DISTRIBUTE LIQUIDITY */
+
+    function test_distributeLiquidityNotMessenger_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notMessenger
+            )
+        );
+        s_lancaParentPool.distributeLiquidity(0, 0, bytes32(0));
+    }
+
+    function test_distributeLiquidityInvalidAddress_revert() public {
+        address messenger = s_lancaParentPool.exposed_getMessengers()[0];
+        vm.startPrank(messenger);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.InvalidAddress.selector,
+                LibErrors.InvalidAddressType.zeroAddress
+            )
+        );
+        s_lancaParentPool.distributeLiquidity(0, 0, bytes32(0));
+
+        vm.stopPrank();
+    }
+
+    function test_distributeLiquidityDistributeLiquidityRequestAlreadyProceeded_revert() public {
+        address messenger = s_lancaParentPool.exposed_getMessengers()[0];
+        uint64 chainSelector = 1;
+        uint256 amountToSend = 1 * USDC_DECIMALS;
+        bytes32 distributeLiquidityRequestId = bytes32(0);
+        address pool = makeAddr("pool");
+
+        vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setDstPool(chainSelector, pool, false);
+
+        deal(s_usdc, address(s_lancaParentPool), 100 * USDC_DECIMALS);
+
+        vm.startPrank(messenger);
+
+        s_lancaParentPool.distributeLiquidity(
+            chainSelector,
+            amountToSend,
+            distributeLiquidityRequestId
+        );
+
+        vm.expectRevert(ILancaPool.DistributeLiquidityRequestAlreadyProceeded.selector);
+        s_lancaParentPool.distributeLiquidity(
+            chainSelector,
+            amountToSend,
+            distributeLiquidityRequestId
+        );
+
+        vm.stopPrank();
+        uint256 afterBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+        console.log("afterBalance", afterBalance);
+    }
+
+    /* REMOVE POOLS */
+
+    function test_removePoolsNotOwner_revert() public {
+        uint64 chainSelector = 0;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
+            )
+        );
+        s_lancaParentPool.removePools(chainSelector);
+    }
+
+    function test_removePools() public {
+        uint64 chainSelector = 1;
+        address pool = makeAddr("pool");
+
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setDstPool(chainSelector, pool, false);
+
+        s_lancaParentPool.removePools(chainSelector);
+
+        vm.assertEq(s_lancaParentPool.exposed_getPoolChainSelectors().length, 0);
+        vm.assertEq(
+            s_lancaParentPool.exposed_getDstPoolByChainSelector(chainSelector),
+            ZERO_ADDRESS
+        );
+    }
+
+    /* WITHDRAW DEPOSIT FEES */
+
+    function test_withdrawDepositFeesNotOwner_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notOwner
+            )
+        );
+        s_lancaParentPool.withdrawDepositFees();
+    }
+
+    function test_withdrawDepositFees() public {
+        uint256 feeAmount = 2 * USDC_DECIMALS;
+        _dealUsdcTo(address(s_lancaParentPool), feeAmount);
+        s_lancaParentPool.exposed_setDepositFeeAmount(feeAmount);
+
+        uint256 beforeBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+        vm.prank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.withdrawDepositFees();
+        uint256 afterBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+
+        vm.assertEq(beforeBalance,feeAmount);
+        vm.assertEq(afterBalance,0);
     }
 
     /* HELPERS */

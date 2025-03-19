@@ -185,6 +185,8 @@ contract LancaChildPoolTest is Test {
         s_lancaChildPool.removePools(chainSelector);
     }
 
+    /* DISTRIBUTE LIQUIDITY */
+
     function test_distributeLiquidityNotMessenger_revert() public {
         vm.expectRevert(
             abi.encodeWithSelector(

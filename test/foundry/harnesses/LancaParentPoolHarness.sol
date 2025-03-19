@@ -41,6 +41,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_withdrawRequests[withdrawalId] = withdrawalReq;
     }
 
+    function exposed_setDepositFeeAmount(uint256 amount) external {
+        s_depositFeeAmount = amount;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
@@ -58,5 +62,10 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_getClfRouter() public view returns (address) {
         return address(i_clfRouter);
+    }
+
+    function exposed_getMessengers() external view returns (address[3] memory) {
+        address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
+        return messengers;
     }
 }
