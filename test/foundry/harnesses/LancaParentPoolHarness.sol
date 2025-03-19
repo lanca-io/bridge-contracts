@@ -45,6 +45,14 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_depositFeeAmount = amount;
     }
 
+    function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
+        s_dstPoolByChainSelector[chainSelector] = pool;
+    }
+
+    function exposed_setWithdrawRequests(bytes32 withdrawalId, ILancaParentPool.WithdrawRequest memory request) external {
+        s_withdrawRequests[withdrawalId] = request;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);

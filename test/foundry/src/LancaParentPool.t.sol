@@ -11,10 +11,12 @@ import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
-import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
-import {CHAIN_SELECTOR_ARBITRUM} from "contracts/common/Constants.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
+import {ICcip} from "contracts/common/interfaces/ICcip.sol";
+import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
+
+import "../../../contracts/bridge/interfaces/ILancaBridge.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -452,7 +454,7 @@ contract LancaParentPoolTest is Test {
 
         vm.stopPrank();
         uint256 afterBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
-        console.log("afterBalance", afterBalance);
+        vm.assertEq(afterBalance, 99 * USDC_DECIMALS);
     }
 
     /* REMOVE POOLS */
@@ -508,6 +510,76 @@ contract LancaParentPoolTest is Test {
 
         vm.assertEq(beforeBalance,feeAmount);
         vm.assertEq(afterBalance,0);
+    }
+
+    /* CCIP RECEIVE FROM ROUTER */
+
+    function test_ccipReceiveSettlementWithoutExecutionLayerFails() public {
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        ICcip.CcipSettleMessage memory ccipTxs = ICcip.CcipSettleMessage({
+        ccipTxType: ICcip.CcipTxType.withdrawal,
+        data: abi.encode(withdrawalId)
+        });
+
+        LibCcipClient.EVMTokenAmount[] memory destTokenAmounts = new LibCcipClient.EVMTokenAmount[](
+            1
+        );
+
+        destTokenAmounts[0].token = s_usdc;
+
+        deal(s_usdc, address(s_lancaParentPool), 100 * USDC_DECIMALS);
+
+        uint256 beforeLancaPoolBalance = IERC20(s_usdc).balanceOf(
+            address(s_lancaParentPool)
+        );
+
+        address s_lancaBridgeArb = makeAddr("arb lanca bridge");
+        uint64 chainSelector = 1;
+
+        LibCcipClient.Any2EVMMessage memory ccipMessage = LibCcipClient.Any2EVMMessage({
+            messageId: keccak256("ccip message id"),
+            sourceChainSelector: chainSelector,
+            sender: abi.encode(s_lancaBridgeArb),
+            data: abi.encode(ccipTxs),
+            destTokenAmounts: destTokenAmounts
+        });
+
+        vm.prank(s_lancaParentPool.getRouter());
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notAllowedSender
+            )
+        );
+        s_lancaParentPool.ccipReceive(ccipMessage);
+
+        s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, s_lancaBridgeArb);
+
+        uint256 lpAmountToBurn = 10;
+        address lpToken = s_lancaParentPool.exposed_getLpToken();
+        deal(lpToken, address(s_lancaParentPool), lpAmountToBurn);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = ILancaParentPool.WithdrawRequest({
+            lpAddress: lpToken,
+            lpAmountToBurn: lpAmountToBurn,
+            totalCrossChainLiquiditySnapshot: 0,
+            amountToWithdraw: 1,
+            liquidityRequestedFromEachPool: 1,
+            remainingLiquidityFromChildPools: 1,
+            triggeredAtTimestamp: 1
+        });
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lancaParentPool.getRouter());
+        s_lancaParentPool.ccipReceive(ccipMessage);
+
+        uint256 afterLancaPoolBalance = IERC20(s_usdc).balanceOf(
+            address(s_lancaParentPool)
+        );
+
+        //assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - destTokenAmounts[0].amount);
+        console.log("afterLancaPoolBalance", afterLancaPoolBalance);
+        console.log("beforeLancaPoolBalance", beforeLancaPoolBalance);
     }
 
     /* HELPERS */
