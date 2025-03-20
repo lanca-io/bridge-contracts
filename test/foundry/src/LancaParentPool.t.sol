@@ -6,6 +6,7 @@ import {Vm} from "forge-std/src/Vm.sol";
 import {console} from "forge-std/src/console.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
+import {LPToken} from "contracts/pools/LPToken.sol";
 import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPoolHarness.s.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -20,6 +21,7 @@ import "../../../contracts/bridge/interfaces/ILancaBridge.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
+    uint256 internal constant LP_TOKEN_DECIMALS = 1 ether;
     uint256 internal constant DEPOSIT_AMOUNT = 100 * USDC_DECIMALS;
     uint256 internal constant LOW_DEPOSIT_AMOUNT = 1 * USDC_DECIMALS;
 
@@ -522,7 +524,7 @@ contract LancaParentPoolTest is Test {
         });
 
         LibCcipClient.EVMTokenAmount[] memory destTokenAmounts = new LibCcipClient.EVMTokenAmount[](
-            1
+            2
         );
 
         destTokenAmounts[0].token = s_usdc;
@@ -556,14 +558,15 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, s_lancaBridgeArb);
 
         uint256 lpAmountToBurn = 10;
-        address lpToken = s_lancaParentPool.exposed_getLpToken();
+        uint256 amountToWithdraw = 3;
+        address lpToken = address(s_lancaParentPool.exposed_getLpToken());
         deal(lpToken, address(s_lancaParentPool), lpAmountToBurn);
 
         ILancaParentPool.WithdrawRequest memory withdrawalRequest = ILancaParentPool.WithdrawRequest({
             lpAddress: lpToken,
             lpAmountToBurn: lpAmountToBurn,
             totalCrossChainLiquiditySnapshot: 0,
-            amountToWithdraw: 1,
+            amountToWithdraw: amountToWithdraw,
             liquidityRequestedFromEachPool: 1,
             remainingLiquidityFromChildPools: 1,
             triggeredAtTimestamp: 1
@@ -577,9 +580,65 @@ contract LancaParentPoolTest is Test {
             address(s_lancaParentPool)
         );
 
-        //assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - destTokenAmounts[0].amount);
-        console.log("afterLancaPoolBalance", afterLancaPoolBalance);
-        console.log("beforeLancaPoolBalance", beforeLancaPoolBalance);
+        assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - amountToWithdraw);
+    }
+
+    /* CALCULATORS */
+
+    function test_calculateWithdrawableAmountViaDelegateCall() public {
+        uint256 childPoolsBalance = 10 * USDC_DECIMALS;
+        uint256 clpAmount = 100;
+
+        uint256 mintedLPAmount = 10 * LP_TOKEN_DECIMALS;
+        _mintLpToken(address(s_lancaParentPool), mintedLPAmount);
+
+        uint256 withdrawableAmount = s_lancaParentPool.calculateWithdrawableAmountViaDelegateCall(
+            childPoolsBalance,clpAmount
+        );
+        assertEq(withdrawableAmount, 0);
+    }
+
+    function test_calculateLPTokensToMint() public {
+        uint256 childPoolsBalance = 10 * USDC_DECIMALS;
+        uint256 amountToDeposit = 5 * USDC_DECIMALS;
+        uint256 beforeResult = s_lancaParentPool.calculateLPTokensToMint(childPoolsBalance, amountToDeposit);
+        assertEq(beforeResult, 5 * LP_TOKEN_DECIMALS);
+
+        uint256 mintedLPAmount = 9999 * LP_TOKEN_DECIMALS;
+        _mintLpToken(address(s_lancaParentPool), mintedLPAmount);
+        _dealUsdcTo(address(s_lancaParentPool), 999 * USDC_DECIMALS);
+
+        uint256 afterResult = s_lancaParentPool.calculateLPTokensToMint(childPoolsBalance, amountToDeposit);
+        assertGt(afterResult - beforeResult, 0);
+    }
+
+    /* UP KEEP */
+
+    function test_performUpkeepNotAutomationForwarder_revert() public {
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes memory performData = new bytes(22);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notAutomationForwarder
+            )
+        );
+        s_lancaParentPool.performUpkeep(performData);
+    }
+
+
+    /* VIEW FUNCTIONS */
+
+    function test_isFull() public {
+        bool result = s_lancaParentPool.isFull();
+        assertEq(result, false);
+
+        s_lancaParentPool.exposed_setLiquidityCap(10);
+        _dealUsdcTo(address(s_lancaParentPool), 10000 * USDC_DECIMALS);
+
+        result = s_lancaParentPool.isFull();
+        assertEq(result, true);
     }
 
     /* HELPERS */
@@ -592,5 +651,11 @@ contract LancaParentPoolTest is Test {
         _dealUsdcTo(s_depositor, depositAmount);
         vm.prank(s_depositor);
         return s_lancaParentPool.startDeposit(depositAmount);
+    }
+
+    function _mintLpToken(address to, uint256 mintedLPAmount) internal {
+        LPToken lpToken = s_lancaParentPool.exposed_getILpToken();
+        vm.prank(s_deployLancaParentPoolHarnessScript.getProxy());
+        lpToken.mint(to, mintedLPAmount);
     }
 }
