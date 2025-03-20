@@ -12,8 +12,7 @@ import {ILancaChildPool} from "contracts/pools/interfaces/ILancaChildPool.sol";
 import {console} from "forge-std/src/Console.sol";
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {ICcip} from "contracts/common/interfaces/ICcip.sol";
-
-import "../../../contracts/bridge/interfaces/ILancaBridge.sol";
+import {ILancaBridge} from "contracts/bridge/interfaces/ILancaBridge.sol";
 
 contract LancaChildPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;

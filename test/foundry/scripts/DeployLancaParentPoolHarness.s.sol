@@ -2,11 +2,12 @@
 pragma solidity 0.8.28;
 
 import {DeployLancaBridgeHarnessScript} from "../scripts/DeployLancaBridgeHarness.s.sol";
-import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
 import {LancaParentPoolCLFCLA} from "contracts/pools/LancaParentPoolCLFCLA.sol";
 import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
 import {DeployBase} from "./DeployBase.s.sol";
 import {LPToken} from "contracts/pools/LPToken.sol";
+import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
+import {LancaParentPoolCLFCLAHarness} from "../harnesses/LancaParentPoolCLFCLAHarness.sol";
 
 contract DeployLancaParentPoolHarnessScript is DeployBase {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -26,7 +27,7 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
             automationForwarder: makeAddr("automation forwarder"),
             owner: getDeployer(),
             lancaParentPoolCLFCLA: address(
-                new LancaParentPoolCLFCLA(
+                new LancaParentPoolCLFCLAHarness(
                     tokenConfig.lpToken,
                     tokenConfig.usdc,
                     getClfRouter(),

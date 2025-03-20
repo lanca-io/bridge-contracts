@@ -85,4 +85,8 @@ contract LancaParentPoolHarness is LancaParentPool {
         address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
         return messengers;
     }
+
+    function exposed_getAutomationForwarder() public view returns (address) {
+        return i_automationForwarder;
+    }
 }

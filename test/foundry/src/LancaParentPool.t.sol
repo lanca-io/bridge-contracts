@@ -16,8 +16,7 @@ import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol"
 import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
 import {ICcip} from "contracts/common/interfaces/ICcip.sol";
 import {Client as LibCcipClient} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
-
-import "../../../contracts/bridge/interfaces/ILancaBridge.sol";
+import {ILancaBridge} from "contracts/bridge/interfaces/ILancaBridge.sol";
 
 contract LancaParentPoolTest is Test {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -615,7 +614,6 @@ contract LancaParentPoolTest is Test {
     /* UP KEEP */
 
     function test_performUpkeepNotAutomationForwarder_revert() public {
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
         bytes memory performData = new bytes(22);
 
         vm.expectRevert(
@@ -627,6 +625,28 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.performUpkeep(performData);
     }
 
+    function test_performUpkeepWithdrawalRequestDoesntExist_revert() public {
+        bytes32 withdrawalId = bytes32(0);
+        bytes memory performData = abi.encode(withdrawalId);
+
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestDoesntExist.selector,
+                    withdrawalId
+            )
+        );
+        s_lancaParentPool.performUpkeep(performData);
+    }
+
+//    function test_performUpkeep() public {
+//        vm.skip();
+//        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+//        bytes memory performData = abi.encode(withdrawalId);
+//
+//        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
+//        s_lancaParentPool.performUpkeep(performData);
+//    }
 
     /* VIEW FUNCTIONS */
 
