@@ -4,11 +4,14 @@ pragma solidity 0.8.28;
 import {Test} from "forge-std/src/Test.sol";
 import {Vm} from "forge-std/src/Vm.sol";
 import {console} from "forge-std/src/console.sol";
+
+import {AutomationBase} from "@chainlink/contracts/src/v0.8/automation/AutomationBase.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
 import {ILancaPool} from "contracts/pools/interfaces/ILancaPool.sol";
 import {LPToken} from "contracts/pools/LPToken.sol";
 import {DeployLancaParentPoolHarnessScript} from "../scripts/DeployLancaParentPoolHarness.s.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
+import {LancaParentPoolCLFCLAHarness} from "../harnesses/LancaParentPoolCLFCLAHarness.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "contracts/common/libraries/LibErrors.sol";
 import {ZERO_ADDRESS} from "contracts/common/Constants.sol";
@@ -556,20 +559,7 @@ contract LancaParentPoolTest is Test {
 
         s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, s_lancaBridgeArb);
 
-        uint256 lpAmountToBurn = 10;
-        uint256 amountToWithdraw = 3;
-        address lpToken = address(s_lancaParentPool.exposed_getLpToken());
-        deal(lpToken, address(s_lancaParentPool), lpAmountToBurn);
-
-        ILancaParentPool.WithdrawRequest memory withdrawalRequest = ILancaParentPool.WithdrawRequest({
-            lpAddress: lpToken,
-            lpAmountToBurn: lpAmountToBurn,
-            totalCrossChainLiquiditySnapshot: 0,
-            amountToWithdraw: amountToWithdraw,
-            liquidityRequestedFromEachPool: 1,
-            remainingLiquidityFromChildPools: 1,
-            triggeredAtTimestamp: 1
-        });
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
         s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
 
         vm.prank(s_lancaParentPool.getRouter());
@@ -579,7 +569,7 @@ contract LancaParentPoolTest is Test {
             address(s_lancaParentPool)
         );
 
-        assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - amountToWithdraw);
+        assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - withdrawalRequest.amountToWithdraw);
     }
 
     /* CALCULATORS */
@@ -639,14 +629,72 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.performUpkeep(performData);
     }
 
-//    function test_performUpkeep() public {
-//        vm.skip();
-//        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
-//        bytes memory performData = abi.encode(withdrawalId);
-//
-//        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
-//        s_lancaParentPool.performUpkeep(performData);
-//    }
+    function test_performUpkeepWithdrawalRequestNotReady_revert() public {
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes memory performData = abi.encode(withdrawalId);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        withdrawalRequest.triggeredAtTimestamp = block.timestamp + 100;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestNotReady.selector,
+                withdrawalId
+            )
+        );
+        s_lancaParentPool.performUpkeep(performData);
+    }
+
+    function test_performUpkeepWithdrawalAlreadyTriggered_revert() public {
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes memory performData = abi.encode(withdrawalId);
+
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, _makeWithdrawalRequest());
+        s_lancaParentPool.exposed_setWithdrawRequestsTriggered(withdrawalId);
+
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
+        vm.expectRevert(ILancaPool.WithdrawalAlreadyTriggered.selector);
+        s_lancaParentPool.performUpkeep(performData);
+    }
+
+    function test_performUpkeep() public {
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes memory performData = abi.encode(withdrawalId);
+
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, _makeWithdrawalRequest());
+
+        vm.prank(s_lancaParentPool.exposed_getAutomationForwarder());
+        s_lancaParentPool.performUpkeep(performData);
+    }
+
+    function test_checkUpkeepOnlySimulatedBackend_revert() public {
+        vm.expectRevert(AutomationBase.OnlySimulatedBackend.selector);
+        s_lancaParentPool.checkUpkeepViaDelegate();
+    }
+
+    function test_checkUpkeepViaDelegate() public {
+        address simulatedBackend = 0x1111111111111111111111111111111111111111;
+        vm.broadcast(simulatedBackend);
+        (bool success, bytes memory data) = s_lancaParentPool.checkUpkeepViaDelegate();
+        assertEq(success, false);
+
+        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest1 = _makeWithdrawalRequest();
+        withdrawalRequest1.amountToWithdraw = 0;
+        vm.broadcast(simulatedBackend);
+        (success, data) = s_lancaParentPool.checkUpkeepViaDelegate();
+        assertEq(success, false);
+
+        withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000002;
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest2 = _makeWithdrawalRequest();
+        withdrawalRequest1.triggeredAtTimestamp = block.timestamp - 100;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest2);
+        vm.broadcast(simulatedBackend);
+        (success, data) = s_lancaParentPool.checkUpkeepViaDelegate();
+        assertEq(success, true);
+    }
 
     /* VIEW FUNCTIONS */
 
@@ -677,5 +725,24 @@ contract LancaParentPoolTest is Test {
         LPToken lpToken = s_lancaParentPool.exposed_getILpToken();
         vm.prank(s_deployLancaParentPoolHarnessScript.getProxy());
         lpToken.mint(to, mintedLPAmount);
+    }
+
+    function _makeWithdrawalRequest() internal returns(
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest
+    ) {
+        address lpToken = address(s_lancaParentPool.exposed_getLpToken());
+        uint256 lpAmountToBurn = 10;
+        uint256 amountToWithdraw = 3;
+        deal(lpToken, address(s_lancaParentPool), lpAmountToBurn);
+
+        withdrawalRequest = ILancaParentPool.WithdrawRequest({
+            lpAddress: lpToken,
+            lpAmountToBurn: lpAmountToBurn,
+            totalCrossChainLiquiditySnapshot: 0,
+            amountToWithdraw: amountToWithdraw,
+            liquidityRequestedFromEachPool: 1,
+            remainingLiquidityFromChildPools: 1,
+            triggeredAtTimestamp: 1
+        });
     }
 }

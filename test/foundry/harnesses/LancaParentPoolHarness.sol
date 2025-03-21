@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
+import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
 import {LPToken} from "contracts/pools/LPToken.sol";
 
 contract LancaParentPoolHarness is LancaParentPool {
@@ -52,6 +53,11 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_setWithdrawRequests(bytes32 withdrawalId, ILancaParentPool.WithdrawRequest memory request) external {
         s_withdrawRequests[withdrawalId] = request;
+        s_withdrawalRequestIds.push(withdrawalId);
+    }
+
+    function exposed_setWithdrawRequestsTriggered(bytes32 withdrawalId) external {
+        s_withdrawTriggered[withdrawalId] = true;
     }
 
     function exposed_setLiquidityCap(uint256 cap) external {
@@ -88,5 +94,9 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_getAutomationForwarder() public view returns (address) {
         return i_automationForwarder;
+    }
+
+    function exposed_getLancaParentPoolCLFCLA() public view returns (ILancaParentPoolCLFCLA) {
+        return i_lancaParentPoolCLFCLA;
     }
 }

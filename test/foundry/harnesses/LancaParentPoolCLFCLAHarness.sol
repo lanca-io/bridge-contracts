@@ -28,11 +28,4 @@ contract LancaParentPoolCLFCLAHarness is LancaParentPoolCLFCLA {
             ethersJsHash,
             withdrawalCooldownSeconds
     ) {}
-
-    function exposed_setWithdrawalRequest(
-        bytes32 withdrawalId,
-        ILancaParentPool.WithdrawRequest memory request
-    ) external {
-        s_withdrawRequests[withdrawalId] = request;
-    }
 }
