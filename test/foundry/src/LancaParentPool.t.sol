@@ -26,11 +26,13 @@ contract LancaParentPoolTest is Test {
     uint256 internal constant LP_TOKEN_DECIMALS = 1 ether;
     uint256 internal constant DEPOSIT_AMOUNT = 100 * USDC_DECIMALS;
     uint256 internal constant LOW_DEPOSIT_AMOUNT = 1 * USDC_DECIMALS;
+    bytes32 internal constant SOME_WITHDRAWAL_ID = keccak256(abi.encode("SOME_WITHDRAWAL_ID"));
 
     DeployLancaParentPoolHarnessScript internal s_deployLancaParentPoolHarnessScript;
     LancaParentPoolHarness internal s_lancaParentPool;
     address internal s_usdc = vm.envAddress("USDC_BASE");
     address internal s_depositor = makeAddr("depositor");
+    address internal s_lpToken = makeAddr("LP_TOKEN");
 
     modifier dealUsdcTo(address to, uint256 amount) {
         _dealUsdcTo(to, amount);
@@ -519,7 +521,7 @@ contract LancaParentPoolTest is Test {
     /* CCIP RECEIVE FROM ROUTER */
 
     function test_ccipReceiveSettlementWithoutExecutionLayerFails() public {
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         ICcip.CcipSettleMessage memory ccipTxs = ICcip.CcipSettleMessage({
         ccipTxType: ICcip.CcipTxType.withdrawal,
         data: abi.encode(withdrawalId)
@@ -630,7 +632,7 @@ contract LancaParentPoolTest is Test {
     }
 
     function test_performUpkeepWithdrawalRequestNotReady_revert() public {
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         bytes memory performData = abi.encode(withdrawalId);
 
         ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
@@ -648,7 +650,7 @@ contract LancaParentPoolTest is Test {
     }
 
     function test_performUpkeepWithdrawalAlreadyTriggered_revert() public {
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         bytes memory performData = abi.encode(withdrawalId);
 
         s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, _makeWithdrawalRequest());
@@ -660,7 +662,7 @@ contract LancaParentPoolTest is Test {
     }
 
     function test_performUpkeep() public {
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         bytes memory performData = abi.encode(withdrawalId);
 
         s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, _makeWithdrawalRequest());
@@ -680,20 +682,130 @@ contract LancaParentPoolTest is Test {
         (bool success, bytes memory data) = s_lancaParentPool.checkUpkeepViaDelegate();
         assertEq(success, false);
 
-        bytes32 withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         ILancaParentPool.WithdrawRequest memory withdrawalRequest1 = _makeWithdrawalRequest();
         withdrawalRequest1.amountToWithdraw = 0;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest1);
         vm.broadcast(simulatedBackend);
         (success, data) = s_lancaParentPool.checkUpkeepViaDelegate();
         assertEq(success, false);
 
-        withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000002;
+        withdrawalId = SOME_WITHDRAWAL_ID;
         ILancaParentPool.WithdrawRequest memory withdrawalRequest2 = _makeWithdrawalRequest();
         withdrawalRequest1.triggeredAtTimestamp = block.timestamp - 100;
         s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest2);
         vm.broadcast(simulatedBackend);
         (success, data) = s_lancaParentPool.checkUpkeepViaDelegate();
         assertEq(success, true);
+    }
+
+    function test_checkUpkeep() public {
+        address simulatedBackend = 0x1111111111111111111111111111111111111111;
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest1 = _makeWithdrawalRequest();
+        withdrawalRequest1.amountToWithdraw = 0;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest1);
+        withdrawalId = 0x0000000000000000000000000000000000000000000000000000000000000002;
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest2 = _makeWithdrawalRequest();
+        withdrawalRequest1.triggeredAtTimestamp = block.timestamp - 100;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest2);
+
+        vm.startBroadcast(simulatedBackend);
+        bytes memory anyValue = new bytes(0);
+        (bool success, ) = s_lancaParentPool.checkUpkeep(anyValue);
+        vm.stopBroadcast();
+        assertEq(success, true);
+    }
+
+    /* RETRY PERFORM WITHDRAWAL REQUEST*/
+
+    function test_retryPerformWithdrawalRequestUnauthorized_revert() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LibErrors.Unauthorized.selector,
+                LibErrors.UnauthorizedType.notLpProvider
+            )
+        );
+        s_lancaParentPool.retryPerformWithdrawalRequest();
+    }
+
+    function test_retryPerformWithdrawalRequestWithdrawalRequestDoesntExist_revert() public {
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        s_lancaParentPool.exposed_setWithdrawalIdByLPAddress(address(s_lpToken), withdrawalId);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        withdrawalRequest.lpAddress = s_lpToken;
+        withdrawalRequest.liquidityRequestedFromEachPool = 0;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lpToken);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestDoesntExist.selector,
+                withdrawalId
+            )
+        );
+        s_lancaParentPool.retryPerformWithdrawalRequest();
+    }
+
+    function test_retryPerformWithdrawalRequestWithdrawalAlreadyPerformed_revert() public {
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        s_lancaParentPool.exposed_setWithdrawalIdByLPAddress(address(s_lpToken), withdrawalId);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        withdrawalRequest.lpAddress = s_lpToken;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lpToken);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalAlreadyPerformed.selector,
+                withdrawalId
+            )
+        );
+        s_lancaParentPool.retryPerformWithdrawalRequest();
+    }
+
+    function test_retryPerformWithdrawalRequestWithdrawalRequestNotReady_revert() public {
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        s_lancaParentPool.exposed_setWithdrawalIdByLPAddress(address(s_lpToken), withdrawalId);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        withdrawalRequest.lpAddress = s_lpToken;
+        withdrawalRequest.remainingLiquidityFromChildPools = 20;
+        withdrawalRequest.triggeredAtTimestamp = block.timestamp + 40 minutes;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lpToken);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ILancaParentPoolCLFCLA.WithdrawalRequestNotReady.selector,
+                withdrawalId
+            )
+        );
+        s_lancaParentPool.retryPerformWithdrawalRequest();
+    }
+
+    function test_retryPerformWithdrawalRequest() public {
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        s_lancaParentPool.exposed_setWithdrawalIdByLPAddress(address(s_lpToken), withdrawalId);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        withdrawalRequest.lpAddress = s_lpToken;
+        withdrawalRequest.remainingLiquidityFromChildPools = 20;
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        uint256 beforeLpBalance = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(address(s_lancaParentPool));
+        uint256 beforeUSDCBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+        console.log("beforeLpBalance", beforeLpBalance);
+        console.log("beforeUSDCBalance", beforeUSDCBalance);
+
+        vm.prank(s_lpToken);
+        s_lancaParentPool.retryPerformWithdrawalRequest();
+        uint256 afterLpBalance = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(address(s_lancaParentPool));
+        uint256 afterUSDCBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
+        console.log("afterLpBalance", afterLpBalance);
+        console.log("afterUSDCBalance", afterUSDCBalance);
     }
 
     /* VIEW FUNCTIONS */

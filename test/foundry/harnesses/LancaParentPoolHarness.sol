@@ -64,6 +64,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_liquidityCap = cap;
     }
 
+    function exposed_setWithdrawalIdByLPAddress(address lpAddress, bytes32 withdrawalId) external {
+        s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
