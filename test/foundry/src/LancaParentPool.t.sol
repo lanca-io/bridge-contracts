@@ -249,7 +249,7 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(IERC20(lpToken).balanceOf(address(s_lancaParentPool)), 0);
     }
 
-    function test_handleOracleFulfillmentDepositGetChildPoolsLiqSuccess() public {
+    function test_handleOracleFulfillmentStartDepositGetChildPoolsLiqSuccess() public {
         bytes32 clfReqId = keccak256("clfReqId");
         uint256 amountUsdcToDeposit = 85_000 * USDC_DECIMALS;
         bytes memory response = abi.encode(amountUsdcToDeposit);
@@ -275,6 +275,47 @@ contract LancaParentPoolTest is Test {
         vm.assertEq(
             uint8(s_lancaParentPool.getClfReqTypeById(clfReqId)),
             uint8(ILancaParentPool.ClfRequestType.empty)
+        );
+    }
+
+    function test_handleOracleFulfillmentStartWithdrawalGetChildPoolsLiqSuccess() public {
+        bytes32 clfReqId = keccak256("clfReqId");
+        uint256 amountUsdcToDeposit = 85_000 * USDC_DECIMALS;
+        bytes memory response = abi.encode(amountUsdcToDeposit);
+        bytes memory err;
+
+        s_lancaParentPool.exposed_setClfReqTypeById(
+            clfReqId,
+            ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity
+        );
+
+        uint256 amountToWithdraw = 10 * LP_TOKEN_DECIMALS;
+        bytes32 withdrawalId = keccak256("withdrawalId");
+        uint256 mintedLPAmount = 10 * LP_TOKEN_DECIMALS;
+        _mintLpToken(address(s_lancaParentPool), mintedLPAmount);
+
+        s_lancaParentPool.exposed_setWithdrawalIdByClfId(clfReqId, withdrawalId);
+        s_lancaParentPool.exposed_setWithdrawalReqById(
+            withdrawalId,
+                ILancaParentPool.WithdrawRequest({
+                lpAddress: s_depositor,
+                lpAmountToBurn: amountToWithdraw,
+                amountToWithdraw: amountToWithdraw,
+                liquidityRequestedFromEachPool: 0,
+                remainingLiquidityFromChildPools: 0,
+                triggeredAtTimestamp: 0,
+                totalCrossChainLiquiditySnapshot: 0
+            })
+        );
+
+        bytes32[] memory beforeIdsCount = s_lancaParentPool.getPendingWithdrawalRequestIds();
+        assertEq(beforeIdsCount.length, 0);
+        vm.prank(s_lancaParentPool.exposed_getClfRouter());
+        s_lancaParentPool.handleOracleFulfillment(clfReqId, response, err);
+        bytes32[] memory afterIdsCount = s_lancaParentPool.getPendingWithdrawalRequestIds();
+        assertEq(afterIdsCount.length, 1);
+        vm.assertGe(
+            s_lancaParentPool.getWithdrawalRequestById(withdrawalId).triggeredAtTimestamp, 0
         );
     }
 
@@ -908,16 +949,11 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
 
         uint256 beforeLpBalance = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(address(s_lancaParentPool));
-        uint256 beforeUSDCBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
-        console.log("beforeLpBalance", beforeLpBalance);
-        console.log("beforeUSDCBalance", beforeUSDCBalance);
 
         vm.prank(s_lpToken);
         s_lancaParentPool.retryPerformWithdrawalRequest();
         uint256 afterLpBalance = IERC20(s_lancaParentPool.exposed_getLpToken()).balanceOf(address(s_lancaParentPool));
-        uint256 afterUSDCBalance = IERC20(s_usdc).balanceOf(address(s_lancaParentPool));
-        console.log("afterLpBalance", afterLpBalance);
-        console.log("afterUSDCBalance", afterUSDCBalance);
+        assertEq(beforeLpBalance, afterLpBalance);
     }
 
     /* VIEW FUNCTIONS */
