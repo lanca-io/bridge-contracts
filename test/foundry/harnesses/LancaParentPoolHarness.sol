@@ -68,6 +68,10 @@ contract LancaParentPoolHarness is LancaParentPool {
         s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
     }
 
+    function exposed_setDepositsOnTheWayArray(uint64 index, ILancaParentPool.DepositOnTheWay memory value) external {
+        s_depositsOnTheWayArray[index] = value;
+    }
+
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
@@ -102,5 +106,13 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_getLancaParentPoolCLFCLA() public view returns (ILancaParentPoolCLFCLA) {
         return i_lancaParentPoolCLFCLA;
+    }
+
+    function exposed_getLoansInUse() external view returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function exposed_getLancaBridge() external view returns (address) {
+        return address(i_lancaBridge);
     }
 }

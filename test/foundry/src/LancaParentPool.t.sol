@@ -96,6 +96,11 @@ contract LancaParentPoolTest is Test {
 
         console.logUint(IERC20(s_usdc).balanceOf(s_depositor));
 
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        s_lancaParentPool.setDstPool(2, makeAddr("pool 02"), false);
+        s_lancaParentPool.setDstPool(3, makeAddr("pool 03"), false);
+        vm.stopPrank();
+
         vm.startPrank(s_depositor);
         bytes32 depositId = s_lancaParentPool.startDeposit(depositAmount);
         uint256 childPoolLiquidity = 85_000 * USDC_DECIMALS;
@@ -354,6 +359,53 @@ contract LancaParentPoolTest is Test {
         s_lancaParentPool.completeDeposit(depositId);
     }
 
+    function testCompleteDepositWithMoreThanMaxDepositsOnTheWayCount() public {
+        s_lancaParentPool.exposed_setLiquidityCap(2000 * USDC_DECIMALS);
+        // MAX_DEPOSITS_ON_THE_WAY_COUNT == 150
+        uint256 count = 151;
+        uint256 depositAmount = count * USDC_DECIMALS + s_lancaParentPool.getMinDepositAmount();
+        _dealUsdcTo(s_depositor, depositAmount);
+
+        vm.startPrank(s_deployLancaParentPoolHarnessScript.getDeployer());
+        for(uint256 i = 1; i < count; i++) {
+            s_lancaParentPool.setDstPool(uint64(i), makeAddr(string(new bytes(i))), false);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(s_depositor);
+        bytes32 depositId = s_lancaParentPool.startDeposit(depositAmount);
+        uint256 childPoolLiquidity = 85_000 * USDC_DECIMALS;
+        s_lancaParentPool.exposed_setChildPoolsLiqSnapshotByDepositId(
+            depositId,
+            childPoolLiquidity
+        );
+        IERC20(s_usdc).approve(address(s_lancaParentPool), depositAmount);
+
+        vm.expectRevert(ILancaParentPool.DepositsOnTheWayArrayFull.selector);
+        s_lancaParentPool.completeDeposit(depositId);
+
+//        for(uint64 i = 1; i < 20; i++) {
+//            s_lancaParentPool.exposed_setDepositsOnTheWayArray(i, ILancaParentPool.DepositOnTheWay({
+//                chainSelector: i,
+//                ccipMessageId: bytes32(0),
+//                amount: 0
+//            }));
+//        }
+//
+//        s_lancaParentPool.completeDeposit(depositId);
+        vm.stopPrank();
+//
+//        ILancaParentPool.DepositRequest memory depositReq = s_lancaParentPool.getDepositRequestById(
+//            depositId
+//        );
+//
+//        vm.assertEq(depositReq.childPoolsLiquiditySnapshot, 0);
+//        vm.assertEq(depositReq.usdcAmountToDeposit, 0);
+//        vm.assertEq(depositReq.lpAddress, ZERO_ADDRESS);
+//        vm.assertEq(depositReq.deadline, 0);
+//        vm.assertGe(IERC20(s_lancaParentPool.exposed_getLpToken()).totalSupply(), 0);
+    }
+
     /* SET POOLS */
 
     function test_setDstPoolInvalidAddress_revert() public {
@@ -520,11 +572,46 @@ contract LancaParentPoolTest is Test {
 
     /* CCIP RECEIVE FROM ROUTER */
 
-    function test_ccipReceiveSettlementWithoutExecutionLayerFails() public {
+    function test_ccipReceiveInvalidCcipTxType_revert() public {
         bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
         ICcip.CcipSettleMessage memory ccipTxs = ICcip.CcipSettleMessage({
-        ccipTxType: ICcip.CcipTxType.withdrawal,
-        data: abi.encode(withdrawalId)
+            ccipTxType: ICcip.CcipTxType.deposit,
+            data: abi.encode(withdrawalId)
+        });
+
+        LibCcipClient.EVMTokenAmount[] memory destTokenAmounts = new LibCcipClient.EVMTokenAmount[](
+            2
+        );
+
+        destTokenAmounts[0].token = s_usdc;
+
+        deal(s_usdc, address(s_lancaParentPool), 100 * USDC_DECIMALS);
+        address s_lancaBridgeArb = makeAddr("arb lanca bridge");
+        uint64 chainSelector = 1;
+
+        LibCcipClient.Any2EVMMessage memory ccipMessage = LibCcipClient.Any2EVMMessage({
+            messageId: keccak256("ccip message id"),
+            sourceChainSelector: chainSelector,
+            sender: abi.encode(s_lancaBridgeArb),
+            data: abi.encode(ccipTxs),
+            destTokenAmounts: destTokenAmounts
+        });
+
+        s_lancaParentPool.exposed_setDstPoolByChainSelector(chainSelector, s_lancaBridgeArb);
+
+        ILancaParentPool.WithdrawRequest memory withdrawalRequest = _makeWithdrawalRequest();
+        s_lancaParentPool.exposed_setWithdrawRequests(withdrawalId, withdrawalRequest);
+
+        vm.prank(s_lancaParentPool.getRouter());
+        vm.expectRevert(ILancaPool.InvalidCcipTxType.selector);
+        s_lancaParentPool.ccipReceive(ccipMessage);
+    }
+
+    function test_ccipReceive() public {
+        bytes32 withdrawalId = SOME_WITHDRAWAL_ID;
+        ICcip.CcipSettleMessage memory ccipTxs = ICcip.CcipSettleMessage({
+            ccipTxType: ICcip.CcipTxType.withdrawal,
+            data: abi.encode(withdrawalId)
         });
 
         LibCcipClient.EVMTokenAmount[] memory destTokenAmounts = new LibCcipClient.EVMTokenAmount[](
@@ -574,6 +661,18 @@ contract LancaParentPoolTest is Test {
         assertEq(afterLancaPoolBalance, beforeLancaPoolBalance - withdrawalRequest.amountToWithdraw);
     }
 
+    function test_takeLoan() public {
+        deal(s_usdc, address(s_lancaParentPool), 1000 * USDC_DECIMALS);
+        address receiver = makeAddr("receiver");
+        uint256 amount = 100 * USDC_DECIMALS;
+
+        vm.prank(s_lancaParentPool.exposed_getLancaBridge());
+        uint256 loanAmount = s_lancaParentPool.takeLoan(s_usdc, amount, receiver);
+
+        vm.assertEq(IERC20(s_usdc).balanceOf(receiver), loanAmount);
+        vm.assertEq(s_lancaParentPool.exposed_getLoansInUse(), amount);
+    }
+
     /* CALCULATORS */
 
     function test_calculateWithdrawableAmountViaDelegateCall() public {
@@ -584,6 +683,19 @@ contract LancaParentPoolTest is Test {
         _mintLpToken(address(s_lancaParentPool), mintedLPAmount);
 
         uint256 withdrawableAmount = s_lancaParentPool.calculateWithdrawableAmountViaDelegateCall(
+            childPoolsBalance,clpAmount
+        );
+        assertEq(withdrawableAmount, 0);
+    }
+
+    function test_calculateWithdrawableAmount() public {
+        uint256 childPoolsBalance = 10 * USDC_DECIMALS;
+        uint256 clpAmount = 100;
+
+        uint256 mintedLPAmount = 10 * LP_TOKEN_DECIMALS;
+        _mintLpToken(address(s_lancaParentPool), mintedLPAmount);
+
+        uint256 withdrawableAmount = s_lancaParentPool.calculateWithdrawableAmount(
             childPoolsBalance,clpAmount
         );
         assertEq(withdrawableAmount, 0);
