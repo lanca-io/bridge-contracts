@@ -41,6 +41,7 @@ contract LancaParentPoolHarness is LancaParentPool {
         ILancaParentPool.WithdrawRequest memory withdrawalReq
     ) external {
         s_withdrawRequests[withdrawalId] = withdrawalReq;
+        s_withdrawalRequestIds.push(withdrawalId);
     }
 
     function exposed_setDepositFeeAmount(uint256 amount) external {
@@ -49,11 +50,6 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
         s_dstPoolByChainSelector[chainSelector] = pool;
-    }
-
-    function exposed_setWithdrawRequests(bytes32 withdrawalId, ILancaParentPool.WithdrawRequest memory request) external {
-        s_withdrawRequests[withdrawalId] = request;
-        s_withdrawalRequestIds.push(withdrawalId);
     }
 
     function exposed_setWithdrawRequestsTriggered(bytes32 withdrawalId) external {
@@ -70,6 +66,14 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_setDepositsOnTheWayArray(uint64 index, ILancaParentPool.DepositOnTheWay memory value) external {
         s_depositsOnTheWayArray[index] = value;
+    }
+
+    function exposed_setDepositsOnTheWayAmount(uint256 amount) external {
+        s_depositsOnTheWayAmount = amount;
+    }
+
+    function exposed_setLatestDepositOnTheWayIndex(uint8 index) external {
+        s_latestDepositOnTheWayIndex = index;
     }
 
     /* GETTERS */

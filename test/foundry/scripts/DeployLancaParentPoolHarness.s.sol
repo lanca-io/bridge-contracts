@@ -7,7 +7,6 @@ import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
 import {DeployBase} from "./DeployBase.s.sol";
 import {LPToken} from "contracts/pools/LPToken.sol";
 import {LancaParentPoolHarness} from "../harnesses/LancaParentPoolHarness.sol";
-import {LancaParentPoolCLFCLAHarness} from "../harnesses/LancaParentPoolCLFCLAHarness.sol";
 
 contract DeployLancaParentPoolHarnessScript is DeployBase {
     uint256 internal constant USDC_DECIMALS = 1e6;
@@ -27,7 +26,7 @@ contract DeployLancaParentPoolHarnessScript is DeployBase {
             automationForwarder: makeAddr("automation forwarder"),
             owner: getDeployer(),
             lancaParentPoolCLFCLA: address(
-                new LancaParentPoolCLFCLAHarness(
+                new LancaParentPoolCLFCLA(
                     tokenConfig.lpToken,
                     tokenConfig.usdc,
                     getClfRouter(),
