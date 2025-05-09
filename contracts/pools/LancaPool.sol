@@ -103,7 +103,7 @@ abstract contract LancaPool is ILancaPool {
     /* PUBLIC FUNCTIONS */
 
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return amount.mulDiv(LP_FEE_BPS, BPS_DIVISOR, Math.Rounding.Ceil);
+        return amount.mulDiv(LP_FEE_BPS, BPS_DIVISOR);
     }
 
     /* INTERNAL FUNCTIONS */
