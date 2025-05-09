@@ -205,6 +205,7 @@ contract LancaParentPoolTest is Test {
             ILancaParentPool.WithdrawRequest({
                 lpAddress: s_depositor,
                 lpAmountToBurn: amountToWithdraw,
+                lpSupplySnapshot_DEPRECATED: 0,
                 // @dev rest of the fields are not important for this test
                 amountToWithdraw: 0,
                 liquidityRequestedFromEachPool: 0,
