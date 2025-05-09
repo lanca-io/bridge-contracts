@@ -33,8 +33,8 @@ const deployLancaOrchestratorImplementation: (hre: HardhatRuntimeEnvironment) =>
         args: [args.usdc, args.lancaBridge, args.dexSwap, args.chainSelector],
         log: true,
         autoMine: true,
-        maxFeePerGas: maxFeePerGas.toString(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        // maxFeePerGas: maxFeePerGas.toString(),
+        // maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
         waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 

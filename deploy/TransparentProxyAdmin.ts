@@ -26,8 +26,8 @@ const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) 
         args: [initialOwner],
         log: true,
         autoMine: true,
-        maxFeePerGas: maxFeePerGas.toString(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        // maxFeePerGas: maxFeePerGas.toString(),
+        // maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
         gasLimit: 2_000_000,
     })) as Deployment
 

@@ -25,8 +25,8 @@ const deployDexSwap: (hre: HardhatRuntimeEnvironment) => Promise<void> = async f
         args: [],
         log: true,
         autoMine: true,
-        maxFeePerGas: maxFeePerGas.toString(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        // maxFeePerGas: maxFeePerGas.toString(),
+        // maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
         waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 
