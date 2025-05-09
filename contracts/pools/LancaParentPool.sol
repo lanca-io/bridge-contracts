@@ -340,6 +340,30 @@ contract LancaParentPool is
         }
     }
 
+    function processFailedWithdrawalRequest(bytes32 clfRequestId) external onlyOwner {
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[clfRequestId];
+        require(withdrawalId != bytes32(0), WithdrawRequestDoesntExist(clfRequestId));
+
+        address lpAddress = s_withdrawRequests[withdrawalId].lpAddress;
+        require(lpAddress != address(0), WithdrawRequestDoesntExist(withdrawalId));
+
+        uint256 lpAmount = s_withdrawRequests[withdrawalId].lpAmountToBurn;
+        require(lpAmount != 0, WithdrawRequestDoesntExist(withdrawalId));
+
+        ILancaParentPool.ClfRequestType clfReqType = s_clfRequestTypes[clfRequestId];
+        require(
+            clfReqType == ILancaParentPool.ClfRequestType.startWithdrawal_getChildPoolsLiquidity,
+            ILancaParentPoolCLFCLA.InvalidCLFRequestType()
+        );
+
+        delete s_withdrawRequests[withdrawalId];
+        delete s_withdrawalIdByCLFRequestId[clfRequestId];
+        delete s_withdrawalIdByLPAddress[lpAddress];
+        delete s_clfRequestTypes[clfRequestId];
+
+        IERC20(i_lpToken).safeTransfer(lpAddress, lpAmount);
+    }
+
     /**
      * @notice Function to fulfill the Automation request for the pool upkeep.
      * @param performData the data for the upkeep to be performed
