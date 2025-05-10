@@ -3,6 +3,8 @@ pragma solidity 0.8.28;
 
 import {LancaParentPool} from "contracts/pools/LancaParentPool.sol";
 import {ILancaParentPool} from "contracts/pools/interfaces/ILancaParentPool.sol";
+import {ILancaParentPoolCLFCLA} from "contracts/pools/interfaces/ILancaParentPoolCLFCLA.sol";
+import {LPToken} from "contracts/pools/LPToken.sol";
 
 contract LancaParentPoolHarness is LancaParentPool {
     constructor(
@@ -39,11 +41,48 @@ contract LancaParentPoolHarness is LancaParentPool {
         ILancaParentPool.WithdrawRequest memory withdrawalReq
     ) external {
         s_withdrawRequests[withdrawalId] = withdrawalReq;
+        s_withdrawalRequestIds.push(withdrawalId);
+    }
+
+    function exposed_setDepositFeeAmount(uint256 amount) external {
+        s_depositFeeAmount = amount;
+    }
+
+    function exposed_setDstPoolByChainSelector(uint64 chainSelector, address pool) external {
+        s_dstPoolByChainSelector[chainSelector] = pool;
+    }
+
+    function exposed_setWithdrawRequestsTriggered(bytes32 withdrawalId) external {
+        s_withdrawTriggered[withdrawalId] = true;
+    }
+
+    function exposed_setLiquidityCap(uint256 cap) external {
+        s_liquidityCap = cap;
+    }
+
+    function exposed_setWithdrawalIdByLPAddress(address lpAddress, bytes32 withdrawalId) external {
+        s_withdrawalIdByLPAddress[lpAddress] = withdrawalId;
+    }
+
+    function exposed_setDepositsOnTheWayArray(uint64 index, ILancaParentPool.DepositOnTheWay memory value) external {
+        s_depositsOnTheWayArray[index] = value;
+    }
+
+    function exposed_setDepositsOnTheWayAmount(uint256 amount) external {
+        s_depositsOnTheWayAmount = amount;
+    }
+
+    function exposed_setLatestDepositOnTheWayIndex(uint8 index) external {
+        s_latestDepositOnTheWayIndex = index;
     }
 
     /* GETTERS */
     function exposed_getLpToken() external view returns (address) {
         return address(i_lpToken);
+    }
+
+    function exposed_getILpToken() external view returns (LPToken) {
+        return i_lpToken;
     }
 
     function exposed_getPoolChainSelectors() external view returns (uint64[] memory) {
@@ -58,5 +97,26 @@ contract LancaParentPoolHarness is LancaParentPool {
 
     function exposed_getClfRouter() public view returns (address) {
         return address(i_clfRouter);
+    }
+
+    function exposed_getMessengers() external view returns (address[3] memory) {
+        address[3] memory messengers = [i_messenger0, i_messenger1, i_messenger2];
+        return messengers;
+    }
+
+    function exposed_getAutomationForwarder() public view returns (address) {
+        return i_automationForwarder;
+    }
+
+    function exposed_getLancaParentPoolCLFCLA() public view returns (ILancaParentPoolCLFCLA) {
+        return i_lancaParentPoolCLFCLA;
+    }
+
+    function exposed_getLoansInUse() external view returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function exposed_getLancaBridge() external view returns (address) {
+        return address(i_lancaBridge);
     }
 }
