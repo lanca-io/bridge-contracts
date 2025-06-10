@@ -14,6 +14,9 @@ import deployLancaOrchestratorImplementation from "./orchestrator/deployOrchestr
 import getLoansInUseTask from "./pools/getLoansInUse.task"
 import processFailedWithdrawalRequestTask from "./pools/processFailedWithdrawalRequest.task"
 import withdrawBridgeFee from "./bridge/withdrawBridgeFee.task"
+import withdrawOrchestratorTokensTask from "./orchestrator/withdrawOrchestratorTokens.task"
+import monitorTokenBalances from "./orchestrator/viewTokenBalances.task"
+
 export {
     deployLancaBridgeTask,
     upgradeProxyImplementation,
@@ -31,4 +34,6 @@ export {
     getLoansInUseTask,
     processFailedWithdrawalRequestTask,
     withdrawBridgeFee,
+    withdrawOrchestratorTokensTask,
+    monitorTokenBalances,
 }
