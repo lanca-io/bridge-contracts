@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-uint8 constant SUPPORTED_CHAINS_COUNT = 6;
+uint8 constant SUPPORTED_CHAINS_COUNT = 5;
 
 address constant ZERO_ADDRESS = address(0);
 

@@ -173,6 +173,27 @@ contract LancaBridge is
         s_lancaBridgeContractsByChain[chainSelector] = lancaBridgeContract;
     }
 
+    function withdrawFee() external onlyOwner {
+        uint256 usdcBalance = LibLanca.getBalance(i_usdc, address(this));
+
+        uint256 batchedReserves;
+        uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+            CHAIN_SELECTOR_ARBITRUM,
+            CHAIN_SELECTOR_BASE,
+            CHAIN_SELECTOR_POLYGON,
+            CHAIN_SELECTOR_AVALANCHE,
+            CHAIN_SELECTOR_OPTIMISM
+        ];
+
+        for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
+            batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];
+        }
+
+        uint256 availableBalance = usdcBalance - batchedReserves;
+
+        LibLanca.transferERC20(i_usdc, availableBalance, i_owner);
+    }
+
     /* INTERNAL FUNCTIONS */
 
     /* FEES FUNCTIONS */
