@@ -16,6 +16,7 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
+import {SUPPORTED_CHAINS_COUNT, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_OPTIMISM} from "../common/Constants.sol";
 
 contract LancaBridge is
     LancaBridgeStorage,
@@ -186,7 +187,7 @@ contract LancaBridge is
         ];
 
         for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
-            batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];
+            batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[i]];
         }
 
         uint256 availableBalance = usdcBalance - batchedReserves;
