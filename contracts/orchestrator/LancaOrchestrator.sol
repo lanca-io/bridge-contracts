@@ -204,9 +204,16 @@ contract LancaOrchestrator is
     function withdrawLancaFee(address[] calldata tokens) external nonReentrant onlyOwner {
         for (uint256 i; i < tokens.length; ++i) {
             address token = tokens[i];
-            uint256 tokenBalance = IERC20(token).balanceOf(address(this));
+            if (token == address(0)) {
+                uint256 tokenBalance = address(this).balance;
 
-            if (tokenBalance > 0) {
+                (bool success, ) = msg.sender.call{
+                    value: tokenBalance - s_totalIntegratorFeesAmountByToken[token]
+                }("");
+                require(success, TransferFailed());
+            } else {
+                uint256 tokenBalance = IERC20(token).balanceOf(address(this));
+
                 IERC20(token).safeTransfer(
                     msg.sender,
                     tokenBalance - s_totalIntegratorFeesAmountByToken[token]
