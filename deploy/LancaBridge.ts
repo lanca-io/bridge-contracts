@@ -68,8 +68,8 @@ const deployLancaBridgeImplementation: (
         ],
         log: true,
         autoMine: true,
-        maxFeePerGas: maxFeePerGas.toString(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        // maxFeePerGas: maxFeePerGas.toString(),
+        // maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
         waitConfirmations: viemReceiptConfig.confirmations,
     })) as Deployment
 

@@ -16,4 +16,10 @@ abstract contract LancaChildPoolStorage {
     mapping(bytes32 requestId => bool isProcessed) internal s_distributeLiquidityRequestProcessed;
 
     mapping(bytes32 withdrawalId => bool isTriggered) internal s_isWithdrawalRequestTriggered;
+
+    /* GETTERS */
+
+    function isWithdrawalRequestTriggered(bytes32 withdrawalId) external view returns (bool) {
+        return s_isWithdrawalRequestTriggered[withdrawalId];
+    }
 }

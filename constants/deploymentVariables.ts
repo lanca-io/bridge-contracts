@@ -43,7 +43,7 @@ export const envPrefixes: EnvPrefixes = {
 }
 
 // @dev parent pool deploy vars
-export const PARENT_POOL_LIQ_CAP = parseUnits("60000", 18)
+export const PARENT_POOL_LIQ_CAP = parseUnits("60000", 6)
 export const PARENT_POOL_CLF_SECRETS_SLOT_ID = "1"
 export const PARENT_POOL_TESTNET_WITHDRAWAL_COOLDOWN_SECONDS = 60
 export const PARENT_POOL_MAINNET_WITHDRAWAL_COOLDOWN_SECONDS = 604_800
