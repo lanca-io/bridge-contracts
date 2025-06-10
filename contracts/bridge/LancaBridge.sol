@@ -16,6 +16,7 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {ILancaPool} from "../pools/interfaces/ILancaPool.sol";
 import {LancaOwnable} from "../common/LancaOwnable.sol";
 import {LibLanca} from "../common/libraries/LibLanca.sol";
+import {SUPPORTED_CHAINS_COUNT, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_OPTIMISM} from "../common/Constants.sol";
 
 contract LancaBridge is
     LancaBridgeStorage,
@@ -171,6 +172,27 @@ contract LancaBridge is
     ) external onlyOwner {
         require(chainSelector != 0 && chainSelector != i_chainSelector, InvalidDstChainSelector());
         s_lancaBridgeContractsByChain[chainSelector] = lancaBridgeContract;
+    }
+
+    function withdrawFee() external onlyOwner {
+        uint256 usdcBalance = LibLanca.getBalance(i_usdc, address(this));
+
+        uint256 batchedReserves;
+        uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+            CHAIN_SELECTOR_ARBITRUM,
+            CHAIN_SELECTOR_BASE,
+            CHAIN_SELECTOR_POLYGON,
+            CHAIN_SELECTOR_AVALANCHE,
+            CHAIN_SELECTOR_OPTIMISM
+        ];
+
+        for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
+            batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[i]];
+        }
+
+        uint256 availableBalance = usdcBalance - batchedReserves;
+
+        LibLanca.transferERC20(i_usdc, availableBalance, i_owner);
     }
 
     /* INTERNAL FUNCTIONS */
