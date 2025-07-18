@@ -13,6 +13,7 @@ import retryWithdrawFromPoolTask from "./pools/retryWithdrawFromPool.task"
 import deployLancaOrchestratorImplementation from "./orchestrator/deployOrchestrator.task"
 import getLoansInUseTask from "./pools/getLoansInUse.task"
 import processFailedWithdrawalRequestTask from "./pools/processFailedWithdrawalRequest.task"
+import withdrawBridgeFee from "./bridge/withdrawBridgeFee.task"
 import withdrawOrchestratorTokensTask from "./orchestrator/withdrawOrchestratorTokens.task"
 import monitorTokenBalances from "./orchestrator/viewTokenBalances.task"
 
@@ -32,6 +33,7 @@ export {
     deployLancaOrchestratorImplementation,
     getLoansInUseTask,
     processFailedWithdrawalRequestTask,
+    withdrawBridgeFee,
     withdrawOrchestratorTokensTask,
     monitorTokenBalances,
 }
