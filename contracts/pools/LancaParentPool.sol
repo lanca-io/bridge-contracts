@@ -60,6 +60,8 @@ contract LancaParentPool is
         uint256 depositFeeAmount;
     }
 
+    error WithdrawRequestNotReady();
+
     /* CONSTANT VARIABLES */
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
@@ -362,6 +364,20 @@ contract LancaParentPool is
         delete s_clfRequestTypes[clfRequestId];
 
         IERC20(i_lpToken).safeTransfer(lpAddress, lpAmount);
+    }
+
+    function completeWithdrawal(address lpAddress) external onlyOwner {
+        bytes32 withdrawalId = s_withdrawalIdByLPAddress[lpAddress];
+        require(withdrawalId != bytes32(0), WithdrawRequestDoesntExist(withdrawalId));
+
+        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+        require(request.lpAddress == lpAddress, SenderNotAllowed(lpAddress));
+
+        if (request.remainingLiquidityFromChildPools < 10) {
+            _completeWithdrawal(withdrawalId);
+        } else {
+            revert WithdrawRequestNotReady();
+        }
     }
 
     /**
