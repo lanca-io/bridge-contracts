@@ -16,6 +16,7 @@ import processFailedWithdrawalRequestTask from "./pools/processFailedWithdrawalR
 import withdrawBridgeFee from "./bridge/withdrawBridgeFee.task"
 import withdrawOrchestratorTokensTask from "./orchestrator/withdrawOrchestratorTokens.task"
 import monitorTokenBalances from "./orchestrator/viewTokenBalances.task"
+import completeWithdrawalTask from "./pools/completeWithdrawal.task"
 
 export {
     deployLancaBridgeTask,
@@ -36,4 +37,5 @@ export {
     withdrawBridgeFee,
     withdrawOrchestratorTokensTask,
     monitorTokenBalances,
+    completeWithdrawalTask,
 }

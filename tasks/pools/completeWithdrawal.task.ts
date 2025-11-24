@@ -45,17 +45,19 @@ async function completeWithdrawal(isTestnet: boolean, lpAddress: Address) {
     console.log(`Transaction successful. Hash: ${completeWithdrawalHash}`)
 }
 
-task("complete-withdraw-from-pool", "Complete withdraw from the pool").setAction(async taskArgs => {
-    try {
-        const hre: HardhatRuntimeEnvironment = require("hardhat")
-        compileContracts({ quiet: true })
-        const name = hre.network.name as CNetworkNames
-        const isTestnet = conceroNetworks[name].type === "testnet"
+task("complete-withdraw-from-pool", "Complete withdraw from the pool")
+    .addParam("lpaddress")
+    .setAction(async taskArgs => {
+        try {
+            const hre: HardhatRuntimeEnvironment = require("hardhat")
+            compileContracts({ quiet: true })
+            const name = hre.network.name as CNetworkNames
+            const isTestnet = conceroNetworks[name].type === "testnet"
 
-        await completeWithdrawal(isTestnet, taskArgs.lpaddress)
-    } catch (error) {
-        handleError(error, "complete-withdraw-from-pool")
-    }
-})
+            await completeWithdrawal(isTestnet, taskArgs.lpaddress)
+        } catch (error) {
+            handleError(error, "complete-withdraw-from-pool")
+        }
+    })
 
 export default {}
