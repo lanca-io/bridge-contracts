@@ -6,7 +6,7 @@ import { getEnvAddress } from "../../utils/getEnvVar"
 import { ProxyEnum } from "../../constants/deploymentVariables"
 import { err } from "../../utils/log"
 
-const BASEURL = "https://api.concero.io/api"
+const BASEURL = "https://api.v2.concero.io/api/v1"
 const IGNORE_SYMBOLS = ["LINK", "LINK.e", "LINK(ERC677)", "TITAN"]
 const MIN_TOTAL_VALUE_USD = 1
 
@@ -45,7 +45,7 @@ async function fetchBalances(chain: CNetwork, contractAddress: string): Promise<
         }
 
         const jsonResponse = await response.json()
-        const data: TokenBalance[] = jsonResponse.data[chain.chainId]
+        const data: TokenBalance[] = jsonResponse.payload.data[chain.chainId]
 
         return data
     } catch (error) {
@@ -71,7 +71,7 @@ async function monitorTokenBalances(isTestnet: boolean): Promise<{ [chainName: s
             chainBalances = chainBalances.map(token => {
                 const balanceBigInt = BigInt(token.balance)
                 const balanceFormatted = Number(formatUnits(balanceBigInt, token.decimals))
-                const totalValueUsd = balanceFormatted * token.priceUsd
+                const totalValueUsd = balanceFormatted * token.price_usd
                 return {
                     ...token,
                     totalValueUsd,
